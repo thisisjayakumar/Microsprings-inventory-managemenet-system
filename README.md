@@ -342,7 +342,15 @@ class InventoryTransaction(models.Model):
     quantity = models.DecimalField(max_digits=10, decimal_places=2)
     unit_cost = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
     total_value = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True)
-    
+
+    idempotency_key = models.CharField(
+        max_length=64,
+        unique=False,              # we'll enforce uniqueness at DB level
+        null=True,
+        blank=True,
+        help_text="Idempotency key for safe retries. Ensures no duplicate transaction on retries."
+    )
+
     # When & Who
     transaction_datetime = models.DateTimeField()
     created_by = models.ForeignKey(User, on_delete=models.PROTECT)
@@ -358,8 +366,11 @@ class InventoryTransaction(models.Model):
     
     # Additional Info
     notes = models.TextField(blank=True)
-    
     created_at = models.DateTimeField(auto_now_add=True)
+    class Meta:
+        indexes = [
+            models.Index(fields=['transaction_datetime']),
+        ]
 
 class StockBalance(models.Model):
     """Current stock levels - calculated/cached view"""
