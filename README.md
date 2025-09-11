@@ -1,3 +1,108 @@
+# Microsprings Inventory Management System
+
+A Django-based inventory management system with JWT authentication.
+
+## Features
+
+- ✅ JWT Authentication (Login, Register, Logout, Token Refresh)
+- ✅ Custom User Model with extended fields
+- ✅ Django REST Framework integration
+- ✅ CORS support for frontend integration
+- ✅ Admin panel integration
+- 🚧 Inventory management (coming soon)
+
+## Setup Instructions
+
+### 1. Virtual Environment
+The project already has a virtual environment set up. Activate it:
+```bash
+source venv/bin/activate
+```
+
+### 2. Install Dependencies
+```bash
+pip install -r requirements.txt
+```
+
+### 3. Database Setup
+```bash
+python manage.py makemigrations
+python manage.py migrate
+```
+
+### 4. Create Superuser
+```bash
+python manage.py createsuperuser
+```
+
+### 5. Run Development Server
+```bash
+python manage.py runserver
+```
+
+## API Endpoints
+
+### Authentication Endpoints
+- `POST /api/auth/register/` - Register new user
+- `POST /api/auth/login/` - Login user
+- `POST /api/auth/logout/` - Logout user
+- `POST /api/auth/token/refresh/` - Refresh JWT token
+- `GET /api/auth/profile/me/` - Get current user profile
+- `PUT /api/auth/profile/` - Update user profile
+- `POST /api/auth/change-password/` - Change password
+- `GET /api/auth/health/` - Health check
+
+### Inventory Endpoints (Coming Soon)
+- `GET /api/inventory/health/` - Health check
+
+## Testing
+
+Run the authentication test script:
+```bash
+# Make sure the server is running first
+python manage.py runserver
+
+# In another terminal
+python test_auth.py
+```
+
+## Project Structure
+
+```
+microsprings_inventory_system/
+├── authentication/          # JWT authentication app
+│   ├── models.py           # Custom User model
+│   ├── serializers.py      # API serializers
+│   ├── views.py            # API views
+│   ├── urls.py             # URL routing
+│   └── admin.py            # Admin configuration
+├── inventory/              # Inventory management app
+├── microsprings_inventory_system/  # Main project settings
+│   ├── settings.py         # Django settings
+│   └── urls.py             # Main URL configuration
+├── requirements.txt        # Python dependencies
+└── manage.py              # Django management script
+```
+
+## Technologies Used
+
+- Django 5.2.6
+- Django REST Framework 3.15.2
+- djangorestframework-simplejwt 5.3.0
+- django-cors-headers 4.4.0
+- python-decouple 3.8
+- Pillow 10.4.0
+
+## Next Steps
+
+1. Implement inventory models (Product, Category, Stock, etc.)
+2. Create inventory CRUD operations
+3. Add inventory tracking and reporting
+4. Implement user permissions and roles
+5. Add frontend integration
+
+---
+
 # Enhanced Low-Level System Design for Inventory Management System
 
 ## Key Improvements Made
