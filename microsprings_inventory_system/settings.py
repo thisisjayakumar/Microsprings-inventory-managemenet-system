@@ -44,6 +44,7 @@ INSTALLED_APPS = [
     'rest_framework',
     'rest_framework_simplejwt',
     'corsheaders',
+    'django_filters',
     
     # Local apps - Phase 1: Core Foundation
     'authentication',        # User management and authentication
@@ -71,6 +72,16 @@ MIDDLEWARE = [
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
+    
+    # MSP-ERP Security Middleware (order matters)
+    'authentication.middleware.NetworkRestrictionMiddleware',
+    'authentication.middleware.ShiftRestrictionMiddleware',
+    'authentication.middleware.SessionTrackingMiddleware',
+    'authentication.middleware.RoleBasedAccessMiddleware',
+    'authentication.middleware.DepartmentAccessMiddleware',
+    'authentication.middleware.OperatorEngagementMiddleware',
+    'authentication.middleware.APIRateLimitMiddleware',
+    
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
@@ -211,3 +222,113 @@ MEDIA_ROOT = BASE_DIR / 'media'
 
 # Custom User Model
 AUTH_USER_MODEL = 'authentication.CustomUser'
+
+# Caching Configuration (for production use Redis)
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+        'LOCATION': 'unique-snowflake',
+        'TIMEOUT': 300,  # 5 minutes default
+        'OPTIONS': {
+            'MAX_ENTRIES': 1000,
+        }
+    }
+}
+
+# MSP-ERP Specific Settings
+MSP_ERP_SETTINGS = {
+    # Network Security
+    'ENFORCE_NETWORK_RESTRICTIONS': True,
+    'DEFAULT_IP_RANGES': ['192.168.0.0/16', '10.0.0.0/8'],
+    
+    # Shift Management
+    'ENFORCE_SHIFT_RESTRICTIONS': True,
+    'SHIFT_TIMES': {
+        'I': {'start': '09:00', 'end': '17:00'},
+        'II': {'start': '17:00', 'end': '02:00'},
+        'III': {'start': '02:00', 'end': '09:00'},
+    },
+    
+    # Operator Management
+    'PREVENT_DOUBLE_ASSIGNMENT': True,
+    'MAX_ENGAGEMENT_HOURS': 8,
+    
+    # Session Management
+    'MAX_CONCURRENT_SESSIONS': 1,
+    'SESSION_TIMEOUT_HOURS': 8,
+    
+    # Rate Limiting
+    'API_RATE_LIMIT_PER_HOUR': 1000,
+    'ENABLE_RATE_LIMITING': True,
+    
+    # Manufacturing
+    'BATCH_ID_PREFIX': 'BATCH',
+    'MO_ID_PREFIX': 'MO',
+    'PACKAGE_ID_PREFIX': 'PKG',
+    
+    # Quality Control
+    'ENABLE_TRACEABILITY': True,
+    'QR_CODE_FORMAT': 'JSON',
+    
+    # Departments
+    'DEPARTMENTS': {
+        'rm_store': 'Raw Material Store',
+        'coiling': 'Coiling Department',
+        'tempering': 'Tempering Department',
+        'plating': 'Plating Department',
+        'packing': 'Packing Department',
+        'fg_store': 'Finished Goods Store',
+        'quality': 'Quality Control',
+        'maintenance': 'Maintenance',
+        'admin': 'Administration'
+    }
+}
+
+# Logging Configuration
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {
+        'verbose': {
+            'format': '{levelname} {asctime} {module} {process:d} {thread:d} {message}',
+            'style': '{',
+        },
+        'simple': {
+            'format': '{levelname} {message}',
+            'style': '{',
+        },
+    },
+    'handlers': {
+        'file': {
+            'level': 'INFO',
+            'class': 'logging.FileHandler',
+            'filename': BASE_DIR / 'logs' / 'msp_erp.log',
+            'formatter': 'verbose',
+        },
+        'console': {
+            'level': 'DEBUG',
+            'class': 'logging.StreamHandler',
+            'formatter': 'simple',
+        },
+    },
+    'root': {
+        'handlers': ['console', 'file'],
+        'level': 'INFO',
+    },
+    'loggers': {
+        'authentication': {
+            'handlers': ['file', 'console'],
+            'level': 'INFO',
+            'propagate': False,
+        },
+        'manufacturing': {
+            'handlers': ['file', 'console'],
+            'level': 'INFO',
+            'propagate': False,
+        },
+    },
+}
+
+# Create logs directory
+import os
+os.makedirs(BASE_DIR / 'logs', exist_ok=True)

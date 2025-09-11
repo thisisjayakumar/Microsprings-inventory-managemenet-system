@@ -1,0 +1,131 @@
+INFO 2025-09-11 14:05:10,103 autoreload 22588 8786976960 Watching for file changes with StatReloader
+ERROR 2025-09-11 14:05:41,370 log 22588 6246445056 Internal Server Error: /admin/authentication/customuser/1/change/
+Traceback (most recent call last):
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/django/contrib/admin/options.py", line 840, in get_form
+    return modelform_factory(self.model, **defaults)
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/django/forms/models.py", line 654, in modelform_factory
+    return type(form)(class_name, (form,), form_class_attrs)
+           ~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/django/forms/models.py", line 312, in __new__
+    fields = fields_for_model(
+        opts.model,
+    ...<11 lines>...
+        form_declared_fields=new_class.declared_fields,
+    )
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/django/forms/models.py", line 207, in fields_for_model
+    raise FieldError(
+    ...<2 lines>...
+    )
+django.core.exceptions.FieldError: 'date_joined' cannot be specified for CustomUser model form as it is a non-editable field
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/django/core/handlers/exception.py", line 55, in inner
+    response = get_response(request)
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/django/core/handlers/base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/django/contrib/admin/options.py", line 719, in wrapper
+    return self.admin_site.admin_view(view)(*args, **kwargs)
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/django/utils/decorators.py", line 192, in _view_wrapper
+    result = _process_exception(request, e)
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/django/utils/decorators.py", line 190, in _view_wrapper
+    response = view_func(request, *args, **kwargs)
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/django/views/decorators/cache.py", line 80, in _view_wrapper
+    response = view_func(request, *args, **kwargs)
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/django/contrib/admin/sites.py", line 246, in inner
+    return view(request, *args, **kwargs)
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/django/contrib/admin/options.py", line 1987, in change_view
+    return self.changeform_view(request, object_id, form_url, extra_context)
+           ~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/django/utils/decorators.py", line 48, in _wrapper
+    return bound_method(*args, **kwargs)
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/django/utils/decorators.py", line 192, in _view_wrapper
+    result = _process_exception(request, e)
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/django/utils/decorators.py", line 190, in _view_wrapper
+    response = view_func(request, *args, **kwargs)
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/django/contrib/admin/options.py", line 1840, in changeform_view
+    return self._changeform_view(request, object_id, form_url, extra_context)
+           ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/django/contrib/admin/options.py", line 1878, in _changeform_view
+    ModelForm = self.get_form(
+        request, obj, change=not add, fields=flatten_fieldsets(fieldsets)
+    )
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/django/contrib/auth/admin.py", line 98, in get_form
+    return super().get_form(request, obj, **defaults)
+           ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/django/contrib/admin/options.py", line 842, in get_form
+    raise FieldError(
+    ...<2 lines>...
+    )
+django.core.exceptions.FieldError: 'date_joined' cannot be specified for CustomUser model form as it is a non-editable field. Check fields/fieldsets/exclude attributes of class CustomUserAdmin.
+ERROR 2025-09-11 14:05:46,277 log 22588 6246445056 Internal Server Error: /admin/authentication/customuser/4/change/
+Traceback (most recent call last):
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/django/contrib/admin/options.py", line 840, in get_form
+    return modelform_factory(self.model, **defaults)
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/django/forms/models.py", line 654, in modelform_factory
+    return type(form)(class_name, (form,), form_class_attrs)
+           ~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/django/forms/models.py", line 312, in __new__
+    fields = fields_for_model(
+        opts.model,
+    ...<11 lines>...
+        form_declared_fields=new_class.declared_fields,
+    )
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/django/forms/models.py", line 207, in fields_for_model
+    raise FieldError(
+    ...<2 lines>...
+    )
+django.core.exceptions.FieldError: 'date_joined' cannot be specified for CustomUser model form as it is a non-editable field
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/django/core/handlers/exception.py", line 55, in inner
+    response = get_response(request)
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/django/core/handlers/base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/django/contrib/admin/options.py", line 719, in wrapper
+    return self.admin_site.admin_view(view)(*args, **kwargs)
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/django/utils/decorators.py", line 192, in _view_wrapper
+    result = _process_exception(request, e)
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/django/utils/decorators.py", line 190, in _view_wrapper
+    response = view_func(request, *args, **kwargs)
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/django/views/decorators/cache.py", line 80, in _view_wrapper
+    response = view_func(request, *args, **kwargs)
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/django/contrib/admin/sites.py", line 246, in inner
+    return view(request, *args, **kwargs)
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/django/contrib/admin/options.py", line 1987, in change_view
+    return self.changeform_view(request, object_id, form_url, extra_context)
+           ~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/django/utils/decorators.py", line 48, in _wrapper
+    return bound_method(*args, **kwargs)
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/django/utils/decorators.py", line 192, in _view_wrapper
+    result = _process_exception(request, e)
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/django/utils/decorators.py", line 190, in _view_wrapper
+    response = view_func(request, *args, **kwargs)
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/django/contrib/admin/options.py", line 1840, in changeform_view
+    return self._changeform_view(request, object_id, form_url, extra_context)
+           ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/django/contrib/admin/options.py", line 1878, in _changeform_view
+    ModelForm = self.get_form(
+        request, obj, change=not add, fields=flatten_fieldsets(fieldsets)
+    )
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/django/contrib/auth/admin.py", line 98, in get_form
+    return super().get_form(request, obj, **defaults)
+           ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/django/contrib/admin/options.py", line 842, in get_form
+    raise FieldError(
+    ...<2 lines>...
+    )
+django.core.exceptions.FieldError: 'date_joined' cannot be specified for CustomUser model form as it is a non-editable field. Check fields/fieldsets/exclude attributes of class CustomUserAdmin.
+INFO 2025-09-11 14:06:16,071 autoreload 22588 8786976960 /Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/authentication/urls.py changed, reloading.
+INFO 2025-09-11 14:06:16,499 autoreload 23605 8786976960 Watching for file changes with StatReloader
+INFO 2025-09-11 14:06:33,591 autoreload 23605 8786976960 /Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/authentication/admin.py changed, reloading.
+INFO 2025-09-11 14:06:34,013 autoreload 23787 8786976960 Watching for file changes with StatReloader
+INFO 2025-09-11 14:06:39,469 autoreload 23787 8786976960 /Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/authentication/admin.py changed, reloading.
+INFO 2025-09-11 14:06:39,889 autoreload 23923 8786976960 Watching for file changes with StatReloader
+INFO 2025-09-11 14:07:17,479 autoreload 25000 8786976960 Watching for file changes with StatReloader
+INFO 2025-09-11 14:08:44,785 autoreload 26777 8786976960 Watching for file changes with StatReloader
