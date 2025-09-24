@@ -12,6 +12,6 @@ class MachineAdmin(admin.ModelAdmin):
 
 @admin.register(MachineSchedule)
 class MachineScheduleAdmin(admin.ModelAdmin):
-    list_display = ('machine', 'batch_process', 'scheduled_start', 'scheduled_end', 'status')
+    list_display = ('machine', 'manufacturing_order', 'scheduled_start', 'scheduled_end', 'status')
     list_filter = ('status', 'scheduled_start')
-    search_fields = ('machine__machine_id', 'batch_process__batch__batch_id')
+    search_fields = ('machine__machine_id', 'manufacturing_order__mo_id')

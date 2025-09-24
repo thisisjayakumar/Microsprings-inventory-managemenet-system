@@ -32,7 +32,7 @@ class PackedItem(models.Model):
     ]
     
     package_id = models.CharField(max_length=30, unique=True)  # For QR code
-    batch = models.ForeignKey('manufacturing.Batch', on_delete=models.CASCADE, related_name='packed_items')
+    manufacturing_order = models.ForeignKey('manufacturing.ManufacturingOrder', on_delete=models.CASCADE, related_name='packed_items', null=True, blank=True)
     packaging_type = models.ForeignKey(PackagingType, on_delete=models.PROTECT)
     
     quantity = models.PositiveIntegerField()

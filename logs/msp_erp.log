@@ -129,3 +129,171 @@ INFO 2025-09-11 14:06:39,469 autoreload 23787 8786976960 /Users/jayakumarn/Docum
 INFO 2025-09-11 14:06:39,889 autoreload 23923 8786976960 Watching for file changes with StatReloader
 INFO 2025-09-11 14:07:17,479 autoreload 25000 8786976960 Watching for file changes with StatReloader
 INFO 2025-09-11 14:08:44,785 autoreload 26777 8786976960 Watching for file changes with StatReloader
+INFO 2025-09-13 05:54:49,672 autoreload 51114 8654545088 Watching for file changes with StatReloader
+WARNING 2025-09-13 05:54:53,131 log 51114 6196244480 Not Found: /favicon.ico
+INFO 2025-09-16 04:14:44,460 autoreload 51832 8301977792 Watching for file changes with StatReloader
+WARNING 2025-09-16 04:14:47,312 log 51832 6197981184 Not Found: /favicon.ico
+INFO 2025-09-16 08:10:28,579 autoreload 55769 8301977792 Watching for file changes with StatReloader
+INFO 2025-09-16 16:23:56,015 autoreload 14625 8517886144 Watching for file changes with StatReloader
+WARNING 2025-09-16 16:23:58,581 log 14625 6222458880 Not Found: /favicon.ico
+INFO 2025-09-17 02:06:08,241 autoreload 29634 8430444736 Watching for file changes with StatReloader
+WARNING 2025-09-17 02:06:10,925 log 29634 6136737792 Not Found: /favicon.ico
+INFO 2025-09-20 13:44:41,177 autoreload 56889 8579539136 Watching for file changes with StatReloader
+INFO 2025-09-20 13:51:05,241 autoreload 63319 8579539136 Watching for file changes with StatReloader
+WARNING 2025-09-20 13:51:08,459 log 63319 6189658112 Not Found: /favicon.ico
+ERROR 2025-09-20 13:51:28,625 log 63319 6189658112 Internal Server Error: /admin/inventory/inventorytransaction/
+Traceback (most recent call last):
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/django/db/backends/utils.py", line 105, in _execute
+    return self.cursor.execute(sql, params)
+           ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/django/db/backends/sqlite3/base.py", line 360, in execute
+    return super().execute(query, params)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+sqlite3.OperationalError: no such column: inventory_location.location_name
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/django/core/handlers/exception.py", line 55, in inner
+    response = get_response(request)
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/django/core/handlers/base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/django/contrib/admin/options.py", line 719, in wrapper
+    return self.admin_site.admin_view(view)(*args, **kwargs)
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/django/utils/decorators.py", line 192, in _view_wrapper
+    result = _process_exception(request, e)
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/django/utils/decorators.py", line 190, in _view_wrapper
+    response = view_func(request, *args, **kwargs)
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/django/views/decorators/cache.py", line 80, in _view_wrapper
+    response = view_func(request, *args, **kwargs)
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/django/contrib/admin/sites.py", line 246, in inner
+    return view(request, *args, **kwargs)
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/django/utils/decorators.py", line 48, in _wrapper
+    return bound_method(*args, **kwargs)
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/django/utils/decorators.py", line 192, in _view_wrapper
+    result = _process_exception(request, e)
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/django/utils/decorators.py", line 190, in _view_wrapper
+    response = view_func(request, *args, **kwargs)
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/django/contrib/admin/options.py", line 2024, in changelist_view
+    cl = self.get_changelist_instance(request)
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/django/contrib/admin/options.py", line 867, in get_changelist_instance
+    return ChangeList(
+        request,
+    ...<12 lines>...
+        self.search_help_text,
+    )
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/django/contrib/admin/views/main.py", line 145, in __init__
+    self.queryset = self.get_queryset(request)
+                    ~~~~~~~~~~~~~~~~~^^^^^^^^^
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/django/contrib/admin/views/main.py", line 545, in get_queryset
+    ) = self.get_filters(request)
+        ~~~~~~~~~~~~~~~~^^^^^^^^^
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/django/contrib/admin/views/main.py", line 216, in get_filters
+    spec = field_list_filter_class(
+        field,
+    ...<4 lines>...
+        field_path=field_path,
+    )
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/django/contrib/admin/filters.py", line 217, in create
+    return list_filter_class(
+        field, request, params, model, model_admin, field_path=field_path
+    )
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/django/contrib/admin/filters.py", line 232, in __init__
+    self.lookup_choices = self.field_choices(field, request, model_admin)
+                          ~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/django/contrib/admin/filters.py", line 273, in field_choices
+    return field.get_choices(include_blank=False, ordering=ordering)
+           ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/django/db/models/fields/__init__.py", line 1083, in get_choices
+    (choice_func(x), str(x)) for x in qs
+                                      ^^
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/django/db/models/query.py", line 384, in __iter__
+    self._fetch_all()
+    ~~~~~~~~~~~~~~~^^
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/django/db/models/query.py", line 1949, in _fetch_all
+    self._result_cache = list(self._iterable_class(self))
+                         ~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/django/db/models/query.py", line 91, in __iter__
+    results = compiler.execute_sql(
+        chunked_fetch=self.chunked_fetch, chunk_size=self.chunk_size
+    )
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/django/db/models/sql/compiler.py", line 1623, in execute_sql
+    cursor.execute(sql, params)
+    ~~~~~~~~~~~~~~^^^^^^^^^^^^^
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/django/db/backends/utils.py", line 122, in execute
+    return super().execute(sql, params)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/django/db/backends/utils.py", line 79, in execute
+    return self._execute_with_wrappers(
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        sql, params, many=False, executor=self._execute
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/django/db/backends/utils.py", line 92, in _execute_with_wrappers
+    return executor(sql, params, many, context)
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/django/db/backends/utils.py", line 100, in _execute
+    with self.db.wrap_database_errors:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/django/db/utils.py", line 91, in __exit__
+    raise dj_exc_value.with_traceback(traceback) from exc_value
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/django/db/backends/utils.py", line 105, in _execute
+    return self.cursor.execute(sql, params)
+           ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/django/db/backends/sqlite3/base.py", line 360, in execute
+    return super().execute(query, params)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+django.db.utils.OperationalError: no such column: inventory_location.location_name
+INFO 2025-09-20 13:58:06,577 autoreload 70770 8579539136 Watching for file changes with StatReloader
+INFO 2025-09-20 14:10:27,444 test_logging 86869 8579539136 Test log message - logging is working!
+INFO 2025-09-20 14:13:24,870 autoreload 89822 8579539136 Watching for file changes with StatReloader
+WARNING 2025-09-20 14:15:25,166 log 22 281473438015520 Not Found: /api/
+WARNING 2025-09-20 14:15:35,255 log 21 281473438015520 Unauthorized: /api/auth/
+WARNING 2025-09-20 14:16:23,772 log 21 281473438015520 Not Found: /static/admin/css/login.css
+WARNING 2025-09-20 14:16:25,306 log 20 281473438015520 Not Found: /static/admin/css/login.css
+WARNING 2025-09-20 14:16:36,247 log 20 281473438015520 Not Found: /static/admin/css/base.css
+WARNING 2025-09-20 14:16:36,247 log 21 281473438015520 Not Found: /static/admin/css/dark_mode.css
+WARNING 2025-09-20 14:16:36,252 log 21 281473438015520 Not Found: /static/admin/css/login.css
+WARNING 2025-09-20 14:16:36,251 log 20 281473438015520 Not Found: /static/admin/js/theme.js
+WARNING 2025-09-20 14:16:36,254 log 21 281473438015520 Not Found: /static/admin/css/responsive.css
+WARNING 2025-09-20 14:16:36,255 log 22 281473438015520 Not Found: /static/admin/css/nav_sidebar.css
+WARNING 2025-09-20 14:16:36,319 log 22 281473438015520 Not Found: /static/admin/js/nav_sidebar.js
+WARNING 2025-09-20 14:16:36,320 log 21 281473438015520 Not Found: /static/admin/css/nav_sidebar.css
+WARNING 2025-09-20 14:16:36,320 log 20 281473438015520 Not Found: /static/admin/css/responsive.css
+WARNING 2025-09-20 14:16:36,322 log 22 281473438015520 Not Found: /static/admin/css/login.css
+WARNING 2025-09-20 14:16:36,945 log 20 281473438015520 Not Found: /favicon.ico
+WARNING 2025-09-20 14:18:20,821 log 22 281473438015520 Not Found: /static/admin/css/base.css
+WARNING 2025-09-20 14:19:34,637 log 20 281473663086624 Not Found: /static/admin/css/base.css
+WARNING 2025-09-20 14:21:05,409 log 21 281473662734368 Not Found: /static/admin/css/base.css
+ERROR 2025-09-20 14:21:21,310 log 30 281473341919264 Invalid HTTP_HOST header: 'testserver'. You may need to add 'testserver' to ALLOWED_HOSTS.
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.12/site-packages/django/core/handlers/exception.py", line 55, in inner
+    response = get_response(request)
+               ^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/django/utils/deprecation.py", line 119, in __call__
+    response = self.process_request(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/django/middleware/common.py", line 48, in process_request
+    host = request.get_host()
+           ^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/django/http/request.py", line 202, in get_host
+    raise DisallowedHost(msg)
+django.core.exceptions.DisallowedHost: Invalid HTTP_HOST header: 'testserver'. You may need to add 'testserver' to ALLOWED_HOSTS.
+WARNING 2025-09-20 14:24:05,872 log 20 281472849281056 Not Found: /static/admin/css/base.css
+INFO 2025-09-23 09:03:43,492 autoreload 86569 8512020672 Watching for file changes with StatReloader
+INFO 2025-09-23 09:04:52,618 autoreload 88040 8512020672 Watching for file changes with StatReloader
+WARNING 2025-09-23 09:04:55,796 log 88040 6251753472 Not Found: /favicon.ico
+WARNING 2025-09-23 17:52:41,115 log 22 281473121832992 Not Found: /static/admin/css/dashboard.css
+WARNING 2025-09-23 17:52:41,134 log 22 281473121832992 Not Found: /static/admin/css/nav_sidebar.css
+WARNING 2025-09-23 17:52:41,149 log 22 281473121832992 Not Found: /static/admin/css/responsive.css
+WARNING 2025-09-23 17:52:41,163 log 22 281473121832992 Not Found: /static/admin/js/theme.js
+WARNING 2025-09-23 17:52:41,216 log 21 281473121832992 Not Found: /static/admin/css/base.css
+WARNING 2025-09-23 17:52:41,216 log 20 281473121832992 Not Found: /static/admin/css/dark_mode.css
+WARNING 2025-09-23 17:52:41,234 log 22 281473121832992 Not Found: /static/admin/css/responsive.css
+WARNING 2025-09-23 17:52:41,235 log 21 281473121832992 Not Found: /static/admin/css/nav_sidebar.css
+WARNING 2025-09-23 17:52:41,235 log 20 281473121832992 Not Found: /static/admin/css/dashboard.css
+WARNING 2025-09-23 17:52:41,247 log 22 281473121832992 Not Found: /static/admin/js/nav_sidebar.js
+WARNING 2025-09-23 17:52:41,461 log 22 281473121832992 Not Found: /favicon.ico
+WARNING 2025-09-23 18:04:51,111 log 24 281473853935648 Unauthorized: /api/manufacturing/api/purchase-orders/dashboard_stats/
+WARNING 2025-09-23 18:04:51,111 log 23 281473853935648 Unauthorized: /api/manufacturing/api/manufacturing-orders/dashboard_stats/

@@ -13,6 +13,7 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 from pathlib import Path
 from datetime import timedelta
 from decouple import config
+import os
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -22,7 +23,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-q!$qa5=thav+3cn0z+syuff00pdbymg5qnfdi85%+yee=a1w7&'
+SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-q!$qa5=thav+3cn0z+syuff00pdbymg5qnfdi85%+yee=a1w7&')
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
@@ -50,6 +51,7 @@ INSTALLED_APPS = [
     'authentication',        # User management and authentication
     'products',             # Product catalog, categories, specifications
     'inventory',            # Stock management, locations, transactions
+    'third_party',          # Vendor and third-party management
     
     # Phase 2: Process Management
     'manufacturing',        # Orders, batches, production execution

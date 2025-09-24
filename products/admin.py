@@ -1,30 +1,26 @@
 from django.contrib import admin
-from .models import MaterialType, ProductCategory, Product, ProductSpecification
-
-
-@admin.register(MaterialType)
-class MaterialTypeAdmin(admin.ModelAdmin):
-    list_display = ('name',)
-    search_fields = ('name',)
-
-
-@admin.register(ProductCategory)
-class ProductCategoryAdmin(admin.ModelAdmin):
-    list_display = ('name', 'parent')
-    list_filter = ('parent',)
-    search_fields = ('name',)
+from .models import Product
 
 
 @admin.register(Product)
 class ProductAdmin(admin.ModelAdmin):
-    list_display = ('part_number', 'part_name', 'category', 'material_type', 'grade', 'is_active')
-    list_filter = ('category', 'material_type', 'is_active', 'created_at')
-    search_fields = ('part_number', 'part_name', 'grade')
+    list_display = ('product_code', 'material_type', 'created_at', 'created_by')
+    list_filter = ('material_type', 'created_at')
+    search_fields = ('product_code',)
     ordering = ('-created_at',)
-
-
-@admin.register(ProductSpecification)
-class ProductSpecificationAdmin(admin.ModelAdmin):
-    list_display = ('product', 'version', 'is_current', 'effective_from')
-    list_filter = ('is_current', 'effective_from')
-    search_fields = ('product__part_number', 'version')
+    readonly_fields = ('created_at',)
+    
+    fieldsets = (
+        ('Product Information', {
+            'fields': ('product_code', 'material_type')
+        }),
+        ('Audit Information', {
+            'fields': ('created_by', 'created_at'),
+            'classes': ('collapse',)
+        }),
+    )
+    
+    def save_model(self, request, obj, form, change):
+        if not change:  # Only set created_by for new objects
+            obj.created_by = request.user
+        super().save_model(request, obj, form, change)

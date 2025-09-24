@@ -32,7 +32,7 @@ class QualityCheck(models.Model):
         ('rework', 'Rework')
     ]
     
-    batch_process = models.ForeignKey('manufacturing.BatchProcessExecution', on_delete=models.CASCADE, related_name='quality_checks')
+    manufacturing_order = models.ForeignKey('manufacturing.ManufacturingOrder', on_delete=models.CASCADE, related_name='quality_checks', null=True, blank=True)
     template = models.ForeignKey(QualityCheckTemplate, on_delete=models.PROTECT)
     
     # Results
@@ -59,7 +59,7 @@ class TraceabilityRecord(models.Model):
     """
     Complete traceability chain
     """
-    batch = models.ForeignKey('manufacturing.Batch', on_delete=models.CASCADE, related_name='traceability_records')
+    manufacturing_order = models.ForeignKey('manufacturing.ManufacturingOrder', on_delete=models.CASCADE, related_name='traceability_records', null=True, blank=True)
     
     # Upstream traceability
     raw_material_batches = models.JSONField(default=list)  # List of RM batch IDs used

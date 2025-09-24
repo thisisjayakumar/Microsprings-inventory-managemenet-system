@@ -11,15 +11,15 @@ class QualityCheckTemplateAdmin(admin.ModelAdmin):
 
 @admin.register(QualityCheck)
 class QualityCheckAdmin(admin.ModelAdmin):
-    list_display = ('batch_process', 'template', 'overall_result', 'inspector', 'check_datetime')
+    list_display = ('manufacturing_order', 'template', 'overall_result', 'inspector', 'check_datetime')
     list_filter = ('overall_result', 'check_datetime', 'template')
-    search_fields = ('batch_process__batch__batch_id', 'template__name', 'inspector__email')
+    search_fields = ('manufacturing_order__mo_id', 'template__name', 'inspector__email')
     ordering = ('-check_datetime',)
 
 
 @admin.register(TraceabilityRecord)
 class TraceabilityRecordAdmin(admin.ModelAdmin):
-    list_display = ('batch', 'created_at')
+    list_display = ('manufacturing_order', 'created_at')
     list_filter = ('created_at',)
-    search_fields = ('batch__batch_id',)
+    search_fields = ('manufacturing_order__mo_id',)
     ordering = ('-created_at',)

@@ -11,9 +11,9 @@ class PackagingTypeAdmin(admin.ModelAdmin):
 
 @admin.register(PackedItem)
 class PackedItemAdmin(admin.ModelAdmin):
-    list_display = ('package_id', 'batch', 'packaging_type', 'quantity', 'status', 'pack_datetime')
+    list_display = ('package_id', 'manufacturing_order', 'packaging_type', 'quantity', 'status', 'pack_datetime')
     list_filter = ('status', 'pack_datetime', 'packaging_type')
-    search_fields = ('package_id', 'batch__batch_id')
+    search_fields = ('package_id', 'manufacturing_order__mo_id')
     ordering = ('-pack_datetime',)
 
 

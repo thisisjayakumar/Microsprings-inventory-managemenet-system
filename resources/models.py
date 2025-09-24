@@ -5,9 +5,6 @@ User = get_user_model()
 
 
 class Machine(models.Model):
-    """
-    Machines and equipment
-    """
     STATUS_CHOICES = [
         ('available', 'Available'),
         ('occupied', 'Occupied'),
@@ -55,7 +52,7 @@ class MachineSchedule(models.Model):
     ]
     
     machine = models.ForeignKey(Machine, on_delete=models.CASCADE, related_name='schedule')
-    batch_process = models.ForeignKey('manufacturing.BatchProcessExecution', on_delete=models.CASCADE)
+    manufacturing_order = models.ForeignKey('manufacturing.ManufacturingOrder', on_delete=models.CASCADE, null=True, blank=True)
     scheduled_start = models.DateTimeField()
     scheduled_end = models.DateTimeField()
     actual_start = models.DateTimeField(null=True, blank=True)

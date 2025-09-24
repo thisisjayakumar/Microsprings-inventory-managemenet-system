@@ -1,91 +1,108 @@
 from django.db import models
-from django.contrib.auth import get_user_model
+from django.core.exceptions import ValidationError
+from django.core.management.base import BaseCommand
 
-User = get_user_model()
+from inventory.models import RawMaterial
 
 
-class ProcessTemplate(models.Model):
-    """
-    Configurable workflow templates
-    """
+class Process(models.Model):
     name = models.CharField(max_length=100, unique=True)
-    description = models.TextField()
-    material_types = models.ManyToManyField('products.MaterialType', related_name='process_templates')  # Which materials use this template
+    code = models.IntegerField()
+    description = models.TextField(blank=True, null=True)
     is_active = models.BooleanField(default=True)
-    version = models.CharField(max_length=20, default='1.0')
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
-        verbose_name = 'Process Template'
-        verbose_name_plural = 'Process Templates'
+        ordering = ['name']
 
     def __str__(self):
-        return f"{self.name} v{self.version}"
+        return self.name
+
+
+class SubProcess(models.Model):
+    process = models.ForeignKey(Process, on_delete=models.CASCADE, related_name='subprocesses')
+    name = models.CharField(max_length=100)
+    description = models.TextField(blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['process', 'name']
+
+    def __str__(self):
+        return f"{self.process.name} -> {self.name}"
 
 
 class ProcessStep(models.Model):
     """
-    Individual steps within a process template
+    Defines the sequence of process steps for manufacturing
     """
-    template = models.ForeignKey(ProcessTemplate, on_delete=models.CASCADE, related_name='steps')
     step_name = models.CharField(max_length=100)
-    sequence_order = models.PositiveIntegerField()
-    
-    # Step configuration
-    is_mandatory = models.BooleanField(default=True)
-    estimated_duration_minutes = models.PositiveIntegerField(null=True, blank=True)
-    machine_required = models.BooleanField(default=False)
-    operator_required = models.BooleanField(default=True)
-    
-    # Quality parameters
-    quality_checks = models.JSONField(default=dict)
-    acceptable_scrap_percentage = models.DecimalField(max_digits=5, decimal_places=2, default=0)
-
-    class Meta:
-        unique_together = ['template', 'sequence_order']
-        ordering = ['template', 'sequence_order']
-        verbose_name = 'Process Step'
-        verbose_name_plural = 'Process Steps'
-
-    def __str__(self):
-        return f"{self.template.name} - {self.sequence_order}. {self.step_name}"
-
-
-class ProcessStepDependency(models.Model):
-    """
-    Dependencies between process steps
-    """
-    DEPENDENCY_CHOICES = [
-        ('prerequisite', 'Must Complete Before'),
-        ('parallel', 'Can Run Parallel'),
-        ('optional', 'Optional Dependency')
-    ]
-    
-    step = models.ForeignKey(ProcessStep, on_delete=models.CASCADE, related_name='dependencies')
-    depends_on = models.ForeignKey(ProcessStep, on_delete=models.CASCADE, related_name='dependents')
-    dependency_type = models.CharField(max_length=20, choices=DEPENDENCY_CHOICES)
-
-    class Meta:
-        unique_together = ['step', 'depends_on']
-        verbose_name = 'Process Step Dependency'
-        verbose_name_plural = 'Process Step Dependencies'
-
-    def __str__(self):
-        return f"{self.step.step_name} {self.dependency_type} {self.depends_on.step_name}"
-
-
-class ProductProcessMapping(models.Model):
-    """
-    Link products to their process templates
-    """
-    product = models.ForeignKey('products.Product', on_delete=models.CASCADE, related_name='process_mappings')
-    process_template = models.ForeignKey(ProcessTemplate, on_delete=models.CASCADE, related_name='product_mappings')
-    is_active = models.BooleanField(default=True)
+    step_code = models.CharField(max_length=50, unique=True)
+    process = models.ForeignKey(Process, on_delete=models.CASCADE, related_name='process_steps')
+    subprocess = models.ForeignKey(
+        SubProcess, 
+        on_delete=models.CASCADE, 
+        null=True, 
+        blank=True,
+        related_name='process_steps'
+    )
+    sequence_order = models.IntegerField()
+    description = models.TextField(blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
-        unique_together = ['product', 'process_template']
-        verbose_name = 'Product Process Mapping'
-        verbose_name_plural = 'Product Process Mappings'
+        ordering = ['sequence_order']
+        unique_together = [['step_code', 'process']]
 
     def __str__(self):
-        return f"{self.product.part_number} -> {self.process_template.name}"
+        if self.subprocess:
+            return f"{self.step_name} ({self.process.name} -> {self.subprocess.name})"
+        return f"{self.step_name} ({self.process.name})"
+
+    def clean(self):
+        if self.subprocess and self.subprocess.process != self.process:
+            raise ValidationError("Subprocess must belong to the selected process")
+
+    @property
+    def full_path(self):
+        if self.subprocess:
+            return f"{self.process.name} -> {self.subprocess.name} -> {self.step_name}"
+        return f"{self.process.name} -> {self.step_name}"
+
+class BOM(models.Model):
+    PRODUCT_TYPE_CHOICES = [
+        ('spring', 'Spring'),
+        ('stamp', 'Stamp'),
+    ]
+
+    product_code = models.CharField(max_length=100)
+    type = models.CharField(max_length=20, choices=PRODUCT_TYPE_CHOICES)
+    process_step = models.ForeignKey(
+        ProcessStep, 
+        on_delete=models.CASCADE,
+        help_text="Specific process step with ordering"
+    )
+    material = models.ForeignKey(RawMaterial, on_delete=models.CASCADE)
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['product_code','type']
+        unique_together = [['product_code', 'process_step', 'material']]
+
+    def __str__(self):
+        return f"{self.product_code} ({self.type}) - {self.process_step.full_path}"
+
+    @property
+    def main_process(self):
+        return self.process_step.process
+
+    @property
+    def subprocess(self):
+        return self.process_step.subprocess
+
+    def clean(self):
+        # Add any BOM-specific validation here if needed
+        super().clean()
