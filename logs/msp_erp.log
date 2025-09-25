@@ -297,3 +297,36 @@ WARNING 2025-09-23 17:52:41,247 log 22 281473121832992 Not Found: /static/admin/
 WARNING 2025-09-23 17:52:41,461 log 22 281473121832992 Not Found: /favicon.ico
 WARNING 2025-09-23 18:04:51,111 log 24 281473853935648 Unauthorized: /api/manufacturing/api/purchase-orders/dashboard_stats/
 WARNING 2025-09-23 18:04:51,111 log 23 281473853935648 Unauthorized: /api/manufacturing/api/manufacturing-orders/dashboard_stats/
+INFO 2025-09-24 02:55:46,053 autoreload 5845 8647925952 Watching for file changes with StatReloader
+ERROR 2025-09-24 02:56:06,539 log 5845 6171471872 Invalid HTTP_HOST header: '0.0.0.0:8000'. You may need to add '0.0.0.0' to ALLOWED_HOSTS.
+Traceback (most recent call last):
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/django/core/handlers/exception.py", line 55, in inner
+    response = get_response(request)
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/django/utils/deprecation.py", line 119, in __call__
+    response = self.process_request(request)
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/django/middleware/common.py", line 48, in process_request
+    host = request.get_host()
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/django/http/request.py", line 202, in get_host
+    raise DisallowedHost(msg)
+django.core.exceptions.DisallowedHost: Invalid HTTP_HOST header: '0.0.0.0:8000'. You may need to add '0.0.0.0' to ALLOWED_HOSTS.
+ERROR 2025-09-24 02:56:06,931 log 5845 6188298240 Invalid HTTP_HOST header: '0.0.0.0:8000'. You may need to add '0.0.0.0' to ALLOWED_HOSTS.
+Traceback (most recent call last):
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/django/core/handlers/exception.py", line 55, in inner
+    response = get_response(request)
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/django/utils/deprecation.py", line 119, in __call__
+    response = self.process_request(request)
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/django/middleware/common.py", line 48, in process_request
+    host = request.get_host()
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/django/http/request.py", line 202, in get_host
+    raise DisallowedHost(msg)
+django.core.exceptions.DisallowedHost: Invalid HTTP_HOST header: '0.0.0.0:8000'. You may need to add '0.0.0.0' to ALLOWED_HOSTS.
+INFO 2025-09-24 02:56:22,784 autoreload 6844 8647925952 Watching for file changes with StatReloader
+INFO 2025-09-24 02:57:08,849 autoreload 7277 8647925952 Watching for file changes with StatReloader
+WARNING 2025-09-24 02:57:12,734 log 7277 6201536512 Not Found: /favicon.ico
+INFO 2025-09-24 04:35:08,657 autoreload 56704 8647925952 Watching for file changes with StatReloader
+INFO 2025-09-24 04:35:33,281 autoreload 57324 8647925952 Watching for file changes with StatReloader
+WARNING 2025-09-24 04:35:39,906 log 57324 6173241344 Not Found: /favicon.ico
+INFO 2025-09-24 04:36:19,322 autoreload 58187 8647925952 Watching for file changes with StatReloader
+INFO 2025-09-24 04:39:27,461 autoreload 64130 8647925952 Watching for file changes with StatReloader
+INFO 2025-09-25 05:25:07,210 autoreload 87665 8643059904 Watching for file changes with StatReloader
+WARNING 2025-09-25 05:25:09,555 log 87665 6287585280 Not Found: /favicon.ico

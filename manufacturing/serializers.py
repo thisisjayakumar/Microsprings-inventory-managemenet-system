@@ -1,6 +1,9 @@
 from rest_framework import serializers
 from django.contrib.auth import get_user_model
-from .models import ManufacturingOrder, PurchaseOrder, MOStatusHistory, POStatusHistory
+from .models import (
+    ManufacturingOrder, PurchaseOrder, MOStatusHistory, POStatusHistory,
+    MOProcessExecution, MOProcessStepExecution, MOProcessAlert
+)
 from products.models import Product
 from inventory.models import RawMaterial
 from third_party.models import Vendor
@@ -236,6 +239,160 @@ class PurchaseOrderListSerializer(serializers.ModelSerializer):
             'material_type_display', 'expected_date', 'created_by', 'created_at'
         ]
         read_only_fields = ['po_id', 'date_time', 'total_amount']
+
+
+# Process Execution Serializers
+class MOProcessStepExecutionSerializer(serializers.ModelSerializer):
+    """Serializer for process step execution tracking"""
+    process_step_name = serializers.CharField(source='process_step.step_name', read_only=True)
+    process_step_code = serializers.CharField(source='process_step.step_code', read_only=True)
+    process_step_full_path = serializers.CharField(source='process_step.full_path', read_only=True)
+    operator_name = serializers.CharField(source='operator.get_full_name', read_only=True)
+    status_display = serializers.CharField(source='get_status_display', read_only=True)
+    quality_status_display = serializers.CharField(source='get_quality_status_display', read_only=True)
+    duration_minutes = serializers.ReadOnlyField()
+    efficiency_percentage = serializers.ReadOnlyField()
+    
+    class Meta:
+        model = MOProcessStepExecution
+        fields = [
+            'id', 'process_step', 'process_step_name', 'process_step_code', 
+            'process_step_full_path', 'status', 'status_display', 
+            'quality_status', 'quality_status_display', 'actual_start_time', 
+            'actual_end_time', 'quantity_processed', 'quantity_passed', 
+            'quantity_failed', 'scrap_percentage', 'operator', 'operator_name',
+            'operator_notes', 'quality_notes', 'duration_minutes', 
+            'efficiency_percentage', 'created_at', 'updated_at'
+        ]
+        read_only_fields = ['created_at', 'updated_at']
+
+
+class MOProcessExecutionListSerializer(serializers.ModelSerializer):
+    """Optimized serializer for process execution list view"""
+    process_name = serializers.CharField(source='process.name', read_only=True)
+    process_code = serializers.IntegerField(source='process.code', read_only=True)
+    status_display = serializers.CharField(source='get_status_display', read_only=True)
+    assigned_operator_name = serializers.CharField(source='assigned_operator.get_full_name', read_only=True)
+    duration_minutes = serializers.ReadOnlyField()
+    is_overdue = serializers.ReadOnlyField()
+    step_count = serializers.SerializerMethodField()
+    completed_steps = serializers.SerializerMethodField()
+    
+    class Meta:
+        model = MOProcessExecution
+        fields = [
+            'id', 'process', 'process_name', 'process_code', 'status', 
+            'status_display', 'sequence_order', 'planned_start_time', 
+            'planned_end_time', 'actual_start_time', 'actual_end_time',
+            'assigned_operator', 'assigned_operator_name', 'progress_percentage',
+            'duration_minutes', 'is_overdue', 'step_count', 'completed_steps',
+            'created_at', 'updated_at'
+        ]
+        read_only_fields = ['created_at', 'updated_at']
+    
+    def get_step_count(self, obj):
+        return obj.step_executions.count()
+    
+    def get_completed_steps(self, obj):
+        return obj.step_executions.filter(status='completed').count()
+
+
+class MOProcessExecutionDetailSerializer(serializers.ModelSerializer):
+    """Detailed serializer for process execution with step details"""
+    process_name = serializers.CharField(source='process.name', read_only=True)
+    process_code = serializers.IntegerField(source='process.code', read_only=True)
+    status_display = serializers.CharField(source='get_status_display', read_only=True)
+    assigned_operator_name = serializers.CharField(source='assigned_operator.get_full_name', read_only=True)
+    duration_minutes = serializers.ReadOnlyField()
+    is_overdue = serializers.ReadOnlyField()
+    step_executions = MOProcessStepExecutionSerializer(many=True, read_only=True)
+    alerts = serializers.SerializerMethodField()
+    
+    class Meta:
+        model = MOProcessExecution
+        fields = [
+            'id', 'process', 'process_name', 'process_code', 'status', 
+            'status_display', 'sequence_order', 'planned_start_time', 
+            'planned_end_time', 'actual_start_time', 'actual_end_time',
+            'assigned_operator', 'assigned_operator_name', 'progress_percentage',
+            'notes', 'duration_minutes', 'is_overdue', 'step_executions',
+            'alerts', 'created_at', 'updated_at'
+        ]
+        read_only_fields = ['created_at', 'updated_at']
+    
+    def get_alerts(self, obj):
+        from .serializers import MOProcessAlertSerializer
+        return MOProcessAlertSerializer(
+            obj.alerts.filter(is_resolved=False), many=True
+        ).data
+
+
+class MOProcessAlertSerializer(serializers.ModelSerializer):
+    """Serializer for process alerts"""
+    alert_type_display = serializers.CharField(source='get_alert_type_display', read_only=True)
+    severity_display = serializers.CharField(source='get_severity_display', read_only=True)
+    created_by_name = serializers.CharField(source='created_by.get_full_name', read_only=True)
+    resolved_by_name = serializers.CharField(source='resolved_by.get_full_name', read_only=True)
+    
+    class Meta:
+        model = MOProcessAlert
+        fields = [
+            'id', 'alert_type', 'alert_type_display', 'severity', 'severity_display',
+            'title', 'description', 'is_resolved', 'resolved_at', 'resolved_by',
+            'resolved_by_name', 'resolution_notes', 'created_at', 'created_by',
+            'created_by_name'
+        ]
+        read_only_fields = ['created_at']
+
+
+class ManufacturingOrderWithProcessesSerializer(serializers.ModelSerializer):
+    """Enhanced MO serializer with process execution details"""
+    product_code_display = serializers.CharField(source='product_code.display_name', read_only=True)
+    status_display = serializers.CharField(source='get_status_display', read_only=True)
+    priority_display = serializers.CharField(source='get_priority_display', read_only=True)
+    shift_display = serializers.CharField(source='get_shift_display', read_only=True)
+    assigned_supervisor_name = serializers.CharField(source='assigned_supervisor.get_full_name', read_only=True)
+    created_by_name = serializers.CharField(source='created_by.get_full_name', read_only=True)
+    process_executions = MOProcessExecutionListSerializer(many=True, read_only=True)
+    overall_progress = serializers.SerializerMethodField()
+    active_process = serializers.SerializerMethodField()
+    
+    class Meta:
+        model = ManufacturingOrder
+        fields = [
+            'id', 'mo_id', 'date_time', 'product_code', 'product_code_display',
+            'quantity', 'product_type', 'material_name', 'material_type', 'grade',
+            'wire_diameter_mm', 'thickness_mm', 'finishing', 'manufacturer_brand',
+            'weight_kg', 'loose_fg_stock', 'rm_required_kg', 'assigned_supervisor',
+            'assigned_supervisor_name', 'shift', 'shift_display', 'planned_start_date',
+            'planned_end_date', 'actual_start_date', 'actual_end_date', 'status',
+            'status_display', 'priority', 'priority_display', 'customer_order_reference',
+            'delivery_date', 'special_instructions', 'created_at', 'created_by',
+            'created_by_name', 'updated_at', 'process_executions', 'overall_progress',
+            'active_process'
+        ]
+        read_only_fields = ['mo_id', 'date_time', 'created_at', 'updated_at']
+    
+    def get_overall_progress(self, obj):
+        """Calculate overall progress across all processes"""
+        executions = obj.process_executions.all()
+        if not executions:
+            return 0
+        
+        total_progress = sum(exec.progress_percentage for exec in executions)
+        return round(total_progress / len(executions), 2)
+    
+    def get_active_process(self, obj):
+        """Get currently active process"""
+        active_exec = obj.process_executions.filter(status='in_progress').first()
+        if active_exec:
+            return {
+                'id': active_exec.id,
+                'process_name': active_exec.process.name,
+                'progress_percentage': active_exec.progress_percentage,
+                'assigned_operator': active_exec.assigned_operator.get_full_name() if active_exec.assigned_operator else None
+            }
+        return None
 
 
 class PurchaseOrderDetailSerializer(serializers.ModelSerializer):

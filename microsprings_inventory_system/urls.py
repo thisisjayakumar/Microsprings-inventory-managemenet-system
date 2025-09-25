@@ -12,6 +12,7 @@ urlpatterns = [
     path('api/auth/', include('authentication.urls')),
     path('api/inventory/', include('inventory.urls')),
     path('api/manufacturing/', include('manufacturing.urls')),
+    path('api/processes/', include('processes.urls')),
 ]
 
 # Serve media files during development

@@ -328,3 +328,205 @@ class POStatusHistory(models.Model):
 
     def __str__(self):
         return f"{self.po.po_id}: {self.from_status} → {self.to_status}"
+
+
+class MOProcessExecution(models.Model):
+    """
+    Track process execution for Manufacturing Orders
+    Links MO to specific processes and tracks their progress
+    """
+    EXECUTION_STATUS_CHOICES = [
+        ('pending', 'Pending'),
+        ('in_progress', 'In Progress'),
+        ('completed', 'Completed'),
+        ('on_hold', 'On Hold'),
+        ('failed', 'Failed'),
+        ('skipped', 'Skipped'),
+    ]
+    
+    mo = models.ForeignKey(ManufacturingOrder, on_delete=models.CASCADE, related_name='process_executions')
+    process = models.ForeignKey('processes.Process', on_delete=models.CASCADE)
+    
+    # Execution tracking
+    status = models.CharField(max_length=20, choices=EXECUTION_STATUS_CHOICES, default='pending')
+    sequence_order = models.IntegerField(help_text="Order of execution for this MO")
+    
+    # Timing
+    planned_start_time = models.DateTimeField(null=True, blank=True)
+    planned_end_time = models.DateTimeField(null=True, blank=True)
+    actual_start_time = models.DateTimeField(null=True, blank=True)
+    actual_end_time = models.DateTimeField(null=True, blank=True)
+    
+    # Assignment
+    assigned_operator = models.ForeignKey(
+        User, on_delete=models.SET_NULL, null=True, blank=True,
+        related_name='assigned_process_executions'
+    )
+    
+    # Progress tracking
+    progress_percentage = models.DecimalField(max_digits=5, decimal_places=2, default=0)
+    notes = models.TextField(blank=True)
+    
+    # Audit
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        ordering = ['mo', 'sequence_order']
+        unique_together = [['mo', 'process']]
+    
+    def __str__(self):
+        return f"{self.mo.mo_id} - {self.process.name} ({self.status})"
+    
+    @property
+    def duration_minutes(self):
+        """Calculate actual duration in minutes"""
+        if self.actual_start_time and self.actual_end_time:
+            delta = self.actual_end_time - self.actual_start_time
+            return int(delta.total_seconds() / 60)
+        return None
+    
+    @property
+    def is_overdue(self):
+        """Check if process is overdue"""
+        if self.planned_end_time and self.status not in ['completed', 'skipped']:
+            return timezone.now() > self.planned_end_time
+        return False
+
+
+class MOProcessStepExecution(models.Model):
+    """
+    Track individual process step execution within a process
+    """
+    STEP_STATUS_CHOICES = [
+        ('pending', 'Pending'),
+        ('in_progress', 'In Progress'),
+        ('completed', 'Completed'),
+        ('failed', 'Failed'),
+        ('skipped', 'Skipped'),
+    ]
+    
+    QUALITY_STATUS_CHOICES = [
+        ('pending', 'Pending'),
+        ('passed', 'Passed'),
+        ('failed', 'Failed'),
+        ('rework_required', 'Rework Required'),
+    ]
+    
+    process_execution = models.ForeignKey(
+        MOProcessExecution, 
+        on_delete=models.CASCADE, 
+        related_name='step_executions'
+    )
+    process_step = models.ForeignKey('processes.ProcessStep', on_delete=models.CASCADE)
+    
+    # Execution tracking
+    status = models.CharField(max_length=20, choices=STEP_STATUS_CHOICES, default='pending')
+    quality_status = models.CharField(max_length=20, choices=QUALITY_STATUS_CHOICES, default='pending')
+    
+    # Timing
+    actual_start_time = models.DateTimeField(null=True, blank=True)
+    actual_end_time = models.DateTimeField(null=True, blank=True)
+    
+    # Quality & Output
+    quantity_processed = models.PositiveIntegerField(default=0)
+    quantity_passed = models.PositiveIntegerField(default=0)
+    quantity_failed = models.PositiveIntegerField(default=0)
+    scrap_percentage = models.DecimalField(max_digits=5, decimal_places=2, default=0)
+    
+    # Assignment
+    operator = models.ForeignKey(
+        User, on_delete=models.SET_NULL, null=True, blank=True,
+        related_name='operated_step_executions'
+    )
+    
+    # Notes and observations
+    operator_notes = models.TextField(blank=True)
+    quality_notes = models.TextField(blank=True)
+    
+    # Audit
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        ordering = ['process_execution', 'process_step__sequence_order']
+        unique_together = [['process_execution', 'process_step']]
+    
+    def __str__(self):
+        return f"{self.process_execution.mo.mo_id} - {self.process_step.step_name} ({self.status})"
+    
+    @property
+    def duration_minutes(self):
+        """Calculate step duration in minutes"""
+        if self.actual_start_time and self.actual_end_time:
+            delta = self.actual_end_time - self.actual_start_time
+            return int(delta.total_seconds() / 60)
+        return None
+    
+    @property
+    def efficiency_percentage(self):
+        """Calculate efficiency based on passed vs processed quantity"""
+        if self.quantity_processed > 0:
+            return (self.quantity_passed / self.quantity_processed) * 100
+        return 0
+
+
+class MOProcessAlert(models.Model):
+    """
+    Alerts and notifications for process execution issues
+    """
+    ALERT_TYPE_CHOICES = [
+        ('delay', 'Process Delay'),
+        ('quality_issue', 'Quality Issue'),
+        ('equipment_failure', 'Equipment Failure'),
+        ('material_shortage', 'Material Shortage'),
+        ('operator_issue', 'Operator Issue'),
+        ('custom', 'Custom Alert'),
+    ]
+    
+    SEVERITY_CHOICES = [
+        ('low', 'Low'),
+        ('medium', 'Medium'),
+        ('high', 'High'),
+        ('critical', 'Critical'),
+    ]
+    
+    process_execution = models.ForeignKey(
+        MOProcessExecution, 
+        on_delete=models.CASCADE, 
+        related_name='alerts'
+    )
+    step_execution = models.ForeignKey(
+        MOProcessStepExecution, 
+        on_delete=models.CASCADE, 
+        null=True, 
+        blank=True,
+        related_name='alerts'
+    )
+    
+    alert_type = models.CharField(max_length=20, choices=ALERT_TYPE_CHOICES)
+    severity = models.CharField(max_length=10, choices=SEVERITY_CHOICES, default='medium')
+    title = models.CharField(max_length=200)
+    description = models.TextField()
+    
+    # Status
+    is_resolved = models.BooleanField(default=False)
+    resolved_at = models.DateTimeField(null=True, blank=True)
+    resolved_by = models.ForeignKey(
+        User, on_delete=models.SET_NULL, null=True, blank=True,
+        related_name='resolved_alerts'
+    )
+    resolution_notes = models.TextField(blank=True)
+    
+    # Audit
+    created_at = models.DateTimeField(auto_now_add=True)
+    created_by = models.ForeignKey(
+        User, on_delete=models.SET_NULL, null=True,
+        related_name='created_alerts'
+    )
+    
+    class Meta:
+        ordering = ['-created_at']
+    
+    def __str__(self):
+        return f"{self.process_execution.mo.mo_id} - {self.title} ({self.severity})"
