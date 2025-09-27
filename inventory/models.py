@@ -16,10 +16,15 @@ class RawMaterial(models.Model):
         ('sheet', 'Sheet'),
     ]
 
-    product_code = models.CharField(max_length=100, unique=True)
+    FINISHING_CHOICES = [
+        ('soap_coated', 'Soap Coated'),
+        ('bright','BRIGHT'),
+    ]
+    
     material_name = models.CharField(max_length=20, choices=MATERIAL_NAME_CHOICES)
     material_type = models.CharField(max_length=20, choices=MATERIAL_TYPE_CHOICES)
     grade = models.CharField(max_length=50)
+    finishing = models.CharField(max_length=20, choices=FINISHING_CHOICES, null=True, blank=True)
     
     # Conditional fields based on material type
     wire_diameter_mm = models.DecimalField(
@@ -75,7 +80,7 @@ class RawMaterial(models.Model):
         type_display = self.get_material_type_display() if self.material_type else "Unknown Type"
         grade_str = f" {self.grade}" if self.grade else ""
         
-        return f"{self.product_code} - {material_display}{grade_str} - {type_display}{spec_str}"
+        return f"{material_display}{grade_str} - {type_display}{spec_str}"
 
     def clean(self):
         errors = {}

@@ -1,4 +1,5 @@
 from rest_framework.permissions import BasePermission
+from django.core.cache import cache
 
 
 class IsManagerOrReadOnly(BasePermission):
@@ -17,7 +18,19 @@ class IsManagerOrReadOnly(BasePermission):
             return True
         
         # Write permissions only for managers
-        return hasattr(request.user, 'role') and request.user.role == 'manager'
+        return self._get_user_role(request.user) == 'manager'
+    
+    def _get_user_role(self, user):
+        """Get user role with caching"""
+        cache_key = f'user_role_{user.id}'
+        user_role = cache.get(cache_key)
+        
+        if not user_role:
+            active_role = user.user_roles.filter(is_active=True).select_related('role').first()
+            user_role = active_role.role.name if active_role else None
+            cache.set(cache_key, user_role, 3000)  # Cache for 50 minutes
+        
+        return user_role
 
 
 class IsManager(BasePermission):
@@ -31,7 +44,19 @@ class IsManager(BasePermission):
             return False
         
         # Check if user is a manager
-        return hasattr(request.user, 'role') and request.user.role == 'manager'
+        return self._get_user_role(request.user) == 'manager'
+    
+    def _get_user_role(self, user):
+        """Get user role with caching"""
+        cache_key = f'user_role_{user.id}'
+        user_role = cache.get(cache_key)
+        
+        if not user_role:
+            active_role = user.user_roles.filter(is_active=True).select_related('role').first()
+            user_role = active_role.role.name if active_role else None
+            cache.set(cache_key, user_role, 300)  # Cache for 5 minutes
+        
+        return user_role
 
 
 class IsManagerOrSupervisor(BasePermission):
@@ -45,7 +70,17 @@ class IsManagerOrSupervisor(BasePermission):
             return False
         
         # Check if user is a manager or supervisor
-        if hasattr(request.user, 'role'):
-            return request.user.role in ['manager', 'supervisor']
+        user_role = self._get_user_role(request.user)
+        return user_role in ['manager', 'supervisor']
+    
+    def _get_user_role(self, user):
+        """Get user role with caching"""
+        cache_key = f'user_role_{user.id}'
+        user_role = cache.get(cache_key)
         
-        return False
+        if not user_role:
+            active_role = user.user_roles.filter(is_active=True).select_related('role').first()
+            user_role = active_role.role.name if active_role else None
+            cache.set(cache_key, user_role, 300)  # Cache for 5 minutes
+        
+        return user_role

@@ -83,7 +83,7 @@ class BOM(models.Model):
         on_delete=models.CASCADE,
         help_text="Specific process step with ordering"
     )
-    material = models.ForeignKey(RawMaterial, on_delete=models.CASCADE)
+    material = models.ForeignKey(RawMaterial, on_delete=models.CASCADE, null=True, blank=True)
     is_active = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

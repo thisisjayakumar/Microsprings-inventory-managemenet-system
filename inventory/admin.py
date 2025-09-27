@@ -7,15 +7,15 @@ from .models import RawMaterial, Location, InventoryTransaction, RMStockBalance
 
 @admin.register(RawMaterial)
 class RawMaterialAdmin(admin.ModelAdmin):
-    list_display = ('product_code', 'material_name', 'material_type', 'grade', 'get_specifications', 'created_at')
+    list_display = ('material_name', 'material_type', 'grade', 'get_specifications', 'created_at')
     list_filter = ('material_name', 'material_type', 'created_at')
-    search_fields = ('product_code', 'grade')
+    search_fields = ('grade',)
     ordering = ('-created_at',)
     readonly_fields = ('created_at', 'updated_at')
     
     fieldsets = (
         ('Basic Information', {
-            'fields': ('product_code', 'material_name', 'material_type', 'grade')
+            'fields': ('material_name', 'material_type', 'grade', 'finishing')
         }),
         ('Coil Specifications', {
             'fields': ('wire_diameter_mm', 'weight_kg'),
@@ -104,8 +104,8 @@ class InventoryTransactionAdmin(admin.ModelAdmin):
         ('Transaction Details', {
             'fields': ('transaction_id', 'transaction_type', 'transaction_datetime')
         }),
-        ('Product & Batch', {
-            'fields': ('product', 'batch')
+        ('Product Information', {
+            'fields': ('product', 'manufacturing_order')
         }),
         ('Location Movement', {
             'fields': ('location_from', 'location_to'),
@@ -136,7 +136,7 @@ class InventoryTransactionAdmin(admin.ModelAdmin):
     
     def get_queryset(self, request):
         return super().get_queryset(request).select_related(
-            'product', 'batch', 'location_from', 'location_to', 'created_by'
+            'product', 'manufacturing_order', 'location_from', 'location_to', 'created_by'
         )
 
 

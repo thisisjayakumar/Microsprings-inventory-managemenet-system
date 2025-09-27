@@ -1,5 +1,17 @@
 from django.contrib import admin
-from .models import ManufacturingOrder, PurchaseOrder, MOStatusHistory, POStatusHistory
+from .models import ManufacturingOrder, PurchaseOrder, MOStatusHistory, POStatusHistory, Batch
+
+
+# Inline for displaying batches within Manufacturing Order admin
+class BatchInline(admin.TabularInline):
+    model = Batch
+    extra = 0
+    readonly_fields = ('batch_id', 'completion_percentage', 'remaining_quantity')
+    fields = ('batch_id', 'product_code', 'planned_quantity', 'actual_quantity_completed', 
+             'status', 'assigned_operator', 'completion_percentage')
+    
+    def get_queryset(self, request):
+        return super().get_queryset(request).select_related('product_code', 'assigned_operator')
 
 
 @admin.register(ManufacturingOrder)
@@ -10,6 +22,7 @@ class ManufacturingOrderAdmin(admin.ModelAdmin):
     readonly_fields = ('mo_id', 'date_time', 'product_type', 'material_name', 'material_type', 'grade', 
                       'wire_diameter_mm', 'thickness_mm', 'finishing', 'manufacturer_brand', 'weight_kg')
     ordering = ('-created_at',)
+    inlines = [BatchInline]
     
     fieldsets = (
         ('Basic Information', {
@@ -96,3 +109,44 @@ class POStatusHistoryAdmin(admin.ModelAdmin):
     list_filter = ('to_status', 'changed_at')
     search_fields = ('po__po_id', 'changed_by__email')
     ordering = ('-changed_at',)
+
+
+@admin.register(Batch)
+class BatchAdmin(admin.ModelAdmin):
+    list_display = ('batch_id', 'mo', 'product_code', 'planned_quantity', 'actual_quantity_completed', 
+                   'status', 'progress_percentage', 'assigned_operator', 'created_at')
+    list_filter = ('status', 'mo__status', 'product_code__product_type', 'created_at')
+    search_fields = ('batch_id', 'mo__mo_id', 'product_code__product_code', 'product_code__part_name')
+    readonly_fields = ('batch_id', 'completion_percentage', 'is_overdue', 'remaining_quantity', 
+                      'created_at', 'updated_at')
+    ordering = ('-created_at',)
+    
+    fieldsets = (
+        ('Basic Information', {
+            'fields': ('batch_id', 'mo', 'product_code')
+        }),
+        ('Quantities', {
+            'fields': ('planned_quantity', 'actual_quantity_started', 'actual_quantity_completed', 
+                      'scrap_quantity', 'completion_percentage', 'remaining_quantity')
+        }),
+        ('Planning & Timing', {
+            'fields': ('planned_start_date', 'planned_end_date', 'actual_start_date', 'actual_end_date')
+        }),
+        ('Status & Progress', {
+            'fields': ('status', 'progress_percentage', 'current_process_step', 'is_overdue')
+        }),
+        ('Assignment', {
+            'fields': ('assigned_operator', 'assigned_supervisor')
+        }),
+        ('Metrics & Notes', {
+            'fields': ('total_processing_time_minutes', 'notes')
+        }),
+        ('Audit Information', {
+            'fields': ('created_by', 'created_at', 'updated_at'),
+            'classes': ('collapse',)
+        })
+    )
+    
+    # Inline display of batches in MO admin
+    def get_queryset(self, request):
+        return super().get_queryset(request).select_related('mo', 'product_code', 'assigned_operator', 'assigned_supervisor')

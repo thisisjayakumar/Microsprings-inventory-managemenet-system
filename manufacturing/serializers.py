@@ -43,9 +43,9 @@ class RawMaterialBasicSerializer(serializers.ModelSerializer):
     class Meta:
         model = RawMaterial
         fields = [
-            'id', 'product_code', 'material_name', 'material_name_display',
+            'id', 'material_name', 'material_name_display',
             'material_type', 'material_type_display', 'grade', 'wire_diameter_mm',
-            'weight_kg', 'thickness_mm', 'quantity'
+            'weight_kg', 'thickness_mm', 'quantity', 'finishing'
         ]
         read_only_fields = fields
 
@@ -514,7 +514,7 @@ class RawMaterialDropdownSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = RawMaterial
-        fields = ['id', 'product_code', 'material_name', 'material_type', 'grade', 'display_name']
+        fields = ['id', 'material_name', 'material_type', 'grade', 'display_name']
     
     def get_display_name(self, obj):
         return str(obj)  # Uses the __str__ method from the model

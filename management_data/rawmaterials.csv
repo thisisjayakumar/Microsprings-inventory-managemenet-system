@@ -1,0 +1,100 @@
+S.NO,Material_Type,Material_Name,Wire Diameter,Thickness (mm),Grade,FINISHING
+1,Coil,SS Stainless Steel,0.30mm, ,304,SOAP COATED
+2,Coil,SS Stainless Steel,0.35mm, ,304,SOAP COATED
+3,Coil,SS Stainless Steel,0.40mm, ,304,SOAP COATED
+4,Coil,SS Stainless Steel,0.45mm, ,304,SOAP COATED
+5,Coil,SS Stainless Steel,0.50mm, ,304,SOAP COATED
+6,Coil,ST Spring Steel,2.60mm, ,DH,
+7,Sheet,MS Mild Steel,,3.00mm,CR2,
+8,Coil,PB Phosphor Bronze,0.20mm, ,PB,
+9,Coil,PB Phosphor Bronze,0.30mm, ,PB,
+10,Sheet,MS Mild Steel,,0.50mm,CR2,
+11,Sheet,MS Mild Steel,,1.00mm,CR2,
+12,Sheet,MS Mild Steel,,2.00mm,CR2,
+13,Coil,ST Spring Steel,1.40mm, ,DH,
+14,Coil,ST Spring Steel,0.30mm, ,DH,
+15,Coil,ST Spring Steel,0.40mm, ,DH,
+16,Coil,ST Spring Steel,0.45mm, ,DH,
+17,Coil,ST Spring Steel,2.80mm, ,DH,
+18,Coil,ST Spring Steel,4.00mm, ,DH,
+19,Coil,ST Spring Steel,5.80mm, ,DM,
+20,Coil,ST Spring Steel,0.35mm, ,DM,
+21,Coil,ST Spring Steel,0.50mm, ,DM,
+22,Coil,MS Mild Steel,1.60mm, ,CR2,
+23,Coil,ST Spring Steel,7.00mm, ,DM,
+24,Coil,ST Spring Steel,1.20mm, ,DM,
+25,Coil,ST Spring Steel,2.00mm, ,DM,
+26,Coil,ST Spring Steel,2.80mm, ,DM,
+27,Coil,SS Stainless Steel,0.55mm, ,304,SOAP COATED
+28,Coil,SS Stainless Steel,0.60mm, ,304,SOAP COATED
+29,Coil,SS Stainless Steel,0.70mm, ,304,SOAP COATED
+30,Coil,SS Stainless Steel,0.80mm, ,304,SOAP COATED
+31,Coil,SS Stainless Steel,0.90mm, ,304,SOAP COATED
+32,Coil,MS Mild Steel Half Round,0.90mm, ,,
+33,Coil,ST Spring Steel,1.00mm, ,DH,
+34,Coil,ST Spring Steel,1.40mm, ,DM,
+35,Coil,ST Spring Steel,1.50mm, ,DH,
+36,Coil,ST Spring Steel,1.80mm, ,DH,
+37,Coil,ST Spring Steel,2.00mm, ,DH,
+38,Coil,ST Spring Steel,2.50mm, ,DH,
+39,Coil,ST Spring Steel,3.80mm, ,DH,
+40,Coil,ST Spring Steel,5.00mm, ,DH,
+41,Coil,ST Spring Steel,1.60mm, ,DH,
+42,Coil,ST Spring Steel,0.20mm, ,DM,
+43,Coil,ST Spring Steel,5.00mm, ,DM,
+44,Coil,SS Stainless Steel,1.00mm, ,302,SOAP COATED
+45,Coil,SS Stainless Steel,1.00mm, ,304,SOAP COATED
+46,Coil,SS Stainless Steel,1.20mm, ,304,SOAP COATED
+47,Coil,SS Stainless Steel,1.50mm, ,304,SOAP COATED
+48,Coil,SS Stainless Steel,1.60mm, ,304,SOAP COATED
+49,Coil,SS Stainless Steel,1.80mm, ,304,SOAP COATED
+50,Coil,SS Stainless Steel,2.00mm, ,304,SOAP COATED
+51,Coil,ST Spring Steel,2.20mm, ,DH,
+52,Coil,ST Spring Steel,3.20mm, ,DM,
+53,Coil,ST Spring Steel,3.50mm, ,DH,
+54,Coil,ST Spring Steel,0.80mm, ,DH,
+55,Coil,ST Spring Steel,0.90mm, ,DH,
+56,Coil,ST Spring Steel,1.20mm, ,DH,
+57,Coil,ST Spring Steel,2.30mm, ,DH,
+58,Coil,ST Spring Steel,3.00mm, ,DH,
+59,Coil,ST Spring Steel,4.50mm, ,DH,
+60,Coil,ST Spring Steel,6.00mm, ,DH,
+61,Coil,SS Stainless Steel,2.40mm, ,304,SOAP COATED
+62,Coil,SS Stainless Steel,2.50mm, ,304,SOAP COATED
+63,Coil,SS Stainless Steel,3.00mm, ,304,SOAP COATED
+64,Coil,SS Stainless Steel,3.20mm, ,304,SOAP COATED
+65,Coil,SS Stainless Steel,3.50mm, ,304,SOAP COATED
+66,Coil,SS Stainless Steel,3.60mm, ,304,SOAP COATED
+67,Coil,SS Stainless Steel,4.00mm, ,304,SOAP COATED
+68,Coil,SS Stainless Steel,5.00mm, ,304,SOAP COATED
+69,Coil,SS Stainless Steel,6.00mm, ,304,SOAP COATED
+70,Coil,ST Spring Steel,0.60mm, ,DM,
+71,Coil,ST Spring Steel,0.70mm, ,DM,
+72,Coil,ST Spring Steel,0.80mm, ,DM,
+73,Coil,ST Spring Steel,0.90mm, ,DM,
+74,Coil,ST Spring Steel,1.00mm, ,DM,
+75,Coil,ST Spring Steel,1.30mm, ,DM,
+76,Coil,ST Spring Steel,1.50mm, ,DM,
+77,Coil,ST Spring Steel,1.70mm, ,DM,
+78,Coil,ST Spring Steel,2.20mm, ,DM,
+79,Coil,ST Spring Steel,2.50mm, ,DM,
+80,Coil,ST Spring Steel,3.50mm, ,DM,
+81,Coil,ST Spring Steel,3.60mm, ,DM,
+82,Coil,ST Spring Steel,4.20mm, ,DM,
+83,Coil,ST Spring Steel,4.80mm, ,DM,
+84,Coil,ST Spring Steel,6.00mm, ,DM,
+85,Coil,ST Spring Steel,6.50mm, ,DM,
+86,Coil,ST Spring Steel,8.00mm, ,DM,
+87,Coil,ST Spring Steel,10.00mm, ,DM,
+88,Coil,PB Phosphor Bronze,0.20mm, ,,
+89,Coil,PB Phosphor Bronze,0.30mm, ,,
+90,Coil,SS Stainless Steel,8.00mm, ,304,SOAP COATED
+91,Coil,GI Galvanized Iron,4.00mm, ,GI,
+92,Coil,MS Mild Steel,2.00mm, ,CR2,
+93,Coil,ST Spring Steel,1.60mm, ,DM,
+94,Coil,SS Stainless Steel,0.35mm, ,304,BRIGHT
+95,Coil,SS Stainless Steel,0.40mm, ,304,BRIGHT
+96,Coil,SS Stainless Steel,0.45mm, ,304,BRIGHT
+97,Coil,SS Stainless Steel,0.50mm, ,304,BRIGHT
+98,Sheet,Aluminium,,3.00mm,,
+99,Sheet,Aluminium,,0.90mm,,
