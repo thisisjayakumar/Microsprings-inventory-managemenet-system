@@ -145,7 +145,7 @@ class ProcessStepAdmin(admin.ModelAdmin):
 class BOMAdmin(admin.ModelAdmin):
     list_display = ('product_code', 'type', 'process_display', 'subprocess_display', 'step_display', 'material', 'is_active', 'created_at')
     list_filter = ('type', 'is_active', 'process_step__process', 'created_at')
-    search_fields = ('product_code', 'process_step__step_name', 'process_step__process__name', 'material__name')
+    search_fields = ('product_code', 'process_step__step_name', 'process_step__process__name', 'material__material_code', 'material__grade')
     readonly_fields = ('created_at', 'updated_at', 'main_process', 'subprocess')
     
     fieldsets = (

@@ -11,7 +11,7 @@ class RawMaterialBasicSerializer(serializers.ModelSerializer):
     class Meta:
         model = RawMaterial
         fields = [
-            'id', 'product_code', 'material_name', 'material_name_display',
+            'id', 'material_code', 'material_name', 'material_name_display',
             'material_type', 'material_type_display', 'grade', 'wire_diameter_mm',
             'weight_kg', 'thickness_mm', 'quantity'
         ]
@@ -189,13 +189,13 @@ class BOMDetailSerializer(serializers.ModelSerializer):
     type_display = serializers.CharField(source='get_type_display', read_only=True)
     
     # Write-only field for creation/update
-    material_id = serializers.IntegerField(write_only=True)
+    material_code = serializers.CharField(write_only=True)
     
     class Meta:
         model = BOM
         fields = [
             'id', 'product_code', 'type', 'type_display', 'process_step',
-            'process_step_name', 'process_step_full_path', 'material', 'material_id',
+            'process_step_name', 'process_step_full_path', 'material', 'material_code',
             'main_process_name', 'subprocess_name', 'is_active',
             'created_at', 'updated_at'
         ]
@@ -203,25 +203,25 @@ class BOMDetailSerializer(serializers.ModelSerializer):
     
     def create(self, validated_data):
         """Create BOM with material reference"""
-        material_id = validated_data.pop('material_id')
+        material_code = validated_data.pop('material_code')
         
         try:
-            material = RawMaterial.objects.get(id=material_id)
+            material = RawMaterial.objects.get(material_code=material_code)
         except RawMaterial.DoesNotExist:
-            raise serializers.ValidationError("Invalid material reference")
+            raise serializers.ValidationError("Invalid material code reference")
         
         validated_data['material'] = material
         return super().create(validated_data)
     
     def update(self, instance, validated_data):
         """Update BOM with material reference"""
-        if 'material_id' in validated_data:
-            material_id = validated_data.pop('material_id')
+        if 'material_code' in validated_data:
+            material_code = validated_data.pop('material_code')
             try:
-                material = RawMaterial.objects.get(id=material_id)
+                material = RawMaterial.objects.get(material_code=material_code)
                 validated_data['material'] = material
             except RawMaterial.DoesNotExist:
-                raise serializers.ValidationError("Invalid material reference")
+                raise serializers.ValidationError("Invalid material code reference")
         
         return super().update(instance, validated_data)
 
@@ -266,7 +266,7 @@ class RawMaterialDropdownSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = RawMaterial
-        fields = ['id', 'product_code', 'material_name', 'material_type', 'grade', 'display_name']
+        fields = ['id', 'material_code', 'material_name', 'material_type', 'grade', 'display_name']
     
     def get_display_name(self, obj):
         return str(obj)  # Uses the __str__ method from the model

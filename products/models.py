@@ -5,61 +5,111 @@ User = get_user_model()
 
 
 class Product(models.Model):
-    MATERIAL_TYPE_CHOICES = [
-        ('coil', 'Spring Coil'),
-        ('sheet', 'Spring Sheet')
-    ]
-    
     PRODUCT_TYPE_CHOICES = [
         ('spring', 'Spring'),
-        ('stamping_part', 'Stamping Part')
+        ('press_component', 'PRESS COMPONENT')
     ]
     
-    product_code = models.CharField(max_length=100, unique=True)
-    part_number = models.CharField(max_length=100, blank=True, help_text="Part number for identification")
-    part_name = models.CharField(max_length=200, blank=True, help_text="Descriptive name of the part")
-    
-    # Product specifications
+    SPRING_TYPE_CHOICES = [
+        ('tension', 'TENSION SPRING'),
+        ('wire_form', 'WIRE FORM SPRING'),
+        ('compression', 'COMPRESSION SPRING'),
+        ('torsion', 'TORSION SPRING'),
+        ('clip', 'CLIP'),
+        ('rivet', 'RIVET'),
+        ('helical', 'HELICAL SPRING'),
+        ('length_pin', 'LENGTH PIN'),
+        ('length_rod', 'LENGTH ROD'),
+        ('double_torsion', 'DOUBLE TORSION SPRING'),
+        ('cotter_pin', 'COTTER PIN'),
+        ('conical', 'CONICAL SPRING'),
+        ('ring', 'RING'),
+        ('s-spring', 'S-SPRING'),
+    ]
+
+    product_code = models.CharField(max_length=120, unique=True)
     product_type = models.CharField(max_length=20, choices=PRODUCT_TYPE_CHOICES, default='spring')
-    material_type = models.CharField(max_length=10, choices=MATERIAL_TYPE_CHOICES)
-    material_name = models.CharField(max_length=100, blank=True, help_text="Material name/type")
-    grade = models.CharField(max_length=50, blank=True, help_text="Material grade")
+    spring_type = models.CharField(max_length=20, choices=SPRING_TYPE_CHOICES, default='tension')
     
-    # Material specifications (conditional based on type)
-    wire_diameter_mm = models.DecimalField(
-        max_digits=8, decimal_places=3, null=True, blank=True,
-        help_text="Wire diameter for coil materials"
-    )
-    thickness_mm = models.DecimalField(
-        max_digits=8, decimal_places=3, null=True, blank=True,
-        help_text="Thickness for sheet materials"
-    )
-    finishing = models.CharField(max_length=100, blank=True, help_text="Surface finishing")
-    manufacturer_brand = models.CharField(max_length=100, blank=True, help_text="Manufacturer/Brand")
-    
-    # BOM and costing
-    rm_consumption_per_unit = models.DecimalField(
-        max_digits=10, decimal_places=4, default=0,
-        help_text="Raw material consumption per unit (kg)"
-    )
-    standard_cost = models.DecimalField(
-        max_digits=10, decimal_places=2, null=True, blank=True,
-        help_text="Standard cost per unit"
+    # Foreign key to RawMaterial for material details
+    material = models.ForeignKey(
+        'inventory.RawMaterial', 
+        on_delete=models.PROTECT, 
+        related_name='products',
+        help_text="Raw material used for this product"
     )
     
-    # Status
-    is_active = models.BooleanField(default=True)
+    # Foreign key to Customer using c_id field for customer relationship
+    customer_c_id = models.ForeignKey(
+        'third_party.Customer',
+        to_field='c_id',
+        on_delete=models.PROTECT,
+        related_name='products',
+        help_text="Customer associated with this product (references c_id)",
+        null=True,
+        blank=True
+    )
     
     # Audit
     created_at = models.DateTimeField(auto_now_add=True)
     created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='created_products')
     updated_at = models.DateTimeField(auto_now=True)
+    internal_product_code = models.CharField(max_length=120, null=True, blank=True, db_index=True)
 
     class Meta:
         verbose_name = 'Product'
         verbose_name_plural = 'Products'
 
     def __str__(self):
-        if self.part_number and self.part_name:
-            return f"{self.part_number} - {self.part_name}"
-        return f"{self.product_code}"
+        customer_info = f" ({self.customer_c_id.c_id})" if self.customer_c_id else ""
+        return f"{self.product_code}{customer_info}"
+    
+    # Properties to access material details
+    @property
+    def material_type(self):
+        return self.material.material_type if self.material else None
+    
+    @property
+    def material_name(self):
+        return self.material.material_name if self.material else None
+    
+    @property
+    def grade(self):
+        return self.material.grade if self.material else None
+    
+    @property
+    def wire_diameter_mm(self):
+        return self.material.wire_diameter_mm if self.material else None
+    
+    @property
+    def thickness_mm(self):
+        return self.material.thickness_mm if self.material else None
+    
+    @property
+    def finishing(self):
+        return self.material.get_finishing_display() if self.material else None
+    
+    @property
+    def weight_kg(self):
+        return self.material.weight_kg if self.material else None
+    
+    @property
+    def material_type_display(self):
+        return self.material.get_material_type_display() if self.material else None
+    
+    # Properties to access customer details
+    @property
+    def customer_name(self):
+        return self.customer_c_id.name if self.customer_c_id else None
+    
+    @property
+    def customer_id(self):
+        return self.customer_c_id.c_id if self.customer_c_id else None
+    
+    @property
+    def customer_industry(self):
+        return self.customer_c_id.get_industry_type_display() if self.customer_c_id else None
+    
+    def get_product_type_display(self):
+        return dict(self.PRODUCT_TYPE_CHOICES).get(self.product_type, self.product_type)
+

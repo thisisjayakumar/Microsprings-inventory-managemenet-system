@@ -11,6 +11,7 @@ class Migration(migrations.Migration):
 
     dependencies = [
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
+        ('inventory', '0001_initial'),  # Add dependency on inventory
     ]
 
     operations = [
@@ -19,9 +20,11 @@ class Migration(migrations.Migration):
             fields=[
                 ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
                 ('product_code', models.CharField(max_length=100, unique=True)),
-                ('material_type', models.CharField(choices=[('coil', 'Spring Coil'), ('sheet', 'Spring Sheet')], max_length=10)),
+                ('product_type', models.CharField(max_length=20, choices=[('spring', 'Spring'), ('stamping_part', 'Stamping Part')], default='spring')),
+                ('material', models.ForeignKey(help_text='Raw material used for this product', on_delete=django.db.models.deletion.PROTECT, related_name='products', to='inventory.rawmaterial')),
                 ('created_at', models.DateTimeField(auto_now_add=True)),
                 ('created_by', models.ForeignKey(null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='created_products', to=settings.AUTH_USER_MODEL)),
+                ('updated_at', models.DateTimeField(auto_now=True)),
             ],
             options={
                 'verbose_name': 'Product',

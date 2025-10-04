@@ -360,7 +360,7 @@ def user_profile(request):
         'profile'
     ).prefetch_related(
         Prefetch('user_roles', queryset=UserRole.objects.filter(is_active=True).select_related('role')),
-        'supervised_processes',
+        'process_supervisor_assignments',
         'current_engagement'
     ).get(id=request.user.id)
     

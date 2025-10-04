@@ -21,16 +21,25 @@ class UserBasicSerializer(serializers.ModelSerializer):
 
 class ProductBasicSerializer(serializers.ModelSerializer):
     """Basic product serializer for nested relationships"""
-    material_type_display = serializers.CharField(source='get_material_type_display', read_only=True)
+    material_type_display = serializers.CharField(read_only=True)
     product_type_display = serializers.CharField(source='get_product_type_display', read_only=True)
+    material_name = serializers.CharField(read_only=True)
+    customer_name = serializers.CharField(source='customer_c_id.name', read_only=True)
+    customer_id = serializers.CharField(source='customer_c_id.c_id', read_only=True)
+    grade = serializers.CharField(read_only=True)
+    wire_diameter_mm = serializers.DecimalField(max_digits=8, decimal_places=3, read_only=True)
+    thickness_mm = serializers.DecimalField(max_digits=8, decimal_places=3, read_only=True)
+    finishing = serializers.CharField(read_only=True)
+    weight_kg = serializers.DecimalField(max_digits=10, decimal_places=3, read_only=True)
+    material_type = serializers.CharField(read_only=True)
     
     class Meta:
         model = Product
         fields = [
-            'id', 'product_code', 'part_number', 'part_name', 'product_type', 
-            'product_type_display', 'material_type', 'material_type_display',
-            'material_name', 'grade', 'wire_diameter_mm', 'thickness_mm', 
-            'finishing', 'manufacturer_brand', 'rm_consumption_per_unit'
+            'id', 'product_code', 'product_type', 'product_type_display', 
+            'material_type', 'material_type_display', 'material_name', 'grade', 
+            'wire_diameter_mm', 'thickness_mm', 'finishing', 'weight_kg', 
+            'customer_name', 'customer_id'
         ]
         read_only_fields = fields
 
@@ -112,6 +121,10 @@ class ManufacturingOrderDetailSerializer(serializers.ModelSerializer):
     rm_allocated_by = UserBasicSerializer(read_only=True)
     status_history = MOStatusHistorySerializer(many=True, read_only=True)
     
+    # Customer fields
+    from third_party.serializers import CustomerListSerializer
+    customer = CustomerListSerializer(read_only=True)
+    
     # Display fields
     status_display = serializers.CharField(source='get_status_display', read_only=True)
     priority_display = serializers.CharField(source='get_priority_display', read_only=True)
@@ -119,7 +132,8 @@ class ManufacturingOrderDetailSerializer(serializers.ModelSerializer):
     
     # Write-only fields for creation
     product_code_id = serializers.IntegerField(write_only=True)
-    assigned_supervisor_id = serializers.IntegerField(write_only=True)
+    assigned_supervisor_id = serializers.IntegerField(write_only=True, required=False)
+    customer_id = serializers.IntegerField(write_only=True, required=False)
     
     class Meta:
         model = ManufacturingOrder
@@ -130,10 +144,10 @@ class ManufacturingOrderDetailSerializer(serializers.ModelSerializer):
             'loose_fg_stock', 'rm_required_kg', 'assigned_supervisor', 'assigned_supervisor_id',
             'shift', 'shift_display', 'planned_start_date', 'planned_end_date',
             'actual_start_date', 'actual_end_date', 'status', 'status_display',
-            'priority', 'priority_display', 'customer_order_reference', 'delivery_date',
-            'special_instructions', 'submitted_at', 'gm_approved_at', 'gm_approved_by',
-            'rm_allocated_at', 'rm_allocated_by', 'created_at', 'created_by',
-            'updated_at', 'status_history'
+            'priority', 'priority_display', 'customer', 'customer_id', 'customer_name', 
+            'delivery_date', 'special_instructions', 'submitted_at', 'gm_approved_at', 
+            'gm_approved_by', 'rm_allocated_at', 'rm_allocated_by', 'created_at', 
+            'created_by', 'updated_at', 'status_history'
         ]
         read_only_fields = [
             'mo_id', 'date_time', 'product_type', 'material_name', 'material_type',
@@ -145,32 +159,73 @@ class ManufacturingOrderDetailSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         """Create MO with auto-population of product details"""
         product_code_id = validated_data.pop('product_code_id')
-        assigned_supervisor_id = validated_data.pop('assigned_supervisor_id')
+        assigned_supervisor_id = validated_data.pop('assigned_supervisor_id', None)
+        customer_id = validated_data.pop('customer_id', None)
         
         try:
-            product = Product.objects.get(id=product_code_id)
-            supervisor = User.objects.get(id=assigned_supervisor_id)
-        except (Product.DoesNotExist, User.DoesNotExist) as e:
-            raise serializers.ValidationError(f"Invalid reference: {str(e)}")
+            # Try to get product by ID first (numeric)
+            if str(product_code_id).isdigit():
+                product = Product.objects.select_related('customer_c_id', 'material').get(id=product_code_id)
+            else:
+                # If ID is not numeric, treat it as product_code (string)
+                product = Product.objects.select_related('customer_c_id', 'material').get(product_code=product_code_id)
+        except Product.DoesNotExist:
+            # If product doesn't exist, we need to create it or handle it differently
+            from processes.models import BOM
+            bom_item = BOM.objects.filter(product_code=product_code_id, is_active=True).first()
+            if not bom_item:
+                raise serializers.ValidationError("Invalid product reference - not found in Product table or BOM")
+            
+            # Create a new Product record from BOM data
+            # First, try to get the material from BOM
+            material = bom_item.material
+            if not material:
+                raise serializers.ValidationError("BOM item has no associated material")
+            
+            product = Product.objects.create(
+                product_code=product_code_id,
+                product_type='spring' if bom_item.type == 'spring' else 'stamping_part',
+                material=material,
+                created_by=self.context['request'].user
+            )
+        
+        # Handle optional supervisor
+        supervisor = None
+        if assigned_supervisor_id:
+            try:
+                supervisor = User.objects.get(id=assigned_supervisor_id)
+            except User.DoesNotExist:
+                raise serializers.ValidationError("Invalid supervisor reference")
+        
+        # Handle optional customer
+        customer = None
+        if customer_id:
+            try:
+                from third_party.models import Customer
+                customer = Customer.objects.get(id=customer_id)
+            except Customer.DoesNotExist:
+                raise serializers.ValidationError("Invalid customer reference")
         
         # Auto-populate product details
         validated_data.update({
             'product_code': product,
             'assigned_supervisor': supervisor,
+            'customer': customer,
+            'customer_name': customer.name if customer else validated_data.get('customer_name', ''),
             'product_type': product.get_product_type_display() if product.product_type else '',
-            'material_name': product.material_name,
-            'material_type': product.material_type,
-            'grade': product.grade,
+            'material_name': product.material_name or '',
+            'material_type': product.material_type or '',
+            'grade': product.grade or '',
             'wire_diameter_mm': product.wire_diameter_mm,
             'thickness_mm': product.thickness_mm,
-            'finishing': product.finishing,
-            'manufacturer_brand': product.manufacturer_brand,
+            'finishing': product.finishing or '',
+            'manufacturer_brand': '',  # Not available in new structure
+            'weight_kg': product.weight_kg,
             'created_by': self.context['request'].user
         })
         
-        # Calculate RM required (quantity * rm_consumption_per_unit)
-        if product.rm_consumption_per_unit:
-            validated_data['rm_required_kg'] = validated_data['quantity'] * product.rm_consumption_per_unit
+        # Set default RM required (can be updated later)
+        validated_data['rm_required_kg'] = validated_data['quantity'] * 0.001  # Default 1g per unit
         
         return super().create(validated_data)
 
@@ -183,18 +238,19 @@ class ManufacturingOrderDetailSerializer(serializers.ModelSerializer):
         if 'product_code_id' in validated_data:
             product_code_id = validated_data.pop('product_code_id')
             try:
-                product = Product.objects.get(id=product_code_id)
+                product = Product.objects.select_related('customer_c_id', 'material').get(id=product_code_id)
                 validated_data['product_code'] = product
                 # Re-populate product details if product changed
                 validated_data.update({
                     'product_type': product.get_product_type_display() if product.product_type else '',
-                    'material_name': product.material_name,
-                    'material_type': product.material_type,
-                    'grade': product.grade,
+                    'material_name': product.material_name or '',
+                    'material_type': product.material_type or '',
+                    'grade': product.grade or '',
                     'wire_diameter_mm': product.wire_diameter_mm,
                     'thickness_mm': product.thickness_mm,
-                    'finishing': product.finishing,
-                    'manufacturer_brand': product.manufacturer_brand,
+                    'finishing': product.finishing or '',
+                    'manufacturer_brand': '',  # Not available in new structure
+                    'weight_kg': product.weight_kg,
                 })
             except Product.DoesNotExist:
                 raise serializers.ValidationError("Invalid product reference")
@@ -348,6 +404,7 @@ class MOProcessAlertSerializer(serializers.ModelSerializer):
 class ManufacturingOrderWithProcessesSerializer(serializers.ModelSerializer):
     """Enhanced MO serializer with process execution details"""
     product_code_display = serializers.CharField(source='product_code.display_name', read_only=True)
+    product_code_value = serializers.CharField(source='product_code.product_code', read_only=True)
     status_display = serializers.CharField(source='get_status_display', read_only=True)
     priority_display = serializers.CharField(source='get_priority_display', read_only=True)
     shift_display = serializers.CharField(source='get_shift_display', read_only=True)
@@ -360,13 +417,13 @@ class ManufacturingOrderWithProcessesSerializer(serializers.ModelSerializer):
     class Meta:
         model = ManufacturingOrder
         fields = [
-            'id', 'mo_id', 'date_time', 'product_code', 'product_code_display',
+            'id', 'mo_id', 'date_time', 'product_code', 'product_code_display', 'product_code_value',
             'quantity', 'product_type', 'material_name', 'material_type', 'grade',
             'wire_diameter_mm', 'thickness_mm', 'finishing', 'manufacturer_brand',
             'weight_kg', 'loose_fg_stock', 'rm_required_kg', 'assigned_supervisor',
             'assigned_supervisor_name', 'shift', 'shift_display', 'planned_start_date',
             'planned_end_date', 'actual_start_date', 'actual_end_date', 'status',
-            'status_display', 'priority', 'priority_display', 'customer_order_reference',
+            'status_display', 'priority', 'priority_display', 'customer_name',
             'delivery_date', 'special_instructions', 'created_at', 'created_by',
             'created_by_name', 'updated_at', 'process_executions', 'overall_progress',
             'active_process'
@@ -500,11 +557,9 @@ class ProductDropdownSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = Product
-        fields = ['id', 'product_code', 'part_number', 'part_name', 'display_name', 'is_active']
+        fields = ['id', 'product_code', 'display_name']
     
     def get_display_name(self, obj):
-        if obj.part_number and obj.part_name:
-            return f"{obj.part_number} - {obj.part_name}"
         return obj.product_code
 
 

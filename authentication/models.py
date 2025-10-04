@@ -84,18 +84,19 @@ class Role(models.Model):
     ROLE_HIERARCHY = [
         ('admin', 'Admin'),
         ('manager', 'Manager'),
+        ('production_head', 'Production Head'),
         ('supervisor', 'Supervisor'),
-        ('store_manager', 'Store Manager'),
-        ('operator', 'Operator')
+        ('rm_store', 'RM Store'),
+        ('fg_store', 'FG Store'),
     ]
     
     name = models.CharField(max_length=50, choices=ROLE_HIERARCHY, unique=True)
     description = models.TextField()
     hierarchy_level = models.IntegerField(default=5, help_text="Lower number = higher authority")
-    permissions = models.JSONField(default=dict)  # Module-specific permissions
+    permissions = models.JSONField(default=dict, null=True, blank=True)  # Module-specific permissions
     
     # Department restrictions
-    restricted_departments = models.JSONField(default=list, help_text="Departments this role can access")
+    restricted_departments = models.JSONField(default=list, null=True, blank=True,help_text="Departments this role can access")
     
     class Meta:
         verbose_name = 'Role'

@@ -10,4 +10,5 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
+        # Empty migration to maintain compatibility
     ]

@@ -1,0 +1,41 @@
+S.No,Customer Table,Industry Type,GST No.,Address,Point of Contact- Name,Designation,Contact No.,Email _ID,Cust_ID
+1,KBI,Brake Industry,33AACCK9903B1ZX,"49, Sengadu Village, Sriperumbudur Tk, Kancheepuram Dt-602105","Seenu Gen, Sumathi Bill, Balamurugan, Gajendran","Purchase, A/C, M, GM","044-27601070, 044-27692225, 9894114732, 9597578063, 9841299956, 9940710719",,C_001
+2,WOORY,Automotive,33AAACW5300Q1Z9,"A1B, MMDA Industrial Complex, Maraimalai Nagar - 603209, Kancheepuram Dist.",V.Vijayarajasekaran,Purc Dept,"9710099953, 7358380610",woory@vsnl.net,C_002
+3,ROTORK (Bangalore),Other,29AAACR3438C1ZL,"165 & 166, KIADB Industrial Area, Bommasandra, Jigani Link Road, Anekal, Bangalore-562106",,,080-30981600,,C_003
+4,ROTORK (Chennai),Other,33AAACR3438C1ZW,"28-B, Ambattur Industrial Estate (North) Chennai - 600098","P D Jayachandran, Geetha",A/c,"044-39555645, 9600092948",pdj@rotork.com,C_004
+5,YAMARI,Temperature Sensor,33AAACY5873C1ZE,"#863, Padur Main Road, Irulapalayam, Kuthambakkam Village, Chennai - 600124",,,"044-26810025, 044-26810086, 044-26810096",,C_005
+6,ATIRUM,Other,,,,,,,C_006
+7,PLACKA,Instruments,33AABCP4624M1ZE,"No-5, Ramamoorthy Street, Nehru Nagar, Chrompet, Chennai-600044",,,"91-44-22231559, 22234562, 22230187",Plackainstruments@yahoo.com,C_007
+8,MURUGAPPA MORGAN,Thermal Ceramics,33AAACM4385M1Z8,"Plot no.26 & 27, Sipcot Industrial Complex, Ranipet, Vellore Dist - 632403",,,"+91-4172-244313, +91-4172-245947",,C_008
+9,SOUTHERN RAILWAYS,Electric Loco Shed,33AAAGM0289C1ZQ,"Southern Railways, Arakkonam-631001",Sr.DEE/RS/AJJ,,,,C_009
+10,AKT PUMPS,Other,,,,,,,C_036
+11,TM AUTOMOTIVE,Seating System,33AAFCT3313F1ZT,"Plot No.CP-3, Industrial Park, Oragadam, SIPCOT Industrial Park, Sriperumbudur, Kancheepuram-602105",,,,,C_010
+13,SGI AUTOMOTIVE,Automotive,33AAQCS1080F1ZF,"481, 1-B, Sengundram Indl. Estate, Maraimalai Nagar, Chengalpattu-603209",,,7299015660,,C_011
+15,AMPS INDUSTRY,Other,,,,,,,C_012
+16,AVALON TECHNOLOGY,Technology & Services,33AAHCA3430A2ZH,"Unit-II, Plot A6 & A7, Phase-II Module No.6, SDF-II, MEPZ-SEZ, Tambaram, Chennai-600045",,,044-42220400,,C_013
+17,HL MANDO,Other,33AAECM8625J1ZB,"Plant I: S1A &S5 Sipcot Industrial Park, Pillaipakkam(P.O.), Vengadu Village, Sriperumbudur, Kancheepuram, TamilNadu-602105",Mr.Ashok Kumar,,"044-37170308, 044-37170372, 9952720187",,C_014
+18,FEAM TECH,Other,33AAGFF0855L1ZE,"No.2/152, Bajanai Koil Street, Banruti Kandigai, ORAGADAM, Sriperumbudur Taluk - 631604",,,,,C_015
+19,APPASWAMY,Other,,,,,,,C_016
+20,I.MATICS,Other,33AEHPR4647B1ZN,"Plot No.16, Self help Indl.Estate, Keelkattalai, Chennai-600117",,,9003099265,,C_017
+21,AVASARALA,Technology,34AABCA2381E1Z6,"MSI Area, 6th Main, 24th Cross, Pipdic Industrial Estate, Mettuppalayam, Puducherry-605009",,,0413-4207557 / 2275574,,C_018
+22,DELFINGEN,Other,33AAACK8689A1ZK,"Indospace Industrial and Logistics Park, 500 C, Panruti, Oragadam-631604",,,,,C_019
+23,MEDIHUB,Other,33AAICM9231C1ZQ,"Plot No.4, NH-7, MMDA Industrial Estate, Marai Malai Nagar 603 209, Tamil Nadu",,,,,C_020
+24,CARRLANE,Other,33AAICC1585H1ZP,"Survey No.72, Vandalur-Kelambakkam Road, Melakottiyur Village, Chennai - 600127",,,9176526454,Clb.Purchase@carrlane.com,C_021
+25,SUPRAJIT,Other,33AADCS1638L1ZB,"Plot no. Nos. G28 & G29, Sipcot Industrial Area, Vallam-Vadagal-602105, Sriperumbudur T.K. Kanchipuram (dist)",,,,,C_022
+26,YAMAHA,Motor Electronics,33AAACY5528J1Z7,"VV2, SIPCOT Industrial Park, Vallam Vadal Village, Sriperumbudur Taluk, Kanchipuram Dist-602105",,,,,C_023
+27,ALCHEMY SPRING,Springs,33DPMPR4537B1ZV,"49, Anagana Reddy Street, Athipet, Amabattur, Chennai-600058",,,8870735363,,C_024
+31,SUMMITS HYGRONICS,Other,33AAGCS3100G1ZY,"SF 192, Earithottam, Kannampalayam, Coimbatore-641402",,,0422-2689020,Matl2@airdryer.in,C_026
+32,NHK SPRING,Springs,37AAACN3501G1ZW,"# 4500, Central Express Way, Sector – 24, Sri City, Varadaiah Palem Mandel, Chittoor District, Andhra Pradesh 517541",,,,,C_027
+34,K.R.TRANS ENERGY,Other,33AAHCK6544M1Z6,"B-9, G.K. Industrial Park, Reddimangudi, Siruganur, Trichy-621105",,,9585554967,,C_028
+35,KUMARAN ENGG,Other,33AADFK9993K1ZP,"No.11 np developed plot, Ekkaduthangal, Chennai-600032",,,043542443 / 9791037703,,C_029
+36,MUTHIAH,Other,33AOFPP0842J1Z0,"No. 10/57C, Nehru Street, TMP Nagar, Padi, Chennai-600050",,,9444065876,Muthiahind1964@gmail.com,C_030
+37,V.TITAN,Other,,,,,,,C_031
+38,PRM AUTOMOTIVE,Automotive,33AAMCP7652G1Z6,"PRM towers first floor, Office No. 419, Mambakkam, Chennai 602105",,,,,C_032
+39,TI CLEAN MOBILITY,Other,33AAJCT1836F1ZH,"Post Bag No-5 MTH Road Ambattur, Chennai- 600053",,,,,C_033
+40,RISHABA,Other,33AAVFR8450J2ZJ,"Plot No.19A, Engineering SEZ, Swarna Bhoomi, New Chennai Township, Chenneerkuppam Village, Chengalpet (Dist) - 603305",,,,Purchase1@rishaba.in,C_034
+12,TM AUTOMOTIVE (Branch),Seating System,33AAFCT3313F1ZT,"Building No.B 100-B, Indo Space Indl. Park, Pollivakkam village, Thiruvallur Dist -602002",,,,,C_037
+14,THREYES,Harness,33AABCT2566L1Z7,"Plot #169, Sirumathur Village, Padappai, Sriperumbudur Taluk, Kancheepuram District- 601301","Deena, Naraen, Elansezhian","Chq, A/C","044-27175001, 044-37107526, 9380290205, 7358293277, 9629176610",kr@threyes.co.in,C_038
+28,ROYAL REFRIGERATION,Other,33ANAPL4115E1ZO,"390/2, Ponniyamman Koil Street, Alapakkam, Porur, Chennai-600116",,,7299988444 / 7299988100,,C_039
+29,SHAFI BROTHERS,Other,33BPOPN7956N1ZX,"New No.216, Thambu Chetty Street, Near Kallikambal Koil, Chennai-600001",,,8608463805,Shafibrothers06@gmail.com,C_040
+30,SS AIR COOL & SPARES,Other,33CQXPS3431G1ZH,"No.4A, Earikkarai St, Kundrathur Road, Porur, Chennai-600116",,,"9941550552, 917613653, 9500137139",Ssaircool1984@gmail.com,C_041
+33,NYCA,Other,33BVTPS1134E1ZK,"Plot No.E2, Suriya Gandhi Street, B.T. Nagar Annexe, Gerugambakkam, Chennai - 600122",,,9952577760,,C_042

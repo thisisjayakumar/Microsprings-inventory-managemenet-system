@@ -26,34 +26,65 @@ class Command(BaseCommand):
                 material_type = row["Material_Type"].strip().lower()  # Coil / Sheet
                 material_name = row["Material_Name"].strip()
                 grade = row["Grade"].strip() if row["Grade"] else ""
-                finishing = row["FINISHING"].strip() if "FINISHING" in row and row["FINISHING"] else None
+                finishing = row["Finishing"].strip() if row.get("Finishing") else None
+                # Use the last Material Code column (rightmost one)
+                material_code = row.get("Material Code", "").strip()
+                if not material_code and len([k for k in row.keys() if "Material Code" in k]) > 1:
+                    # If there are multiple Material Code columns, use the last non-empty one
+                    for key in reversed([k for k in row.keys() if "Material Code" in k]):
+                        if row.get(key, "").strip():
+                            material_code = row[key].strip()
+                            break
+                
+                # Skip row if material_code is empty (required field)
+                if not material_code:
+                    self.stdout.write(
+                        self.style.WARNING(f"Skipping row - Material Code is required but empty")
+                    )
+                    continue
 
                 # numeric fields
                 wire_dia = (
                     row["Wire Diameter"].replace("mm", "").strip()
-                    if row.get("Wire Diameter")
+                    if row.get("Wire Diameter") and row["Wire Diameter"].strip()
                     else None
                 )
                 thickness = (
-                    row["Thickness (mm)"].replace("mm", "").strip()
-                    if row.get("Thickness (mm)")
+                    row["Thickness"].replace("mm", "").strip()
+                    if row.get("Thickness") and row["Thickness"].strip()
                     else None
                 )
+                
+                # Additional fields that might be in CSV
+                weight_kg = None
+                quantity = None
+                
+                # Check for weight/quantity columns (these might not exist in all CSVs)
+                if row.get("Weight"):
+                    weight_str = row["Weight"].replace("kg", "").strip()
+                    weight_kg = float(weight_str) if weight_str else None
+                    
+                if row.get("Quantity"):
+                    quantity_str = row["Quantity"].replace("kg", "").strip()
+                    quantity = float(quantity_str) if quantity_str else None
 
                 self.stdout.write(
                     f"[{'DRY' if dry_run else 'SAVE'}] "
-                    f"Type={material_type}, Name={material_name}, Grade={grade}, "
-                    f"WireDia={wire_dia}, Thickness={thickness}, Finishing={finishing}"
+                    f"Code={material_code}, Type={material_type}, Name={material_name}, Grade={grade}, "
+                    f"WireDia={wire_dia}, Thickness={thickness}, Weight={weight_kg}, Quantity={quantity}, Finishing={finishing}"
                 )
 
                 if not dry_run:
                     raw_mat, created = RawMaterial.objects.update_or_create(
-                        material_type=material_type,
-                        material_name=self._map_material_name(material_name),
-                        grade=grade,
-                        wire_diameter_mm=float(wire_dia) if wire_dia else None,
-                        thickness_mm=float(thickness) if thickness else None,
+                        material_code=material_code,
                         defaults={
+                            "material_type": material_type,
+                            "material_name": material_name,  # Use complete name from CSV
+                            "grade": grade,
+                            "wire_diameter_mm": float(wire_dia) if wire_dia else None,
+                            "thickness_mm": float(thickness) if thickness else None,
+                            "weight_kg": weight_kg,
+                            "quantity": quantity,
                             "finishing": self._map_finishing(finishing),
                         },
                     )
@@ -63,17 +94,6 @@ class Command(BaseCommand):
                 f"Raw materials {'previewed' if dry_run else 'imported/updated'} successfully"
             )
         )
-
-    def _map_material_name(self, name):
-        """Map CSV material names to choices in RawMaterial model"""
-        name = name.lower()
-        if "spring steel" in name or "st " in name:
-            return "spring"
-        elif "stainless" in name or "ss" in name:
-            return "stain"
-        elif "mild" in name or "ms" in name:
-            return "ms"
-        return "spring"  # fallback
 
     def _map_finishing(self, finishing):
         """Map CSV finishing text to RawMaterial.FINISHING_CHOICES"""

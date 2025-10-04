@@ -7,15 +7,15 @@ from .models import RawMaterial, Location, InventoryTransaction, RMStockBalance
 
 @admin.register(RawMaterial)
 class RawMaterialAdmin(admin.ModelAdmin):
-    list_display = ('material_name', 'material_type', 'grade', 'get_specifications', 'created_at')
+    list_display = ('material_code', 'material_name', 'material_type', 'grade', 'get_specifications', 'created_at')
     list_filter = ('material_name', 'material_type', 'created_at')
-    search_fields = ('grade',)
+    search_fields = ('material_code', 'grade', 'material_name')
     ordering = ('-created_at',)
     readonly_fields = ('created_at', 'updated_at')
     
     fieldsets = (
         ('Basic Information', {
-            'fields': ('material_name', 'material_type', 'grade', 'finishing')
+            'fields': ('material_code', 'material_name', 'material_type', 'grade', 'finishing')
         }),
         ('Coil Specifications', {
             'fields': ('wire_diameter_mm', 'weight_kg'),
@@ -143,20 +143,19 @@ class InventoryTransactionAdmin(admin.ModelAdmin):
 @admin.register(RMStockBalance)
 class RMStockBalanceAdmin(admin.ModelAdmin):
     list_display = (
-        'product', 'type', 'current_quantity', 'reserved_quantity', 
-        'available_quantity', 'get_stock_status', 'last_updated'
+        'product', 'available_quantity', 'get_stock_status', 'last_updated'
     )
-    list_filter = ('type', 'last_updated')
+    list_filter = ('last_updated',)
     search_fields = ('product__product_code',)
     ordering = ('-last_updated',)
     readonly_fields = ('last_updated',)
     
     fieldsets = (
         ('Product Information', {
-            'fields': ('product', 'type')
+            'fields': ('product',)
         }),
         ('Stock Levels', {
-            'fields': ('current_quantity', 'reserved_quantity', 'available_quantity')
+            'fields': ('available_quantity',)
         }),
         ('Tracking', {
             'fields': ('last_updated',),

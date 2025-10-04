@@ -5,12 +5,6 @@ from django.core.exceptions import ValidationError
 User = get_user_model()
 
 class RawMaterial(models.Model):
-    MATERIAL_NAME_CHOICES = [
-        ('spring', 'Spring Steel'),
-        ('stain', 'Stainless Steel'),
-        ('ms','Mild Steel'),
-    ]
-    
     MATERIAL_TYPE_CHOICES = [
         ('coil', 'Coil'),
         ('sheet', 'Sheet'),
@@ -21,7 +15,9 @@ class RawMaterial(models.Model):
         ('bright','BRIGHT'),
     ]
     
-    material_name = models.CharField(max_length=20, choices=MATERIAL_NAME_CHOICES)
+    
+    material_code = models.CharField(max_length=50, unique=True, help_text="Unique identifier for the raw material")
+    material_name = models.CharField(max_length=100, help_text="Complete material name from CSV")
     material_type = models.CharField(max_length=20, choices=MATERIAL_TYPE_CHOICES)
     grade = models.CharField(max_length=50)
     finishing = models.CharField(max_length=20, choices=FINISHING_CHOICES, null=True, blank=True)
@@ -76,11 +72,11 @@ class RawMaterial(models.Model):
                 specs.append(f"{self.quantity}kg")
         
         spec_str = f" ({', '.join(specs)})" if specs else ""
-        material_display = self.get_material_name_display() if self.material_name else "Unknown Material"
+        material_display = self.material_name if self.material_name else "Unknown Material"
         type_display = self.get_material_type_display() if self.material_type else "Unknown Type"
         grade_str = f" {self.grade}" if self.grade else ""
         
-        return f"{material_display}{grade_str} - {type_display}{spec_str}"
+        return f"{self.material_code} - {material_display}{grade_str} - {type_display}{spec_str}"
 
     def clean(self):
         errors = {}
@@ -229,16 +225,13 @@ class RMStockBalance(models.Model):
     Current stock levels - calculated/cached view
     """
     product = models.ForeignKey('products.Product', on_delete=models.CASCADE, related_name='stock_balances')
-    type = models.CharField(max_length=5, choices=[('coil', 'Coil'), ('sheet', 'Sheet')])
-    current_quantity = models.IntegerField()
-    reserved_quantity = models.IntegerField()  # Allocated but not consumed
-    available_quantity = models.IntegerField()  # current - reserved
+    available_quantity = models.IntegerField() 
     last_updated = models.DateTimeField(auto_now=True)
 
     class Meta:
-        unique_together = ['product', 'type', 'available_quantity']
+        unique_together = ['product']
         verbose_name = 'Inventory Stock Balance'
         verbose_name_plural = 'Inventory Stock Balances'
 
     def __str__(self):
-        return f"{self.product.part_number} @ {self.type}: {self.current_quantity}"
+        return f"{self.product.internal_product_code} @ {self.available_quantity}"

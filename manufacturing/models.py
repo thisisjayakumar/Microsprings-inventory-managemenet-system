@@ -12,10 +12,8 @@ class ManufacturingOrder(models.Model):
     Based on the Production Head Functions workflow
     """
     STATUS_CHOICES = [
-        ('draft', 'Draft'),
         ('submitted', 'Submitted'),
-        ('gm_approved', 'GM Approved'),
-        ('rm_allocated', 'RM Allocated'),
+        ('mo_approved', 'MO Approved'),
         ('in_progress', 'In Progress'),
         ('completed', 'Completed'),
         ('cancelled', 'Cancelled'),
@@ -67,13 +65,13 @@ class ManufacturingOrder(models.Model):
     loose_fg_stock = models.PositiveIntegerField(default=0, help_text="Available finished goods stock")
     rm_required_kg = models.DecimalField(max_digits=10, decimal_places=3, default=0, help_text="Raw material required in kg")
     
-    # Assignment
+    # Assignment (optional - assigned later in workflow)
     assigned_supervisor = models.ForeignKey(
-        User, on_delete=models.PROTECT, 
+        User, on_delete=models.PROTECT, null=True, blank=True,
         related_name='supervised_mo_orders',
-        help_text="Supervisor allocates operator"
+        help_text="Supervisor allocates operator (assigned later)"
     )
-    shift = models.CharField(max_length=10, choices=SHIFT_CHOICES)
+    shift = models.CharField(max_length=10, choices=SHIFT_CHOICES, null=True, blank=True)
     
     # Planning dates
     planned_start_date = models.DateTimeField()
@@ -82,11 +80,20 @@ class ManufacturingOrder(models.Model):
     actual_end_date = models.DateTimeField(null=True, blank=True)
     
     # Status & Priority
-    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='draft')
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='on_hold')
     priority = models.CharField(max_length=10, choices=PRIORITY_CHOICES, default='medium')
     
-    # Business details
-    customer_order_reference = models.CharField(max_length=100, blank=True)
+    # Business details - customer field that references c_id
+    customer_c_id = models.ForeignKey(
+        'third_party.Customer', 
+        to_field='c_id',
+        on_delete=models.PROTECT, 
+        null=True, 
+        blank=True,
+        related_name='manufacturing_orders',
+        help_text="Customer for this manufacturing order (references c_id)"
+    )
+    customer_name = models.CharField(max_length=200, blank=True, help_text="Customer name (auto-filled from customer)")
     delivery_date = models.DateField(null=True, blank=True)
     special_instructions = models.TextField(blank=True)
     
@@ -466,7 +473,8 @@ class MOProcessStepExecution(models.Model):
     @property
     def efficiency_percentage(self):
         """Calculate efficiency based on passed vs processed quantity"""
-        if self.quantity_processed > 0:
+        if (self.quantity_processed and self.quantity_processed > 0 and 
+            self.quantity_passed is not None):
             return (self.quantity_passed / self.quantity_processed) * 100
         return 0
 
@@ -702,7 +710,7 @@ class Batch(models.Model):
     @property
     def completion_percentage(self):
         """Calculate completion percentage based on actual vs planned quantity"""
-        if self.planned_quantity > 0:
+        if self.planned_quantity and self.planned_quantity > 0 and self.actual_quantity_completed is not None:
             return (self.actual_quantity_completed / self.planned_quantity) * 100
         return 0
     
@@ -716,7 +724,9 @@ class Batch(models.Model):
     @property
     def remaining_quantity(self):
         """Calculate remaining quantity to complete"""
-        return max(0, self.planned_quantity - self.actual_quantity_completed)
+        if self.planned_quantity and self.actual_quantity_completed is not None:
+            return max(0, self.planned_quantity - self.actual_quantity_completed)
+        return self.planned_quantity or 0
     
     def can_create_new_batch_for_mo(self):
         """

@@ -6,9 +6,23 @@ from .models import ManufacturingOrder, PurchaseOrder, MOStatusHistory, POStatus
 class BatchInline(admin.TabularInline):
     model = Batch
     extra = 0
-    readonly_fields = ('batch_id', 'completion_percentage', 'remaining_quantity')
+    readonly_fields = ('batch_id', 'completion_percentage_display', 'remaining_quantity_display')
     fields = ('batch_id', 'product_code', 'planned_quantity', 'actual_quantity_completed', 
-             'status', 'assigned_operator', 'completion_percentage')
+             'status', 'assigned_operator', 'completion_percentage_display')
+    
+    def completion_percentage_display(self, obj):
+        """Safe display of completion percentage"""
+        if obj.pk:  # Only for existing objects
+            return f"{obj.completion_percentage:.1f}%"
+        return "-"
+    completion_percentage_display.short_description = 'Completion %'
+    
+    def remaining_quantity_display(self, obj):
+        """Safe display of remaining quantity"""
+        if obj.pk:  # Only for existing objects
+            return obj.remaining_quantity
+        return "-"
+    remaining_quantity_display.short_description = 'Remaining Qty'
     
     def get_queryset(self, request):
         return super().get_queryset(request).select_related('product_code', 'assigned_operator')
@@ -16,13 +30,30 @@ class BatchInline(admin.TabularInline):
 
 @admin.register(ManufacturingOrder)
 class ManufacturingOrderAdmin(admin.ModelAdmin):
-    list_display = ('mo_id', 'product_code', 'quantity', 'status', 'priority', 'assigned_supervisor', 'created_at')
-    list_filter = ('status', 'priority', 'shift', 'material_type', 'created_at')
-    search_fields = ('mo_id', 'product_code__product_code', 'customer_order_reference')
+    list_display = ('mo_id', 'product_code', 'customer_display', 'quantity', 'status', 'priority', 'assigned_supervisor', 'created_at')
+    list_filter = ('status', 'priority', 'shift', 'material_type', 'product_code__customer_c_id__industry_type', 'created_at')
+    search_fields = ('mo_id', 'product_code__product_code', 'product_code__customer_c_id__name', 'product_code__customer_c_id__c_id', 'customer_name')
     readonly_fields = ('mo_id', 'date_time', 'product_type', 'material_name', 'material_type', 'grade', 
-                      'wire_diameter_mm', 'thickness_mm', 'finishing', 'manufacturer_brand', 'weight_kg')
+                      'wire_diameter_mm', 'thickness_mm', 'finishing', 'manufacturer_brand', 'weight_kg', 'customer_name')
     ordering = ('-created_at',)
     inlines = [BatchInline]
+    
+    def customer_display(self, obj):
+        """Display customer information in list view"""
+        # Check product's customer first, then MO's direct customer
+        if obj.product_code and obj.product_code.customer_c_id:
+            return f"{obj.product_code.customer_c_id.c_id} - {obj.product_code.customer_c_id.name}"
+        elif obj.customer_c_id:
+            return f"{obj.customer_c_id.c_id} - {obj.customer_c_id.name}"
+        return obj.customer_name or "No customer"
+    customer_display.short_description = 'Customer'
+    customer_display.admin_order_field = 'product_code__customer_c_id__name'
+    
+    def get_queryset(self, request):
+        """Optimize queryset with select_related for better performance"""
+        return super().get_queryset(request).select_related(
+            'product_code', 'assigned_supervisor', 'product_code__customer_c_id', 'customer_c_id', 'created_by'
+        )
     
     fieldsets = (
         ('Basic Information', {
@@ -43,8 +74,8 @@ class ManufacturingOrderAdmin(admin.ModelAdmin):
         ('Status & Priority', {
             'fields': ('status', 'priority')
         }),
-        ('Business Details', {
-            'fields': ('customer_order_reference', 'delivery_date', 'special_instructions')
+        ('Customer & Business Details', {
+            'fields': ('customer', 'customer_name', 'delivery_date', 'special_instructions')
         }),
         ('Workflow Tracking', {
             'fields': ('submitted_at', 'gm_approved_at', 'gm_approved_by', 'rm_allocated_at', 'rm_allocated_by'),

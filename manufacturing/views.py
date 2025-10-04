@@ -18,7 +18,7 @@ from .serializers import (
     PurchaseOrderListSerializer, PurchaseOrderDetailSerializer,
     ProductDropdownSerializer, RawMaterialDropdownSerializer,
     VendorDropdownSerializer, UserDropdownSerializer,
-    RawMaterialBasicSerializer, VendorBasicSerializer,
+    ProductBasicSerializer, RawMaterialBasicSerializer, VendorBasicSerializer,
     ManufacturingOrderWithProcessesSerializer, MOProcessExecutionListSerializer,
     MOProcessExecutionDetailSerializer, MOProcessStepExecutionSerializer,
     MOProcessAlertSerializer
@@ -45,7 +45,7 @@ class ManufacturingOrderViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         """Optimized queryset with select_related and prefetch_related"""
         queryset = ManufacturingOrder.objects.select_related(
-            'product_code', 'assigned_supervisor', 'created_by', 
+            'product_code', 'product_code__customer_c_id', 'customer_c_id', 'assigned_supervisor', 'created_by', 
             'gm_approved_by', 'rm_allocated_by'
         ).prefetch_related(
             Prefetch('status_history', queryset=MOStatusHistory.objects.select_related('changed_by'))
@@ -139,9 +139,141 @@ class ManufacturingOrderViewSet(viewsets.ModelViewSet):
     @action(detail=False, methods=['get'])
     def products(self, request):
         """Get products for dropdown"""
-        products = Product.objects.filter(is_active=True).order_by('product_code')
+        products = Product.objects.all().order_by('product_code')
+        
+        # If no products in Product table, get unique products from BOM
+        if not products.exists():
+            from processes.models import BOM
+            
+            # Get unique product codes from BOM
+            bom_products = BOM.objects.filter(is_active=True).values('product_code').distinct().order_by('product_code')
+            
+            # Create a list of product-like objects for the dropdown
+            product_list = []
+            for bom_product in bom_products:
+                product_list.append({
+                    'id': bom_product['product_code'],  # Use product_code as ID temporarily
+                    'product_code': bom_product['product_code'],
+                    'part_number': None,
+                    'part_name': None,
+                    'display_name': bom_product['product_code'],
+                    'is_active': True
+                })
+            
+            return Response(product_list)
+        
         serializer = ProductDropdownSerializer(products, many=True)
         return Response(serializer.data)
+
+    @action(detail=False, methods=['get'])
+    def product_details(self, request):
+        """Get complete product details with BOM and material info for MO creation"""
+        product_code = request.query_params.get('product_code')
+        if not product_code:
+            return Response(
+                {'error': 'product_code is required'}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        try:
+            # Try to get product details from Product table
+            try:
+                product = Product.objects.select_related('customer_c_id', 'material').get(product_code=product_code)
+            except Product.DoesNotExist:
+                # If product doesn't exist in Product table, create a minimal product object from BOM
+                bom_item = BOM.objects.filter(product_code=product_code, is_active=True).first()
+                if not bom_item:
+                    return Response(
+                        {'error': 'Product not found in BOM'}, 
+                        status=status.HTTP_404_NOT_FOUND
+                    )
+                
+                # Create a minimal product-like object from BOM
+                material = bom_item.material if bom_item.material else None
+                
+                product = type('Product', (), {
+                    'id': product_code,
+                    'product_code': product_code,
+                    'product_type': bom_item.type,
+                    'material': material,
+                    'material_type': material.material_type if material else '',
+                    'material_name': material.get_material_name_display() if material else '',
+                    'grade': material.grade if material else '',
+                    'wire_diameter_mm': material.wire_diameter_mm if material else None,
+                    'thickness_mm': material.thickness_mm if material else None,
+                    'finishing': material.get_finishing_display() if material else '',
+                    'weight_kg': material.weight_kg if material else None,
+                    'material_type_display': material.get_material_type_display() if material else '',
+                    'customer_c_id': None,  # No customer info available from BOM
+                    'customer_name': None,
+                    'customer_id': None,
+                    'customer_industry': None,
+                    'get_product_type_display': lambda: 'Spring' if bom_item.type == 'spring' else 'Stamping Part'
+                })()
+            
+            # Get BOM data for this product
+            from processes.models import BOM
+            from processes.serializers import BOMDetailSerializer
+            
+            bom_items = BOM.objects.filter(
+                product_code=product_code, 
+                is_active=True
+            ).select_related(
+                'process_step__process', 
+                'process_step__subprocess', 
+                'material'
+            ).order_by('process_step__sequence_order')
+            
+            # Serialize the data
+            product_data = ProductBasicSerializer(product).data
+            bom_data = BOMDetailSerializer(bom_items, many=True).data
+            
+            # Extract unique processes and materials
+            processes = []
+            materials = []
+            process_ids = set()
+            material_codes = set()
+            
+            for bom_item in bom_items:
+                # Collect unique processes
+                if bom_item.process_step.process.id not in process_ids:
+                    processes.append({
+                        'id': bom_item.process_step.process.id,
+                        'name': bom_item.process_step.process.name,
+                        'code': bom_item.process_step.process.code
+                    })
+                    process_ids.add(bom_item.process_step.process.id)
+                
+                # Collect unique materials
+                if bom_item.material and bom_item.material.material_code not in material_codes:
+                    materials.append(RawMaterialBasicSerializer(bom_item.material).data)
+                    material_codes.add(bom_item.material.material_code)
+            
+            response_data = {
+                'product': product_data,
+                'bom_items': bom_data,
+                'processes': processes,
+                'materials': materials,
+                'auto_populate_data': {
+                    'product_type': product.get_product_type_display() if hasattr(product, 'get_product_type_display') else '',
+                    'material_name': product.material_name if hasattr(product, 'material_name') else '',
+                    'material_type': product.material_type if hasattr(product, 'material_type') else '',
+                    'grade': product.grade if hasattr(product, 'grade') else '',
+                    'wire_diameter_mm': product.wire_diameter_mm if hasattr(product, 'wire_diameter_mm') else None,
+                    'thickness_mm': product.thickness_mm if hasattr(product, 'thickness_mm') else None,
+                    'finishing': product.finishing if hasattr(product, 'finishing') else '',
+                    'weight_kg': product.weight_kg if hasattr(product, 'weight_kg') else None,
+                    'material_type_display': product.material_type_display if hasattr(product, 'material_type_display') else ''
+                }
+            }
+            
+            return Response(response_data)
+            
+        except Product.DoesNotExist:
+            return Response(
+                {'error': 'Product not found'}, 
+                status=status.HTTP_404_NOT_FOUND
+            )
 
     @action(detail=False, methods=['get'])
     def supervisors(self, request):
@@ -149,6 +281,16 @@ class ManufacturingOrderViewSet(viewsets.ModelViewSet):
         # You might want to filter by role/permission here
         supervisors = User.objects.filter(is_active=True).order_by('first_name', 'last_name')
         serializer = UserDropdownSerializer(supervisors, many=True)
+        return Response(serializer.data)
+
+    @action(detail=False, methods=['get'])
+    def customers(self, request):
+        """Get customers for dropdown"""
+        from third_party.models import Customer
+        from third_party.serializers import CustomerListSerializer
+        
+        customers = Customer.objects.filter(is_active=True).order_by('name')
+        serializer = CustomerListSerializer(customers, many=True)
         return Response(serializer.data)
 
     @action(detail=True, methods=['get'])
@@ -207,6 +349,244 @@ class ManufacturingOrderViewSet(viewsets.ModelViewSet):
         
         serializer = ManufacturingOrderWithProcessesSerializer(mo)
         return Response(serializer.data)
+
+    @action(detail=True, methods=['patch'])
+    def update_mo_details(self, request, pk=None):
+        """Update MO supervisor and shift (Manager only)"""
+        mo = self.get_object()
+        
+        # Check if user is manager
+        if not request.user.userrole_set.filter(role__name='manager').exists():
+            return Response(
+                {'error': 'Only managers can update MO details'}, 
+                status=status.HTTP_403_FORBIDDEN
+            )
+        
+        # Only allow updates for certain statuses
+        if mo.status not in ['submitted', 'mo_approved']:
+            return Response(
+                {'error': f'Cannot update MO in {mo.status} status'}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        # Update allowed fields
+        allowed_fields = ['assigned_supervisor', 'shift']
+        updated_fields = []
+        
+        for field in allowed_fields:
+            if field in request.data:
+                if field == 'assigned_supervisor':
+                    # Validate supervisor exists and has supervisor role
+                    supervisor_id = request.data[field]
+                    try:
+                        supervisor = User.objects.get(id=supervisor_id)
+                        if not supervisor.userrole_set.filter(role__name='supervisor').exists():
+                            return Response(
+                                {'error': 'Selected user is not a supervisor'}, 
+                                status=status.HTTP_400_BAD_REQUEST
+                            )
+                        mo.assigned_supervisor = supervisor
+                        updated_fields.append(field)
+                    except User.DoesNotExist:
+                        return Response(
+                            {'error': 'Supervisor not found'}, 
+                            status=status.HTTP_400_BAD_REQUEST
+                        )
+                elif field == 'shift':
+                    if request.data[field] in ['I', 'II', 'III']:
+                        mo.shift = request.data[field]
+                        updated_fields.append(field)
+                    else:
+                        return Response(
+                            {'error': 'Invalid shift value'}, 
+                            status=status.HTTP_400_BAD_REQUEST
+                        )
+        
+        if updated_fields:
+            mo.save()
+            
+        serializer = ManufacturingOrderWithProcessesSerializer(mo)
+        return Response({
+            'message': f'Updated fields: {", ".join(updated_fields)}',
+            'mo': serializer.data
+        })
+
+    @action(detail=True, methods=['post'])
+    def approve_mo(self, request, pk=None):
+        """Approve MO and notify supervisor (Manager only)"""
+        mo = self.get_object()
+        
+        # Check if user is manager
+        if not request.user.userrole_set.filter(role__name='manager').exists():
+            return Response(
+                {'error': 'Only managers can approve MOs'}, 
+                status=status.HTTP_403_FORBIDDEN
+            )
+        
+        # Check current status
+        if mo.status != 'submitted':
+            return Response(
+                {'error': f'MO must be in submitted status to approve. Current status: {mo.status}'}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        # Check if supervisor is assigned
+        if not mo.assigned_supervisor:
+            return Response(
+                {'error': 'Cannot approve MO without assigned supervisor'}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        # Update MO status
+        old_status = mo.status
+        mo.status = 'mo_approved'
+        mo.save()
+        
+        # Create status history
+        MOStatusHistory.objects.create(
+            mo=mo,
+            from_status=old_status,
+            to_status='mo_approved',
+            changed_by=request.user,
+            notes=request.data.get('notes', 'MO approved by manager')
+        )
+        
+        # Create notification for supervisor
+        from notifications.models import Alert, AlertRule
+        
+        # Create or get alert rule for MO approval notifications
+        alert_rule, created = AlertRule.objects.get_or_create(
+            name='MO Approval Notification',
+            alert_type='custom',
+            defaults={
+                'trigger_condition': {'event': 'mo_approved'},
+                'notification_methods': ['in_app']
+            }
+        )
+        
+        # Create alert for supervisor
+        Alert.objects.create(
+            alert_rule=alert_rule,
+            title=f'Manufacturing Order {mo.mo_id} Assigned',
+            message=f'Manufacturing Order {mo.mo_id} has been approved and assigned to you. Product: {mo.product_code.product_code}, Quantity: {mo.quantity}',
+            severity='medium',
+            related_object_type='mo',
+            related_object_id=str(mo.id)
+        )
+        
+        # Add supervisor to alert rule recipients if not already added
+        if not alert_rule.recipient_users.filter(id=mo.assigned_supervisor.id).exists():
+            alert_rule.recipient_users.add(mo.assigned_supervisor)
+        
+        serializer = ManufacturingOrderWithProcessesSerializer(mo)
+        return Response({
+            'message': 'MO approved successfully and supervisor notified',
+            'mo': serializer.data
+        })
+
+    @action(detail=False, methods=['get'])
+    def supervisor_dashboard(self, request):
+        """Get MOs assigned to current supervisor"""
+        # Check if user is supervisor
+        if not request.user.userrole_set.filter(role__name='supervisor').exists():
+            return Response(
+                {'error': 'Only supervisors can access this endpoint'}, 
+                status=status.HTTP_403_FORBIDDEN
+            )
+        
+        # Get MOs assigned to this supervisor
+        assigned_mos = self.get_queryset().filter(
+            assigned_supervisor=request.user,
+            status__in=['mo_approved', 'in_progress']
+        ).order_by('-created_at')
+        
+        # Separate by status
+        approved_mos = assigned_mos.filter(status='mo_approved')
+        in_progress_mos = assigned_mos.filter(status='in_progress')
+        
+        # Serialize data
+        approved_serializer = ManufacturingOrderListSerializer(approved_mos, many=True)
+        in_progress_serializer = ManufacturingOrderListSerializer(in_progress_mos, many=True)
+        
+        return Response({
+            'summary': {
+                'total_assigned': assigned_mos.count(),
+                'pending_start': approved_mos.count(),
+                'in_progress': in_progress_mos.count()
+            },
+            'pending_start': approved_serializer.data,
+            'in_progress': in_progress_serializer.data
+        })
+
+    @action(detail=True, methods=['post'])
+    def start_mo(self, request, pk=None):
+        """Start MO (Supervisor only) - moves from mo_approved to in_progress"""
+        mo = self.get_object()
+        
+        # Check if user is supervisor
+        if not request.user.userrole_set.filter(role__name='supervisor').exists():
+            return Response(
+                {'error': 'Only supervisors can start MOs'}, 
+                status=status.HTTP_403_FORBIDDEN
+            )
+        
+        # Check if MO is assigned to this supervisor
+        if mo.assigned_supervisor != request.user:
+            return Response(
+                {'error': 'You can only start MOs assigned to you'}, 
+                status=status.HTTP_403_FORBIDDEN
+            )
+        
+        # Check current status
+        if mo.status != 'mo_approved':
+            return Response(
+                {'error': f'MO must be in mo_approved status to start. Current status: {mo.status}'}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        # Update MO status
+        old_status = mo.status
+        mo.status = 'in_progress'
+        mo.actual_start_date = timezone.now()
+        mo.save()
+        
+        # Create status history
+        MOStatusHistory.objects.create(
+            mo=mo,
+            from_status=old_status,
+            to_status='in_progress',
+            changed_by=request.user,
+            notes=request.data.get('notes', 'MO started by supervisor')
+        )
+        
+        # Initialize processes if not already done
+        from processes.models import BOM
+        if not mo.process_executions.exists():
+            bom_items = BOM.objects.filter(
+                product_code=mo.product_code.product_code,
+                is_active=True
+            ).select_related('process_step__process').distinct('process_step__process')
+            
+            sequence = 1
+            for bom_item in bom_items:
+                process = bom_item.process_step.process
+                
+                MOProcessExecution.objects.get_or_create(
+                    mo=mo,
+                    process=process,
+                    defaults={
+                        'sequence_order': sequence,
+                        'status': 'pending',
+                        'assigned_operator': request.user
+                    }
+                )
+                sequence += 1
+        
+        serializer = ManufacturingOrderWithProcessesSerializer(mo)
+        return Response({
+            'message': 'MO started successfully',
+            'mo': serializer.data
+        })
 
 
 class PurchaseOrderViewSet(viewsets.ModelViewSet):

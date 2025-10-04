@@ -13,6 +13,8 @@ urlpatterns = [
     path('api/inventory/', include('inventory.urls')),
     path('api/manufacturing/', include('manufacturing.urls')),
     path('api/processes/', include('processes.urls')),
+    path('api/third-party/', include('third_party.urls')),
+    path('api/notifications/', include('notifications.urls')),
 ]
 
 # Serve media files during development
