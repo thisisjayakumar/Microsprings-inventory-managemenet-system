@@ -12,22 +12,26 @@ class Command(BaseCommand):
         roles_data = [
             {
                 'name': 'admin',
-                'description': 'System Administrator with full access',
+                'description': 'System Administrator with full access to all operations',
                 'hierarchy_level': 1,
                 'permissions': {
                     'users': ['create', 'read', 'update', 'delete'],
                     'roles': ['create', 'read', 'update', 'delete'],
                     'manufacturing': ['create', 'read', 'update', 'delete'],
+                    'manufacturing_orders': ['create', 'read', 'update', 'delete'],
                     'inventory': ['create', 'read', 'update', 'delete'],
+                    'rawmaterials': ['create', 'read', 'update', 'delete'],
+                    'rmstock': ['create', 'read', 'update', 'delete'],
                     'quality': ['create', 'read', 'update', 'delete'],
                     'reports': ['create', 'read', 'update', 'delete'],
-                    'settings': ['create', 'read', 'update', 'delete']
+                    'settings': ['create', 'read', 'update', 'delete'],
+                    'processes': ['create', 'read', 'update', 'delete']
                 },
                 'restricted_departments': []  # No restrictions
             },
             {
                 'name': 'manager',
-                'description': 'Manager with high limited access - MO Management, Stock, Allocation, Reports, Part Master',
+                'description': 'Manager with high level access - MO Management, Stock, Allocation, Reports, Part Master',
                 'hierarchy_level': 2,
                 'permissions': {
                     'users': ['read', 'update'],
@@ -42,8 +46,24 @@ class Command(BaseCommand):
                 'restricted_departments': []  # Access to all departments
             },
             {
+                'name': 'production_head',
+                'description': 'Production Head with all manager operations plus production oversight',
+                'hierarchy_level': 2,
+                'permissions': {
+                    'users': ['read', 'update'],
+                    'manufacturing_orders': ['create', 'read', 'update', 'delete'],
+                    'inventory': ['read', 'update'],
+                    'stock_allocation': ['create', 'read', 'update', 'delete'],
+                    'part_master': ['create', 'read', 'update', 'delete'],
+                    'reports': ['read'],
+                    'quality': ['read', 'update'],
+                    'processes': ['read', 'update']
+                },
+                'restricted_departments': []  # Access to all departments
+            },
+            {
                 'name': 'supervisor',
-                'description': 'Supervisor with limited access to process-specific tasks only',
+                'description': 'Supervisor with limited access to process-specific tasks',
                 'hierarchy_level': 3,
                 'permissions': {
                     'processes': ['read', 'update'],
@@ -55,29 +75,30 @@ class Command(BaseCommand):
                 'restricted_departments': ['coiling', 'tempering', 'plating', 'packing']
             },
             {
-                'name': 'store_manager',
-                'description': 'Store Manager with department-specific access (RM Store, FG Store)',
+                'name': 'rm_store',
+                'description': 'RM Store with access to processes, inventory management, RM stock, and raw materials',
                 'hierarchy_level': 4,
                 'permissions': {
+                    'processes': ['read', 'update'],
                     'inventory': ['create', 'read', 'update'],
+                    'rawmaterials': ['create', 'read', 'update', 'delete'],
+                    'rmstock': ['create', 'read', 'update', 'delete'],
                     'stock_transactions': ['create', 'read', 'update'],
-                    'purchase_orders': ['read', 'update'],
-                    'dispatch_orders': ['create', 'read', 'update'],
-                    'packaging': ['read', 'update']
+                    'purchase_orders': ['read', 'update']
                 },
-                'restricted_departments': ['rm_store', 'fg_store']
+                'restricted_departments': ['rm_store']
             },
             {
-                'name': 'operator',
-                'description': 'Operator with minimal access for process execution',
+                'name': 'fg_store',
+                'description': 'FG Store with access to process management and finished goods',
                 'hierarchy_level': 5,
                 'permissions': {
-                    'processes': ['read'],
-                    'batches': ['read', 'update'],
-                    'quality_checks': ['read'],
-                    'machine_operations': ['read', 'update']
+                    'processes': ['read', 'update'],
+                    'dispatch_orders': ['create', 'read', 'update'],
+                    'packaging': ['read', 'update'],
+                    'finished_goods': ['create', 'read', 'update']
                 },
-                'restricted_departments': ['coiling', 'tempering', 'plating', 'packing', 'quality']
+                'restricted_departments': ['fg_store']
             }
         ]
         

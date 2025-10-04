@@ -24,7 +24,7 @@ class IsAdminOrManager(BasePermission):
 
 class IsManagerOrAbove(BasePermission):
     """
-    Permission for Manager and above (Admin, Manager)
+    Permission for Manager and above (Admin, Manager, Production Head)
     """
     def has_permission(self, request, view):
         if not request.user or not request.user.is_authenticated:
@@ -38,12 +38,12 @@ class IsManagerOrAbove(BasePermission):
             user_role = active_role.role.name if active_role else None
             cache.set(cache_key, user_role, 300)
         
-        return user_role in ['admin', 'manager']
+        return user_role in ['admin', 'manager', 'production_head']
 
 
 class IsSupervisorOrAbove(BasePermission):
     """
-    Permission for Supervisor and above (Admin, Manager, Supervisor)
+    Permission for Supervisor and above (Admin, Manager, Production Head, Supervisor)
     """
     def has_permission(self, request, view):
         if not request.user or not request.user.is_authenticated:
@@ -57,12 +57,12 @@ class IsSupervisorOrAbove(BasePermission):
             user_role = active_role.role.name if active_role else None
             cache.set(cache_key, user_role, 300)
         
-        return user_role in ['admin', 'manager', 'supervisor']
+        return user_role in ['admin', 'manager', 'production_head', 'supervisor']
 
 
-class IsStoreManagerOrAbove(BasePermission):
+class IsRMStoreOrAbove(BasePermission):
     """
-    Permission for Store Manager and above
+    Permission for RM Store and above
     """
     def has_permission(self, request, view):
         if not request.user or not request.user.is_authenticated:
@@ -76,7 +76,26 @@ class IsStoreManagerOrAbove(BasePermission):
             user_role = active_role.role.name if active_role else None
             cache.set(cache_key, user_role, 300)
         
-        return user_role in ['admin', 'manager', 'supervisor', 'store_manager']
+        return user_role in ['admin', 'manager', 'production_head', 'supervisor', 'rm_store']
+
+
+class IsFGStoreOrAbove(BasePermission):
+    """
+    Permission for FG Store and above
+    """
+    def has_permission(self, request, view):
+        if not request.user or not request.user.is_authenticated:
+            return False
+        
+        cache_key = f'user_role_{request.user.id}'
+        user_role = cache.get(cache_key)
+        
+        if not user_role:
+            active_role = request.user.user_roles.filter(is_active=True).select_related('role').first()
+            user_role = active_role.role.name if active_role else None
+            cache.set(cache_key, user_role, 300)
+        
+        return user_role in ['admin', 'manager', 'production_head', 'supervisor', 'fg_store']
 
 
 class DepartmentAccessPermission(BasePermission):
@@ -102,8 +121,8 @@ class DepartmentAccessPermission(BasePermission):
         if not active_role:
             return False
         
-        # Admin and Manager have access to all departments
-        if active_role.role.name in ['admin', 'manager']:
+        # Admin, Manager, and Production Head have access to all departments
+        if active_role.role.name in ['admin', 'manager', 'production_head']:
             return True
         
         # Check if role can access the requested department
@@ -118,9 +137,9 @@ class ProcessSupervisorPermission(BasePermission):
         if not request.user or not request.user.is_authenticated:
             return False
         
-        # Admin and Manager have full access
+        # Admin, Manager, and Production Head have full access
         active_role = request.user.user_roles.filter(is_active=True).select_related('role').first()
-        if active_role and active_role.role.name in ['admin', 'manager']:
+        if active_role and active_role.role.name in ['admin', 'manager', 'production_head']:
             return True
         
         # Check if user is a supervisor with process assignments
@@ -176,12 +195,12 @@ class OperatorEngagementPermission(BasePermission):
         if not request.user or not request.user.is_authenticated:
             return False
         
-        # Admin and Manager can always manage engagements
+        # Admin, Manager, and Production Head can always manage engagements
         active_role = request.user.user_roles.filter(is_active=True).select_related('role').first()
-        if active_role and active_role.role.name in ['admin', 'manager']:
+        if active_role and active_role.role.name in ['admin', 'manager', 'production_head']:
             return True
         
-        # Supervisors can manage operators in their department
+        # Supervisors can manage in their department
         if active_role and active_role.role.name == 'supervisor':
             return request.user.process_supervisor_assignments.filter(is_active=True).exists()
         
@@ -196,9 +215,9 @@ class ShiftBasedPermission(BasePermission):
         if not request.user or not request.user.is_authenticated:
             return False
         
-        # Admin and Manager have access anytime
+        # Admin, Manager, and Production Head have access anytime
         active_role = request.user.user_roles.filter(is_active=True).select_related('role').first()
-        if active_role and active_role.role.name in ['admin', 'manager']:
+        if active_role and active_role.role.name in ['admin', 'manager', 'production_head']:
             return True
         
         # Check if user is in their assigned shift
@@ -288,3 +307,39 @@ class SupervisorOnlyPermission(MSPERPBasePermission):
         
         active_role = request.user.user_roles.filter(is_active=True).select_related('role').first()
         return active_role and active_role.role.name == 'supervisor'
+
+
+class ProductionHeadPermission(MSPERPBasePermission):
+    """
+    Production Head permission with base restrictions
+    """
+    def has_permission(self, request, view):
+        if not super().has_permission(request, view):
+            return False
+        
+        active_role = request.user.user_roles.filter(is_active=True).select_related('role').first()
+        return active_role and active_role.role.name == 'production_head'
+
+
+class RMStorePermission(MSPERPBasePermission):
+    """
+    RM Store permission with base restrictions
+    """
+    def has_permission(self, request, view):
+        if not super().has_permission(request, view):
+            return False
+        
+        active_role = request.user.user_roles.filter(is_active=True).select_related('role').first()
+        return active_role and active_role.role.name == 'rm_store'
+
+
+class FGStorePermission(MSPERPBasePermission):
+    """
+    FG Store permission with base restrictions
+    """
+    def has_permission(self, request, view):
+        if not super().has_permission(request, view):
+            return False
+        
+        active_role = request.user.user_roles.filter(is_active=True).select_related('role').first()
+        return active_role and active_role.role.name == 'fg_store'

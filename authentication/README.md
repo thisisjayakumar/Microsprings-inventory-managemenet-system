@@ -13,15 +13,16 @@ The authentication module provides comprehensive user management, role-based acc
 - Session tracking and management
 
 ### 👥 Hierarchical Role System
-- **Admin**: Full system access
+- **Admin**: Full system access to all operations
 - **Manager**: MO Management, Stock, Allocation, Reports, Part Master
+- **Production Head**: All manager operations plus production oversight
 - **Supervisor**: Process-specific tasks only
-- **Store Manager**: Department-specific access (RM Store, FG Store)
-- **Operator**: Minimal access for process execution
+- **RM Store**: Process management, inventory, raw materials, and RM stock management
+- **FG Store**: Process management and finished goods operations
 
 ### 🏭 Manufacturing-Specific Features
 - Process supervisor assignments
-- Operator engagement tracking (prevents double assignment)
+- Worker engagement tracking (prevents double assignment)
 - Department-based access control
 - Shift-based time restrictions
 
@@ -51,7 +52,7 @@ Employee-specific information:
 
 ### Role
 Hierarchical role system:
-- `name` (admin, manager, supervisor, store_manager, operator)
+- `name` (admin, manager, production_head, supervisor, rm_store, fg_store)
 - `hierarchy_level` (1=highest authority)
 - `permissions` (JSON field with module-specific permissions)
 - `restricted_departments` (department access control)
@@ -135,15 +136,16 @@ GET  /api/auth/login-sessions/            # Login session tracking
 
 ### Role-Based Permissions
 - `IsAdminOrManager`: Admin or Manager only
-- `IsManagerOrAbove`: Manager and above
-- `IsSupervisorOrAbove`: Supervisor and above
-- `IsStoreManagerOrAbove`: Store Manager and above
+- `IsManagerOrAbove`: Manager and above (Admin, Manager, Production Head)
+- `IsSupervisorOrAbove`: Supervisor and above (Admin, Manager, Production Head, Supervisor)
+- `IsRMStoreOrAbove`: RM Store and above
+- `IsFGStoreOrAbove`: FG Store and above
 
 ### Specialized Permissions
 - `DepartmentAccessPermission`: Department-specific access
 - `ProcessSupervisorPermission`: Process supervisor access
 - `NetworkRestrictionPermission`: IP-based restrictions
-- `OperatorEngagementPermission`: Operator management
+- `OperatorEngagementPermission`: Worker management
 - `ShiftBasedPermission`: Shift time restrictions
 
 ## Middleware
@@ -154,7 +156,7 @@ GET  /api/auth/login-sessions/            # Login session tracking
 3. **SessionTrackingMiddleware**: Tracks user sessions
 4. **RoleBasedAccessMiddleware**: Adds role info to requests
 5. **DepartmentAccessMiddleware**: Department access control
-6. **OperatorEngagementMiddleware**: Operator conflict prevention
+6. **OperatorEngagementMiddleware**: Worker conflict prevention
 7. **APIRateLimitMiddleware**: Rate limiting (1000 req/hour)
 
 ## Management Commands

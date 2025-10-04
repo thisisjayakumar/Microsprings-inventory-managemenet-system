@@ -4,7 +4,7 @@ from django.core.cache import cache
 
 class IsManagerOrReadOnly(BasePermission):
     """
-    Custom permission to only allow managers to create/edit manufacturing orders and purchase orders.
+    Custom permission to only allow managers and production heads to create/edit manufacturing orders and purchase orders.
     Other authenticated users can only view.
     """
     
@@ -17,8 +17,9 @@ class IsManagerOrReadOnly(BasePermission):
         if request.method in ['GET', 'HEAD', 'OPTIONS']:
             return True
         
-        # Write permissions only for managers
-        return self._get_user_role(request.user) == 'manager'
+        # Write permissions for managers and production heads
+        user_role = self._get_user_role(request.user)
+        return user_role in ['admin', 'manager', 'production_head']
     
     def _get_user_role(self, user):
         """Get user role with caching"""
@@ -35,7 +36,7 @@ class IsManagerOrReadOnly(BasePermission):
 
 class IsManager(BasePermission):
     """
-    Custom permission to only allow managers to access the view.
+    Custom permission to only allow managers and production heads to access the view.
     """
     
     def has_permission(self, request, view):
@@ -43,8 +44,9 @@ class IsManager(BasePermission):
         if not request.user or not request.user.is_authenticated:
             return False
         
-        # Check if user is a manager
-        return self._get_user_role(request.user) == 'manager'
+        # Check if user is a manager or production head
+        user_role = self._get_user_role(request.user)
+        return user_role in ['admin', 'manager', 'production_head']
     
     def _get_user_role(self, user):
         """Get user role with caching"""
@@ -61,7 +63,7 @@ class IsManager(BasePermission):
 
 class IsManagerOrSupervisor(BasePermission):
     """
-    Custom permission to allow managers and supervisors to access the view.
+    Custom permission to allow managers, production heads, and supervisors to access the view.
     """
     
     def has_permission(self, request, view):
@@ -69,9 +71,9 @@ class IsManagerOrSupervisor(BasePermission):
         if not request.user or not request.user.is_authenticated:
             return False
         
-        # Check if user is a manager or supervisor
+        # Check if user is a manager, production head, or supervisor
         user_role = self._get_user_role(request.user)
-        return user_role in ['manager', 'supervisor']
+        return user_role in ['admin', 'manager', 'production_head', 'supervisor']
     
     def _get_user_role(self, user):
         """Get user role with caching"""
