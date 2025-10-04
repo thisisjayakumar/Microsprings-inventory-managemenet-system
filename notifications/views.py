@@ -29,7 +29,7 @@ class AlertViewSet(viewsets.ModelViewSet):
         user_alerts = Alert.objects.filter(alert_rule__recipient_users=user)
         
         # Get alerts for user's roles
-        user_roles = user.userrole_set.values_list('role', flat=True)
+        user_roles = user.user_roles.values_list('role', flat=True)
         role_alerts = Alert.objects.filter(alert_rule__recipient_roles__in=user_roles)
         
         # Combine and return unique alerts
@@ -101,7 +101,7 @@ class AlertRuleViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         """Only allow managers to view/edit alert rules"""
-        if self.request.user.userrole_set.filter(role__name='manager').exists():
+        if self.request.user.user_roles.filter(role__name='manager').exists():
             return AlertRule.objects.all()
         return AlertRule.objects.none()
 

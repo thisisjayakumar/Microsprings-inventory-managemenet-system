@@ -38,7 +38,7 @@ class ProcessStep(models.Model):
     Defines the sequence of process steps for manufacturing
     """
     step_name = models.CharField(max_length=100)
-    step_code = models.CharField(max_length=50, unique=True)
+    step_code = models.CharField(max_length=255, unique=True)
     process = models.ForeignKey(Process, on_delete=models.CASCADE, related_name='process_steps')
     subprocess = models.ForeignKey(
         SubProcess, 

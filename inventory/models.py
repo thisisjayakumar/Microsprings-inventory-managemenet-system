@@ -222,16 +222,16 @@ class InventoryTransaction(models.Model):
 
 class RMStockBalance(models.Model):
     """
-    Current stock levels - calculated/cached view
+    Current stock levels for raw materials
     """
-    product = models.ForeignKey('products.Product', on_delete=models.CASCADE, related_name='stock_balances')
-    available_quantity = models.IntegerField() 
+    raw_material = models.ForeignKey(RawMaterial, on_delete=models.CASCADE, related_name='stock_balances', null=True, blank=True)
+    available_quantity = models.DecimalField(max_digits=10, decimal_places=3, help_text="Available quantity in KG or pieces")
     last_updated = models.DateTimeField(auto_now=True)
 
     class Meta:
-        unique_together = ['product']
-        verbose_name = 'Inventory Stock Balance'
-        verbose_name_plural = 'Inventory Stock Balances'
+        unique_together = ['raw_material']
+        verbose_name = 'RM Stock Balance'
+        verbose_name_plural = 'RM Stock Balances'
 
     def __str__(self):
-        return f"{self.product.internal_product_code} @ {self.available_quantity}"
+        return f"{self.raw_material.material_code} - {self.available_quantity}"

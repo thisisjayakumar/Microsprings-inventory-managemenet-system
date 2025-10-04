@@ -210,7 +210,7 @@ class ManufacturingOrderDetailSerializer(serializers.ModelSerializer):
         validated_data.update({
             'product_code': product,
             'assigned_supervisor': supervisor,
-            'customer': customer,
+            'customer_c_id': customer,
             'customer_name': customer.name if customer else validated_data.get('customer_name', ''),
             'product_type': product.get_product_type_display() if product.product_type else '',
             'material_name': product.material_name or '',

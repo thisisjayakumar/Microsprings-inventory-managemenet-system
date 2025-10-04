@@ -12,11 +12,19 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 
 from pathlib import Path
 from datetime import timedelta
-from decouple import config
+from decouple import Config, RepositoryEnv
 import os
+
+# Use PyMySQL as MySQL driver (better cloud MySQL compatibility)
+import pymysql
+pymysql.install_as_MySQLdb()
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
+
+# Load environment variables from .env file in BASE_DIR
+DOTENV_FILE = BASE_DIR / '.env'
+config = Config(RepositoryEnv(DOTENV_FILE)) if DOTENV_FILE.exists() else Config()
 
 
 # Quick-start development settings - unsuitable for production
@@ -26,9 +34,9 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-q!$qa5=thav+3cn0z+syuff00pdbymg5qnfdi85%+yee=a1w7&')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = config('DEBUG', default=True, cast=bool)
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='localhost,127.0.0.1', cast=lambda v: [s.strip() for s in v.split(',')])
 
 
 # Application definition
@@ -65,6 +73,9 @@ INSTALLED_APPS = [
     
     # Phase 4: Analytics & Integration
     'reporting',           # Reports, analytics, business intelligence
+
+    #DB Sync and Backup
+    'microsprings_inventory_system.sync_system',
 ]
 
 MIDDLEWARE = [
@@ -111,14 +122,41 @@ WSGI_APPLICATION = 'microsprings_inventory_system.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
+# MySQL Database Configuration
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'ENGINE': config('DATABASE_ENGINE', default='django.db.backends.mysql'),
+        'NAME': config('DATABASE_NAME', default='microsprings_db'),
+        'USER': config('DATABASE_USER', default='root'),
+        'PASSWORD': config('DATABASE_PASSWORD', default=''),
+        'HOST': config('DATABASE_HOST', default='localhost'),
+        'PORT': config('DATABASE_PORT', default='3306', cast=int),
+        'OPTIONS': {
+            'init_command': config('DATABASE_OPTIONS_INIT_COMMAND', default="SET sql_mode='STRICT_TRANS_TABLES'"),
+            'charset': config('DATABASE_OPTIONS_CHARSET', default='utf8mb4'),
+        },
+        'CONN_MAX_AGE': config('DATABASE_CONN_MAX_AGE', default=600, cast=int),  # Connection pooling
+    },
+    'remote': {  # Remote cloud database
+        'ENGINE': config('REMOTE_DATABASE_ENGINE', default='django.db.backends.mysql'),
+        'NAME': config('REMOTE_DATABASE_NAME', default='msp_erp_db'),
+        'USER': config('REMOTE_DATABASE_USER', default='root'),
+        'PASSWORD': config('REMOTE_DATABASE_PASSWORD', default=''),
+        'HOST': config('REMOTE_DATABASE_HOST', default='localhost'),
+        'PORT': config('REMOTE_DATABASE_PORT', default='3306', cast=int),
+        'OPTIONS': {
+            'init_command': config('REMOTE_DATABASE_OPTIONS_INIT_COMMAND', default="SET sql_mode='STRICT_TRANS_TABLES'"),
+            'charset': config('REMOTE_DATABASE_OPTIONS_CHARSET', default='utf8mb4'),
+        },
+        'CONN_MAX_AGE': config('REMOTE_DATABASE_CONN_MAX_AGE', default=600, cast=int),  # Connection pooling
     }
 }
 
+# Database Routing
+DATABASE_ROUTERS = ['microsprings_inventory_system.sync_system.routers.SyncRouter']
 
+ENABLE_DB_SYNC = True
+SYNC_BATCH_SIZE = 50
 # Password validation
 # https://docs.djangoproject.com/en/5.2/ref/settings/#auth-password-validators
 
@@ -143,7 +181,7 @@ AUTH_PASSWORD_VALIDATORS = [
 
 LANGUAGE_CODE = 'en-us'
 
-TIME_ZONE = 'UTC'
+TIME_ZONE = 'Asia/Kolkata'
 
 USE_I18N = True
 
@@ -240,20 +278,16 @@ CACHES = {
 # MSP-ERP Specific Settings
 MSP_ERP_SETTINGS = {
     # Network Security
-    'ENFORCE_NETWORK_RESTRICTIONS': True,
+    'ENFORCE_NETWORK_RESTRICTIONS': False,
     'DEFAULT_IP_RANGES': ['192.168.0.0/16', '10.0.0.0/8'],
     
     # Shift Management
-    'ENFORCE_SHIFT_RESTRICTIONS': True,
+    'ENFORCE_SHIFT_RESTRICTIONS': False,
     'SHIFT_TIMES': {
         'I': {'start': '09:00', 'end': '17:00'},
         'II': {'start': '17:00', 'end': '02:00'},
         'III': {'start': '02:00', 'end': '09:00'},
     },
-    
-    # Operator Management
-    'PREVENT_DOUBLE_ASSIGNMENT': True,
-    'MAX_ENGAGEMENT_HOURS': 8,
     
     # Session Management
     'MAX_CONCURRENT_SESSIONS': 1,

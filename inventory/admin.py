@@ -143,16 +143,17 @@ class InventoryTransactionAdmin(admin.ModelAdmin):
 @admin.register(RMStockBalance)
 class RMStockBalanceAdmin(admin.ModelAdmin):
     list_display = (
-        'product', 'available_quantity', 'get_stock_status', 'last_updated'
+        'raw_material', 'available_quantity', 'get_stock_status', 'last_updated'
     )
     list_filter = ('last_updated',)
-    search_fields = ('product__product_code',)
+    search_fields = ('raw_material__material_code',)
     ordering = ('-last_updated',)
+    raw_id_fields = ('raw_material',)
     readonly_fields = ('last_updated',)
     
     fieldsets = (
-        ('Product Information', {
-            'fields': ('product',)
+        ('Raw Material', {
+            'fields': ('raw_material',)
         }),
         ('Stock Levels', {
             'fields': ('available_quantity',)
@@ -183,7 +184,7 @@ class RMStockBalanceAdmin(admin.ModelAdmin):
     get_stock_status.short_description = 'Stock Status'
     
     def get_queryset(self, request):
-        return super().get_queryset(request).select_related('product')
+        return super().get_queryset(request).select_related('raw_material')
 
 
 # Custom admin site configuration

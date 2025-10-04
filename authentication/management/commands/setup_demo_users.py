@@ -22,24 +22,41 @@ class Command(BaseCommand):
         
         self.stdout.write(f'Creating {count} demo users...')
         
-        # Demo user templates
+        # Demo user templates based on role hierarchy
         user_templates = [
-            # Managers
+            # Admin (Hierarchy Level 0)
+            {
+                'role': 'admin',
+                'department': 'admin',
+                'users': [
+                    ('John', 'Admin', 'john.admin@microsprings.com', 'ADM001'),
+                ]
+            },
+            # Manager (Hierarchy Level 1)
             {
                 'role': 'manager',
                 'department': 'admin',
                 'users': [
-                    ('John', 'Manager', 'john.manager@microsprings.com', 'MGR001'),
-                    ('Sarah', 'Wilson', 'sarah.wilson@microsprings.com', 'MGR002'),
+                    ('Sarah', 'Wilson', 'sarah.manager@microsprings.com', 'MGR001'),
+                    ('Robert', 'Kumar', 'robert.kumar@microsprings.com', 'MGR002'),
                 ]
             },
-            # Supervisors
+            # Production Head (Hierarchy Level 2)
+            {
+                'role': 'production_head',
+                'department': 'admin',
+                'users': [
+                    ('Michael', 'Chen', 'michael.production@microsprings.com', 'PH001'),
+                    ('Lisa', 'Anderson', 'lisa.production@microsprings.com', 'PH002'),
+                ]
+            },
+            # Supervisors (Hierarchy Level 3)
             {
                 'role': 'supervisor',
                 'department': 'coiling',
                 'users': [
                     ('Mike', 'Supervisor', 'mike.coiling@microsprings.com', 'SUP001'),
-                    ('Lisa', 'Chen', 'lisa.chen@microsprings.com', 'SUP002'),
+                    ('Anna', 'Martinez', 'anna.coiling@microsprings.com', 'SUP002'),
                 ]
             },
             {
@@ -53,73 +70,59 @@ class Command(BaseCommand):
                 'role': 'supervisor',
                 'department': 'plating',
                 'users': [
-                    ('Anna', 'Johnson', 'anna.plating@microsprings.com', 'SUP004'),
+                    ('Jennifer', 'Johnson', 'jennifer.plating@microsprings.com', 'SUP004'),
                 ]
             },
             {
                 'role': 'supervisor',
                 'department': 'packing',
                 'users': [
-                    ('Robert', 'Brown', 'robert.packing@microsprings.com', 'SUP005'),
+                    ('James', 'Brown', 'james.packing@microsprings.com', 'SUP005'),
                 ]
             },
-            # Store Managers
             {
-                'role': 'store_manager',
+                'role': 'supervisor',
+                'department': 'quality',
+                'users': [
+                    ('Emily', 'Davis', 'emily.quality@microsprings.com', 'SUP006'),
+                ]
+            },
+            # RM Store Staff (Hierarchy Level 4)
+            {
+                'role': 'rm_store',
                 'department': 'rm_store',
                 'users': [
-                    ('Emily', 'Davis', 'emily.rmstore@microsprings.com', 'STM001'),
+                    ('Tom', 'Williams', 'tom.rmstore@microsprings.com', 'RMS001'),
+                    ('Maria', 'Garcia', 'maria.rmstore@microsprings.com', 'RMS002'),
                 ]
             },
+            # FG Store Staff (Hierarchy Level 5) - Operators
             {
-                'role': 'store_manager',
-                'department': 'fg_store',
-                'users': [
-                    ('James', 'Miller', 'james.fgstore@microsprings.com', 'STM002'),
-                ]
-            },
-            # Operators
-            {
-                'role': 'operator',
-                'department': 'coiling',
-                'users': [
-                    ('Tom', 'Anderson', 'tom.coiling@microsprings.com', 'OP001'),
-                    ('Maria', 'Garcia', 'maria.coiling@microsprings.com', 'OP002'),
-                    ('Chris', 'Taylor', 'chris.coiling@microsprings.com', 'OP003'),
-                ]
-            },
-            {
-                'role': 'operator',
-                'department': 'tempering',
-                'users': [
-                    ('Jennifer', 'White', 'jennifer.tempering@microsprings.com', 'OP004'),
-                    ('Michael', 'Lee', 'michael.tempering@microsprings.com', 'OP005'),
-                ]
-            },
-            {
-                'role': 'operator',
-                'department': 'plating',
-                'users': [
-                    ('Jessica', 'Martinez', 'jessica.plating@microsprings.com', 'OP006'),
-                    ('Daniel', 'Wilson', 'daniel.plating@microsprings.com', 'OP007'),
-                ]
-            },
-            {
-                'role': 'operator',
+                'role': 'fg_store',
                 'department': 'packing',
                 'users': [
-                    ('Ashley', 'Moore', 'ashley.packing@microsprings.com', 'OP008'),
-                    ('Ryan', 'Jackson', 'ryan.packing@microsprings.com', 'OP009'),
+                    ('Michelle', 'Thomas', 'michelle.packing@microsprings.com', 'OP008'),
+                    ('Brandon', 'Harris', 'brandon.packing@microsprings.com', 'OP009'),
+                ]
+            },
+            {
+                'role': 'fg_store',
+                'department': 'fg_store',
+                'users': [
+                    ('Nicole', 'Clark', 'nicole.fgstore@microsprings.com', 'FGS001'),
+                    ('Steven', 'Lewis', 'steven.fgstore@microsprings.com', 'FGS002'),
                 ]
             },
         ]
         
         shifts = ['I', 'II', 'III']
         designations = {
-            'manager': 'Production Manager',
+            'admin': 'System Administrator',
+            'manager': 'General Manager',
+            'production_head': 'Production Head',
             'supervisor': 'Process Supervisor',
-            'store_manager': 'Store Manager',
-            'operator': 'Machine Operator'
+            'rm_store': 'Raw Material Store Keeper',
+            'fg_store': 'Finished Goods Store Keeper / Operator'
         }
         
         created_count = 0
@@ -162,7 +165,7 @@ class Command(BaseCommand):
                             employee_id=emp_id,
                             designation=designations[role_name],
                             department=department,
-                            shift=random.choice(shifts) if role_name == 'operator' else None,
+                            shift=random.choice(shifts) if role_name == 'fg_store' else None,
                             date_of_joining=date.today() - timedelta(days=random.randint(30, 365)),
                             phone_number=f'+1-555-{random.randint(1000, 9999)}',
                             is_active=True

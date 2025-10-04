@@ -5,6 +5,7 @@ from django.db import transaction
 from processes.models import Process, SubProcess, ProcessStep, BOM
 from products.models import Product
 from inventory.models import RawMaterial
+from third_party.models import Customer
 
 
 class Command(BaseCommand):
@@ -44,13 +45,14 @@ class Command(BaseCommand):
                         # Extract product information
                         product_type = row.get("Product_Type", "").strip()
                         material_code = row.get("Material_Code", "").strip()
+                        cust_id = row.get("Cust_ID", "").strip()
                         
                         # Map product type - stamp products are press components
                         mapped_product_type = "press_component" if product_type.lower() == "press component" else "press_component"
                         
                         self.stdout.write(
                             f"[{'DRY' if dry_run else 'SAVE'}] Row {row_num}: Processing Product={product_code}, "
-                            f"Type={mapped_product_type}, Material={material_code}"
+                            f"Type={mapped_product_type}, Material={material_code}, Customer={cust_id}"
                         )
 
                         if not dry_run:
@@ -77,6 +79,19 @@ class Command(BaseCommand):
                                 skipped_rows += 1
                                 continue
 
+                            # Try to find the customer
+                            customer = None
+                            if cust_id:
+                                try:
+                                    customer = Customer.objects.get(c_id=cust_id)
+                                except Customer.DoesNotExist:
+                                    self.stdout.write(
+                                        self.style.WARNING(
+                                            f"Row {row_num}: Customer with c_id '{cust_id}' not found. "
+                                            f"Product will be created without customer link."
+                                        )
+                                    )
+
                             # Create or update product
                             product, product_created = Product.objects.update_or_create(
                                 product_code=product_code,
@@ -84,6 +99,7 @@ class Command(BaseCommand):
                                     "product_type": mapped_product_type,
                                     "spring_type": "tension",  # Default for press components
                                     "material": material,
+                                    "customer_c_id": customer,
                                     "internal_product_code": row.get("IPC_Code", "").strip() or None,
                                 }
                             )

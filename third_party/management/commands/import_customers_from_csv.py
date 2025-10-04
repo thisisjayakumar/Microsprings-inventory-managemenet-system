@@ -112,7 +112,7 @@ class Command(BaseCommand):
                         
                         # Extract data from CSV row
                         s_no = row[0].strip() if row[0] else ''
-                        customer_name = row[1].strip() if row[1] else ''
+                        customer_name = row[0].strip() if row[1] else ''
                         industry_type_raw = row[2].strip() if row[2] else ''
                         gst_no = row[3].strip() if row[3] else ''
                         address = row[4].strip() if row[4] else ''
@@ -120,7 +120,7 @@ class Command(BaseCommand):
                         designation = row[6].strip() if row[6] else ''
                         contact_no = row[7].strip() if row[7] else ''
                         email_id = row[8].strip() if row[8] else ''
-                        cust_id = row[9].strip() if row[9] else ''
+                        cust_id = row[1].strip() if row[9] else ''
                         
                         # Skip rows without customer name
                         if not customer_name:
@@ -211,10 +211,21 @@ class Command(BaseCommand):
                                     error_count += 1
                                     continue
                             
-                            # Check if customer already exists by name
+                            # Check if customer already exists by name OR GST number
+                            existing_customer = None
+                            
+                            # Try to find by name first
                             try:
                                 existing_customer = Customer.objects.get(name=customer_name)
-                                
+                            except Customer.DoesNotExist:
+                                # If not found by name and GST is provided, try by GST
+                                if gst_no:
+                                    try:
+                                        existing_customer = Customer.objects.get(gst_no=gst_no)
+                                    except Customer.DoesNotExist:
+                                        pass
+                            
+                            if existing_customer:
                                 # Update existing customer
                                 for field, value in customer_data.items():
                                     if field not in ['name', 'created_by']:  # Don't update name and created_by
@@ -225,8 +236,7 @@ class Command(BaseCommand):
                                 self.stdout.write(
                                     self.style.WARNING(f'Row {row_num}: Updated - {customer_name}{c_id_info}')
                                 )
-                                
-                            except Customer.DoesNotExist:
+                            else:
                                 # Create new customer
                                 try:
                                     customer = Customer.objects.create(**customer_data)

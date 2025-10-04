@@ -355,15 +355,16 @@ class ManufacturingOrderViewSet(viewsets.ModelViewSet):
         """Update MO supervisor and shift (Manager only)"""
         mo = self.get_object()
         
-        # Check if user is manager
-        if not request.user.userrole_set.filter(role__name='manager').exists():
+        # Check if user is manager or production_head
+        user_roles = request.user.user_roles.values_list('role__name', flat=True)
+        if not any(role in ['manager', 'production_head'] for role in user_roles):
             return Response(
-                {'error': 'Only managers can update MO details'}, 
+                {'error': 'Only managers or production heads can update MO details'}, 
                 status=status.HTTP_403_FORBIDDEN
             )
         
         # Only allow updates for certain statuses
-        if mo.status not in ['submitted', 'mo_approved']:
+        if mo.status not in ['submitted', 'gm_approved', 'mo_approved', 'on_hold', 'rm_allocated']:
             return Response(
                 {'error': f'Cannot update MO in {mo.status} status'}, 
                 status=status.HTTP_400_BAD_REQUEST
@@ -378,23 +379,34 @@ class ManufacturingOrderViewSet(viewsets.ModelViewSet):
                 if field == 'assigned_supervisor':
                     # Validate supervisor exists and has supervisor role
                     supervisor_id = request.data[field]
-                    try:
-                        supervisor = User.objects.get(id=supervisor_id)
-                        if not supervisor.userrole_set.filter(role__name='supervisor').exists():
+                    
+                    # Handle empty string or None (clearing the supervisor)
+                    if not supervisor_id or supervisor_id == '':
+                        mo.assigned_supervisor = None
+                        updated_fields.append(field)
+                    else:
+                        try:
+                            supervisor = User.objects.get(id=supervisor_id)
+                            if not supervisor.user_roles.filter(role__name='supervisor').exists():
+                                return Response(
+                                    {'error': 'Selected user is not a supervisor'}, 
+                                    status=status.HTTP_400_BAD_REQUEST
+                                )
+                            mo.assigned_supervisor = supervisor
+                            updated_fields.append(field)
+                        except User.DoesNotExist:
                             return Response(
-                                {'error': 'Selected user is not a supervisor'}, 
+                                {'error': 'Supervisor not found'}, 
                                 status=status.HTTP_400_BAD_REQUEST
                             )
-                        mo.assigned_supervisor = supervisor
-                        updated_fields.append(field)
-                    except User.DoesNotExist:
-                        return Response(
-                            {'error': 'Supervisor not found'}, 
-                            status=status.HTTP_400_BAD_REQUEST
-                        )
                 elif field == 'shift':
-                    if request.data[field] in ['I', 'II', 'III']:
-                        mo.shift = request.data[field]
+                    shift_value = request.data[field]
+                    # Handle empty string or None (clearing the shift)
+                    if not shift_value or shift_value == '':
+                        mo.shift = None
+                        updated_fields.append(field)
+                    elif shift_value in ['I', 'II', 'III']:
+                        mo.shift = shift_value
                         updated_fields.append(field)
                     else:
                         return Response(
@@ -404,6 +416,29 @@ class ManufacturingOrderViewSet(viewsets.ModelViewSet):
         
         if updated_fields:
             mo.save()
+            
+            # Create notification if supervisor was assigned
+            if 'assigned_supervisor' in updated_fields and mo.assigned_supervisor:
+                from notifications.models import Alert, AlertRule
+                
+                # Create or get alert rule for MO assignments
+                alert_rule, _ = AlertRule.objects.get_or_create(
+                    name='MO Assignment',
+                    alert_type='custom',
+                    defaults={'trigger_condition': {}, 'notification_methods': ['in_app']}
+                )
+                
+                # Create alert for supervisor
+                Alert.objects.create(
+                    alert_rule=alert_rule,
+                    title=f'{mo.mo_id} is assigned to you',
+                    message=f'Manufacturing Order {mo.mo_id} has been assigned to you. Product: {mo.product_code.display_name}, Quantity: {mo.quantity}',
+                    severity='medium',
+                    related_object_type='mo',
+                    related_object_id=str(mo.id),
+                    status='active'
+                )
+                alert_rule.recipient_users.add(mo.assigned_supervisor)
             
         serializer = ManufacturingOrderWithProcessesSerializer(mo)
         return Response({
@@ -416,17 +451,18 @@ class ManufacturingOrderViewSet(viewsets.ModelViewSet):
         """Approve MO and notify supervisor (Manager only)"""
         mo = self.get_object()
         
-        # Check if user is manager
-        if not request.user.userrole_set.filter(role__name='manager').exists():
+        # Check if user is manager or production_head
+        user_roles = request.user.user_roles.values_list('role__name', flat=True)
+        if not any(role in ['manager', 'production_head'] for role in user_roles):
             return Response(
-                {'error': 'Only managers can approve MOs'}, 
+                {'error': 'Only managers or production heads can approve MOs'}, 
                 status=status.HTTP_403_FORBIDDEN
             )
         
         # Check current status
-        if mo.status != 'submitted':
+        if mo.status not in ['submitted', 'on_hold', 'gm_approved']:
             return Response(
-                {'error': f'MO must be in submitted status to approve. Current status: {mo.status}'}, 
+                {'error': f'Cannot approve MO in {mo.status} status'}, 
                 status=status.HTTP_400_BAD_REQUEST
             )
         
@@ -488,7 +524,7 @@ class ManufacturingOrderViewSet(viewsets.ModelViewSet):
     def supervisor_dashboard(self, request):
         """Get MOs assigned to current supervisor"""
         # Check if user is supervisor
-        if not request.user.userrole_set.filter(role__name='supervisor').exists():
+        if not request.user.user_roles.filter(role__name='supervisor').exists():
             return Response(
                 {'error': 'Only supervisors can access this endpoint'}, 
                 status=status.HTTP_403_FORBIDDEN
@@ -497,11 +533,11 @@ class ManufacturingOrderViewSet(viewsets.ModelViewSet):
         # Get MOs assigned to this supervisor
         assigned_mos = self.get_queryset().filter(
             assigned_supervisor=request.user,
-            status__in=['mo_approved', 'in_progress']
+            status__in=['gm_approved', 'mo_approved', 'rm_allocated', 'in_progress', 'on_hold']
         ).order_by('-created_at')
         
         # Separate by status
-        approved_mos = assigned_mos.filter(status='mo_approved')
+        approved_mos = assigned_mos.exclude(status='in_progress')
         in_progress_mos = assigned_mos.filter(status='in_progress')
         
         # Serialize data
@@ -524,7 +560,7 @@ class ManufacturingOrderViewSet(viewsets.ModelViewSet):
         mo = self.get_object()
         
         # Check if user is supervisor
-        if not request.user.userrole_set.filter(role__name='supervisor').exists():
+        if not request.user.user_roles.filter(role__name='supervisor').exists():
             return Response(
                 {'error': 'Only supervisors can start MOs'}, 
                 status=status.HTTP_403_FORBIDDEN
@@ -538,9 +574,9 @@ class ManufacturingOrderViewSet(viewsets.ModelViewSet):
             )
         
         # Check current status
-        if mo.status != 'mo_approved':
+        if mo.status not in ['mo_approved', 'gm_approved', 'rm_allocated', 'on_hold']:
             return Response(
-                {'error': f'MO must be in mo_approved status to start. Current status: {mo.status}'}, 
+                {'error': f'Cannot start MO in {mo.status} status'}, 
                 status=status.HTTP_400_BAD_REQUEST
             )
         
