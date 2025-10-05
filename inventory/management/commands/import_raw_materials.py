@@ -1,11 +1,11 @@
-# inventory/management/commands/import_raw_materials.py
 import csv
+from decimal import Decimal, InvalidOperation
 from django.core.management.base import BaseCommand
-from inventory.models import RawMaterial
+from inventory.models import RawMaterial, RMStockBalance
 
 
 class Command(BaseCommand):
-    help = "Import raw materials from CSV into RawMaterial model (with finishing)"
+    help = "Import raw materials from CSV into RawMaterial model (with finishing + stock balance)"
 
     def add_arguments(self, parser):
         parser.add_argument("csv_file", type=str, help="Path to materials CSV")
@@ -27,19 +27,18 @@ class Command(BaseCommand):
                 material_name = row["Material_Name"].strip()
                 grade = row["Grade"].strip() if row["Grade"] else ""
                 finishing = row["Finishing"].strip() if row.get("Finishing") else None
+
                 # Use the last Material Code column (rightmost one)
                 material_code = row.get("Material Code", "").strip()
                 if not material_code and len([k for k in row.keys() if "Material Code" in k]) > 1:
-                    # If there are multiple Material Code columns, use the last non-empty one
                     for key in reversed([k for k in row.keys() if "Material Code" in k]):
                         if row.get(key, "").strip():
                             material_code = row[key].strip()
                             break
-                
-                # Skip row if material_code is empty (required field)
+
                 if not material_code:
                     self.stdout.write(
-                        self.style.WARNING(f"Skipping row - Material Code is required but empty")
+                        self.style.WARNING("Skipping row - Material Code is required but empty")
                     )
                     continue
 
@@ -54,24 +53,30 @@ class Command(BaseCommand):
                     if row.get("Thickness") and row["Thickness"].strip()
                     else None
                 )
-                
-                # Additional fields that might be in CSV
+
+                # Additional fields
                 weight_kg = None
-                quantity = None
-                
-                # Check for weight/quantity columns (these might not exist in all CSVs)
+                available_quantity = None
+
                 if row.get("Weight"):
-                    weight_str = row["Weight"].replace("kg", "").strip()
-                    weight_kg = float(weight_str) if weight_str else None
-                    
-                if row.get("Quantity"):
-                    quantity_str = row["Quantity"].replace("kg", "").strip()
-                    quantity = float(quantity_str) if quantity_str else None
+                    w = row["Weight"].replace("kg", "").strip()
+                    try:
+                        weight_kg = Decimal(w) if w else None
+                    except InvalidOperation:
+                        weight_kg = None
+
+                if row.get("available_quantity"):
+                    qty_str = row["available_quantity"].replace("kg", "").strip()
+                    try:
+                        available_quantity = Decimal(qty_str) if qty_str else None
+                    except InvalidOperation:
+                        available_quantity = None
 
                 self.stdout.write(
                     f"[{'DRY' if dry_run else 'SAVE'}] "
                     f"Code={material_code}, Type={material_type}, Name={material_name}, Grade={grade}, "
-                    f"WireDia={wire_dia}, Thickness={thickness}, Weight={weight_kg}, Quantity={quantity}, Finishing={finishing}"
+                    f"WireDia={wire_dia}, Thickness={thickness}, Weight={weight_kg}, "
+                    f"AvailableQty={available_quantity}, Finishing={finishing}"
                 )
 
                 if not dry_run:
@@ -79,15 +84,22 @@ class Command(BaseCommand):
                         material_code=material_code,
                         defaults={
                             "material_type": material_type,
-                            "material_name": material_name,  # Use complete name from CSV
+                            "material_name": material_name,
                             "grade": grade,
-                            "wire_diameter_mm": float(wire_dia) if wire_dia else None,
-                            "thickness_mm": float(thickness) if thickness else None,
+                            "wire_diameter_mm": Decimal(wire_dia) if wire_dia else None,
+                            "thickness_mm": Decimal(thickness) if thickness else None,
                             "weight_kg": weight_kg,
-                            "quantity": quantity,
+                            "quantity": available_quantity,  # if you want to mirror available qty
                             "finishing": self._map_finishing(finishing),
                         },
                     )
+
+                    # Insert or update RMStockBalance
+                    if available_quantity is not None:
+                        RMStockBalance.objects.update_or_create(
+                            raw_material=raw_mat,
+                            defaults={"available_quantity": available_quantity},
+                        )
 
         self.stdout.write(
             self.style.SUCCESS(
@@ -104,4 +116,4 @@ class Command(BaseCommand):
             return "soap_coated"
         if "bright" in f:
             return "bright"
-        return None  # fallback if not in choices
+        return None

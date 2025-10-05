@@ -14,6 +14,12 @@ from pathlib import Path
 from datetime import timedelta
 from decouple import Config, RepositoryEnv
 import os
+import warnings
+warnings.filterwarnings(
+    "ignore",
+    category=UserWarning,
+    message="pkg_resources is deprecated as an API.*"
+)
 
 # Use PyMySQL as MySQL driver (better cloud MySQL compatibility)
 import pymysql

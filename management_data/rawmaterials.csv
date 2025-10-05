@@ -1,105 +1,105 @@
-S.No,Material_Type,Material_Name,Grade,Finishing,Thick/dia,Material Code,Wire Diameter,Thickness,Material Code
-1,Coil,SS Stainless Steel,304,Soap Coated,0.30mm ,Coil-SS Stainless Steel-304-SOAP COATED-0.30mm ,0.30mm, ,Coil-SS Stainless Steel-304-Soap Coated-0.30mm 
-2,Coil,SS Stainless Steel,304,Soap Coated,0.35mm ,Coil-SS Stainless Steel-304-SOAP COATED-0.35mm ,0.35mm, ,Coil-SS Stainless Steel-304-Soap Coated-0.35mm 
-3,Coil,SS Stainless Steel,304,Soap Coated,0.40mm ,Coil-SS Stainless Steel-304-SOAP COATED-0.40mm ,0.40mm, ,Coil-SS Stainless Steel-304-Soap Coated-0.40mm 
-4,Coil,SS Stainless Steel,304,Soap Coated,0.45mm ,Coil-SS Stainless Steel-304-SOAP COATED-0.45mm ,0.45mm, ,Coil-SS Stainless Steel-304-Soap Coated-0.45mm 
-5,Coil,SS Stainless Steel,304,Soap Coated,0.50mm ,Coil-SS Stainless Steel-304-SOAP COATED-0.50mm ,0.50mm, ,Coil-SS Stainless Steel-304-Soap Coated-0.50mm 
-6,Coil,ST Spring Steel,DH,,2.60mm ,Coil-ST Spring Steel-DH-2.60mm ,2.60mm, ,Coil-ST Spring Steel-DH-2.60mm 
-7,Sheet,MS Mild Steel,CR2,,3.00mm,Sheet-MS Mild Steel-CR2-3.00mm,,3.00mm,Sheet-MS Mild Steel-CR2-3.00mm
-8,Sheet,MS Mild Steel,CR2,,0.50mm,Sheet-MS Mild Steel-CR2-0.50mm,,0.50mm,Sheet-MS Mild Steel-CR2-0.50mm
-9,Sheet,MS Mild Steel,CR2,,1.00mm,Sheet-MS Mild Steel-CR2-1.00mm,,1.00mm,Sheet-MS Mild Steel-CR2-1.00mm
-10,Sheet,MS Mild Steel,CR2,,2.00mm,Sheet-MS Mild Steel-CR2-2.00mm,,2.00mm,Sheet-MS Mild Steel-CR2-2.00mm
-11,Coil,ST Spring Steel,DH,,1.40mm ,Coil-ST Spring Steel-DH-1.40mm ,1.40mm, ,Coil-ST Spring Steel-DH-1.40mm 
-12,Coil,ST Spring Steel,DH,,0.30mm ,Coil-ST Spring Steel-DH-0.30mm ,0.30mm, ,Coil-ST Spring Steel-DH-0.30mm 
-13,Coil,ST Spring Steel,DH,,0.40mm ,Coil-ST Spring Steel-DH-0.40mm ,0.40mm, ,Coil-ST Spring Steel-DH-0.40mm 
-14,Coil,ST Spring Steel,DH,,0.45mm ,Coil-ST Spring Steel-DH-0.45mm ,0.45mm, ,Coil-ST Spring Steel-DH-0.45mm 
-15,Coil,ST Spring Steel,DH,,2.80mm ,Coil-ST Spring Steel-DH-2.80mm ,2.80mm, ,Coil-ST Spring Steel-DH-2.80mm 
-16,Coil,ST Spring Steel,DH,,4.00mm ,Coil-ST Spring Steel-DH-4.00mm ,4.00mm, ,Coil-ST Spring Steel-DH-4.00mm 
-17,Coil,ST Spring Steel,DM,,5.80mm ,Coil-ST Spring Steel-DM-5.80mm ,5.80mm, ,Coil-ST Spring Steel-DM-5.80mm 
-18,Coil,ST Spring Steel,DM,,0.35mm ,Coil-ST Spring Steel-DM-0.35mm ,0.35mm, ,Coil-ST Spring Steel-DM-0.35mm 
-19,Coil,ST Spring Steel,DM,,0.50mm ,Coil-ST Spring Steel-DM-0.50mm ,0.50mm, ,Coil-ST Spring Steel-DM-0.50mm 
-20,Coil,MS Mild Steel,CR2,,1.60mm ,Coil-MS Mild Steel-CR2-1.60mm ,1.60mm, ,Coil-MS Mild Steel-CR2-1.60mm 
-21,Coil,ST Spring Steel,DM,,7.00mm ,Coil-ST Spring Steel-DM-7.00mm ,7.00mm, ,Coil-ST Spring Steel-DM-7.00mm 
-22,Coil,ST Spring Steel,DM,,1.20mm ,Coil-ST Spring Steel-DM-1.20mm ,1.20mm, ,Coil-ST Spring Steel-DM-1.20mm 
-23,Coil,ST Spring Steel,DM,,2.00mm ,Coil-ST Spring Steel-DM-2.00mm ,2.00mm, ,Coil-ST Spring Steel-DM-2.00mm 
-24,Coil,ST Spring Steel,DM,,2.80mm ,Coil-ST Spring Steel-DM-2.80mm ,2.80mm, ,Coil-ST Spring Steel-DM-2.80mm 
-25,Coil,SS Stainless Steel,304,Soap Coated,0.55mm ,Coil-SS Stainless Steel-304-SOAP COATED-0.55mm ,0.55mm, ,Coil-SS Stainless Steel-304-Soap Coated-0.55mm 
-26,Coil,SS Stainless Steel,304,Soap Coated,0.60mm ,Coil-SS Stainless Steel-304-SOAP COATED-0.60mm ,0.60mm, ,Coil-SS Stainless Steel-304-Soap Coated-0.60mm 
-27,Coil,SS Stainless Steel,304,Soap Coated,0.70mm ,Coil-SS Stainless Steel-304-SOAP COATED-0.70mm ,0.70mm, ,Coil-SS Stainless Steel-304-Soap Coated-0.70mm 
-28,Coil,SS Stainless Steel,304,Soap Coated,0.80mm ,Coil-SS Stainless Steel-304-SOAP COATED-0.80mm ,0.80mm, ,Coil-SS Stainless Steel-304-Soap Coated-0.80mm 
-29,Coil,SS Stainless Steel,304,Soap Coated,0.90mm ,Coil-SS Stainless Steel-304-SOAP COATED-0.90mm ,0.90mm, ,Coil-SS Stainless Steel-304-Soap Coated-0.90mm 
-30,Coil,MS Mild Steel Half Round,,,0.90mm ,Coil-MS Mild Steel Half Round-0.90mm ,0.90mm, ,Coil-MS Mild Steel Half Round-0.90mm 
-31,Coil,ST Spring Steel,DH,,1.00mm ,Coil-ST Spring Steel-DH-1.00mm ,1.00mm, ,Coil-ST Spring Steel-DH-1.00mm 
-32,Coil,ST Spring Steel,DM,,1.40mm ,Coil-ST Spring Steel-DM-1.40mm ,1.40mm, ,Coil-ST Spring Steel-DM-1.40mm 
-33,Coil,ST Spring Steel,DH,,1.50mm ,Coil-ST Spring Steel-DH-1.50mm ,1.50mm, ,Coil-ST Spring Steel-DH-1.50mm 
-34,Coil,ST Spring Steel,DH,,1.80mm ,Coil-ST Spring Steel-DH-1.80mm ,1.80mm, ,Coil-ST Spring Steel-DH-1.80mm 
-35,Coil,ST Spring Steel,DH,,2.00mm ,Coil-ST Spring Steel-DH-2.00mm ,2.00mm, ,Coil-ST Spring Steel-DH-2.00mm 
-36,Coil,ST Spring Steel,DH,,2.50mm ,Coil-ST Spring Steel-DH-2.50mm ,2.50mm, ,Coil-ST Spring Steel-DH-2.50mm 
-37,Coil,ST Spring Steel,DH,,3.80mm ,Coil-ST Spring Steel-DH-3.80mm ,3.80mm, ,Coil-ST Spring Steel-DH-3.80mm 
-38,Coil,ST Spring Steel,DH,,5.00mm ,Coil-ST Spring Steel-DH-5.00mm ,5.00mm, ,Coil-ST Spring Steel-DH-5.00mm 
-39,Coil,ST Spring Steel,DH,,1.60mm ,Coil-ST Spring Steel-DH-1.60mm ,1.60mm, ,Coil-ST Spring Steel-DH-1.60mm 
-40,Coil,ST Spring Steel,DM,,0.20mm ,Coil-ST Spring Steel-DM-0.20mm ,0.20mm, ,Coil-ST Spring Steel-DM-0.20mm 
-41,Coil,ST Spring Steel,DM,,5.00mm ,Coil-ST Spring Steel-DM-5.00mm ,5.00mm, ,Coil-ST Spring Steel-DM-5.00mm 
-42,Coil,SS Stainless Steel,304,Soap Coated,1.00mm ,Coil-SS Stainless Steel-304-SOAP COATED-1.00mm ,1.00mm, ,Coil-SS Stainless Steel-304-Soap Coated-1.00mm 
-43,Coil,SS Stainless Steel,304,Soap Coated,1.20mm ,Coil-SS Stainless Steel-304-SOAP COATED-1.20mm ,1.20mm, ,Coil-SS Stainless Steel-304-Soap Coated-1.20mm 
-44,Coil,SS Stainless Steel,304,Soap Coated,1.50mm ,Coil-SS Stainless Steel-304-SOAP COATED-1.50mm ,1.50mm, ,Coil-SS Stainless Steel-304-Soap Coated-1.50mm 
-45,Coil,SS Stainless Steel,304,Soap Coated,1.60mm ,Coil-SS Stainless Steel-304-SOAP COATED-1.60mm ,1.60mm, ,Coil-SS Stainless Steel-304-Soap Coated-1.60mm 
-46,Coil,SS Stainless Steel,304,Soap Coated,1.80mm ,Coil-SS Stainless Steel-304-SOAP COATED-1.80mm ,1.80mm, ,Coil-SS Stainless Steel-304-Soap Coated-1.80mm 
-47,Coil,SS Stainless Steel,304,Soap Coated,2.00mm ,Coil-SS Stainless Steel-304-SOAP COATED-2.00mm ,2.00mm, ,Coil-SS Stainless Steel-304-Soap Coated-2.00mm 
-48,Coil,ST Spring Steel,DH,,2.20mm ,Coil-ST Spring Steel-DH-2.20mm ,2.20mm, ,Coil-ST Spring Steel-DH-2.20mm 
-49,Coil,ST Spring Steel,DM,,3.20mm ,Coil-ST Spring Steel-DM-3.20mm ,3.20mm, ,Coil-ST Spring Steel-DM-3.20mm 
-50,Coil,ST Spring Steel,DH,,3.50mm ,Coil-ST Spring Steel-DH-3.50mm ,3.50mm, ,Coil-ST Spring Steel-DH-3.50mm 
-51,Coil,ST Spring Steel,DH,,0.80mm ,Coil-ST Spring Steel-DH-0.80mm ,0.80mm, ,Coil-ST Spring Steel-DH-0.80mm 
-52,Coil,ST Spring Steel,DH,,0.90mm ,Coil-ST Spring Steel-DH-0.90mm ,0.90mm, ,Coil-ST Spring Steel-DH-0.90mm 
-53,Coil,ST Spring Steel,DH,,1.20mm ,Coil-ST Spring Steel-DH-1.20mm ,1.20mm, ,Coil-ST Spring Steel-DH-1.20mm 
-54,Coil,ST Spring Steel,DH,,2.30mm ,Coil-ST Spring Steel-DH-2.30mm ,2.30mm, ,Coil-ST Spring Steel-DH-2.30mm 
-55,Coil,ST Spring Steel,DH,,3.00mm ,Coil-ST Spring Steel-DH-3.00mm ,3.00mm, ,Coil-ST Spring Steel-DH-3.00mm 
-56,Coil,ST Spring Steel,DH,,4.50mm ,Coil-ST Spring Steel-DH-4.50mm ,4.50mm, ,Coil-ST Spring Steel-DH-4.50mm 
-57,Coil,ST Spring Steel,DH,,6.00mm ,Coil-ST Spring Steel-DH-6.00mm ,6.00mm, ,Coil-ST Spring Steel-DH-6.00mm 
-58,Coil,SS Stainless Steel,304,Soap Coated,2.40mm ,Coil-SS Stainless Steel-304-SOAP COATED-2.40mm ,2.40mm, ,Coil-SS Stainless Steel-304-Soap Coated-2.40mm 
-59,Coil,SS Stainless Steel,304,Soap Coated,2.50mm ,Coil-SS Stainless Steel-304-SOAP COATED-2.50mm ,2.50mm, ,Coil-SS Stainless Steel-304-Soap Coated-2.50mm 
-60,Coil,SS Stainless Steel,304,Soap Coated,3.00mm ,Coil-SS Stainless Steel-304-SOAP COATED-3.00mm ,3.00mm, ,Coil-SS Stainless Steel-304-Soap Coated-3.00mm 
-61,Coil,SS Stainless Steel,304,Soap Coated,3.20mm ,Coil-SS Stainless Steel-304-SOAP COATED-3.20mm ,3.20mm, ,Coil-SS Stainless Steel-304-Soap Coated-3.20mm 
-62,Coil,SS Stainless Steel,304,Soap Coated,3.50mm ,Coil-SS Stainless Steel-304-SOAP COATED-3.50mm ,3.50mm, ,Coil-SS Stainless Steel-304-Soap Coated-3.50mm 
-63,Coil,SS Stainless Steel,304,Soap Coated,3.60mm ,Coil-SS Stainless Steel-304-SOAP COATED-3.60mm ,3.60mm, ,Coil-SS Stainless Steel-304-Soap Coated-3.60mm 
-64,Coil,SS Stainless Steel,304,Soap Coated,4.00mm ,Coil-SS Stainless Steel-304-SOAP COATED-4.00mm ,4.00mm, ,Coil-SS Stainless Steel-304-Soap Coated-4.00mm 
-65,Coil,SS Stainless Steel,304,Soap Coated,5.00mm ,Coil-SS Stainless Steel-304-SOAP COATED-5.00mm ,5.00mm, ,Coil-SS Stainless Steel-304-Soap Coated-5.00mm 
-66,Coil,SS Stainless Steel,304,Soap Coated,6.00mm ,Coil-SS Stainless Steel-304-SOAP COATED-6.00mm ,6.00mm, ,Coil-SS Stainless Steel-304-Soap Coated-6.00mm 
-67,Coil,ST Spring Steel,DM,,0.60mm ,Coil-ST Spring Steel-DM-0.60mm ,0.60mm, ,Coil-ST Spring Steel-DM-0.60mm 
-68,Coil,ST Spring Steel,DM,,0.70mm ,Coil-ST Spring Steel-DM-0.70mm ,0.70mm, ,Coil-ST Spring Steel-DM-0.70mm 
-69,Coil,ST Spring Steel,DM,,0.80mm ,Coil-ST Spring Steel-DM-0.80mm ,0.80mm, ,Coil-ST Spring Steel-DM-0.80mm 
-70,Coil,ST Spring Steel,DM,,0.90mm ,Coil-ST Spring Steel-DM-0.90mm ,0.90mm, ,Coil-ST Spring Steel-DM-0.90mm 
-71,Coil,ST Spring Steel,DM,,1.00mm ,Coil-ST Spring Steel-DM-1.00mm ,1.00mm, ,Coil-ST Spring Steel-DM-1.00mm 
-72,Coil,ST Spring Steel,DM,,1.30mm ,Coil-ST Spring Steel-DM-1.30mm ,1.30mm, ,Coil-ST Spring Steel-DM-1.30mm 
-73,Coil,ST Spring Steel,DM,,1.50mm ,Coil-ST Spring Steel-DM-1.50mm ,1.50mm, ,Coil-ST Spring Steel-DM-1.50mm 
-74,Coil,ST Spring Steel,DM,,1.70mm ,Coil-ST Spring Steel-DM-1.70mm ,1.70mm, ,Coil-ST Spring Steel-DM-1.70mm 
-75,Coil,ST Spring Steel,DM,,2.20mm ,Coil-ST Spring Steel-DM-2.20mm ,2.20mm, ,Coil-ST Spring Steel-DM-2.20mm 
-76,Coil,ST Spring Steel,DM,,2.50mm ,Coil-ST Spring Steel-DM-2.50mm ,2.50mm, ,Coil-ST Spring Steel-DM-2.50mm 
-77,Coil,ST Spring Steel,DM,,3.50mm ,Coil-ST Spring Steel-DM-3.50mm ,3.50mm, ,Coil-ST Spring Steel-DM-3.50mm 
-78,Coil,ST Spring Steel,DM,,3.60mm ,Coil-ST Spring Steel-DM-3.60mm ,3.60mm, ,Coil-ST Spring Steel-DM-3.60mm 
-79,Coil,ST Spring Steel,DM,,4.20mm ,Coil-ST Spring Steel-DM-4.20mm ,4.20mm, ,Coil-ST Spring Steel-DM-4.20mm 
-80,Coil,ST Spring Steel,DM,,4.80mm ,Coil-ST Spring Steel-DM-4.80mm ,4.80mm, ,Coil-ST Spring Steel-DM-4.80mm 
-81,Coil,ST Spring Steel,DM,,6.00mm ,Coil-ST Spring Steel-DM-6.00mm ,6.00mm, ,Coil-ST Spring Steel-DM-6.00mm 
-82,Coil,ST Spring Steel,DM,,6.50mm ,Coil-ST Spring Steel-DM-6.50mm ,6.50mm, ,Coil-ST Spring Steel-DM-6.50mm 
-83,Coil,ST Spring Steel,DM,,8.00mm ,Coil-ST Spring Steel-DM-8.00mm ,8.00mm, ,Coil-ST Spring Steel-DM-8.00mm 
-84,Coil,ST Spring Steel,DM,,10.00mm ,Coil-ST Spring Steel-DM-10.00mm ,10.00mm, ,Coil-ST Spring Steel-DM-10.00mm 
-85,Coil,PB Phosphor Bronze,,,0.20mm ,Coil-PB Phosphor Bronze-0.20mm ,0.20mm, ,Coil-PB Phosphor Bronze-0.20mm 
-86,Coil,PB Phosphor Bronze,,,0.30mm ,Coil-PB Phosphor Bronze-0.30mm ,0.30mm, ,Coil-PB Phosphor Bronze-0.30mm 
-87,Coil,SS Stainless Steel,304,Soap Coated,8.00mm ,Coil-SS Stainless Steel-304-SOAP COATED-8.00mm ,8.00mm, ,Coil-SS Stainless Steel-304-Soap Coated-8.00mm 
-88,Coil,GI Galvanized Iron,GI,,4.00mm ,Coil-GI Galvanized Iron-GI-4.00mm ,4.00mm, ,Coil-GI Galvanized Iron-GI-4.00mm 
-89,Coil,MS Mild Steel,CR2,,2.00mm ,Coil-MS Mild Steel-CR2-2.00mm ,2.00mm, ,Coil-MS Mild Steel-CR2-2.00mm 
-90,Coil,ST Spring Steel,DM,,1.60mm ,Coil-ST Spring Steel-DM-1.60mm ,1.60mm, ,Coil-ST Spring Steel-DM-1.60mm 
-91,Coil,SS Stainless Steel,304,Bright,0.35mm ,Coil-SS Stainless Steel-304-BRIGHT-0.35mm ,0.35mm, ,Coil-SS Stainless Steel-304-Bright-0.35mm 
-92,Coil,SS Stainless Steel,304,Bright,0.40mm ,Coil-SS Stainless Steel-304-BRIGHT-0.40mm ,0.40mm, ,Coil-SS Stainless Steel-304-Bright-0.40mm 
-93,Coil,SS Stainless Steel,304,Bright,0.45mm ,Coil-SS Stainless Steel-304-BRIGHT-0.45mm ,0.45mm, ,Coil-SS Stainless Steel-304-Bright-0.45mm 
-94,Coil,SS Stainless Steel,304,Bright,0.50mm ,Coil-SS Stainless Steel-304-BRIGHT-0.50mm ,0.50mm, ,Coil-SS Stainless Steel-304-Bright-0.50mm 
-95,Sheet,Aluminium,,,3.00mm,Sheet-Aluminium-3.00mm,,3.00mm,Sheet-Aluminium-3.00mm
-96,Sheet,Aluminium,,,0.90mm,Sheet-Aluminium-0.90mm,,0.90mm,Sheet-Aluminium-0.90mm
-97,Coil,ST Spring Steel,DM,,3.00mm,Coil-ST Spring Steel-DM,3.00mm,,Coil-ST Spring Steel-DM-3.00mm
-98,Coil,MS Mild Steel,,,5.00mm,Coil-MS Mild Steel,5.00mm,,Coil-MS Mild Steel-5.00mm
-99,Coil,MS Mild Steel,,,4.00mm,Coil-MS Mild Steel,4.00mm,,Coil-MS Mild Steel-4.00mm
-100,Coil,ST Spring Steel,DM,,3.80mm,Coil-ST Spring Steel-DM,3.80mm,,Coil-ST Spring Steel-DM-3.80mm
-101,Sheet,SS Stainless Steel,304,,1.50mm,Sheet-SS Stainless Steel-304,,1.50mm,Sheet-SS Stainless Steel-304-1.50mm
-102,Sheet,SS Stainless Steel,304,,0.50mm,Sheet-SS Stainless Steel-304,,0.50mm,Sheet-SS Stainless Steel-304-0.50mm
-103,Sheet,SS Stainless Steel,304,,1.00mm,Sheet-SS Stainless Steel-304,,1.00mm,Sheet-SS Stainless Steel-304-1.00mm
-104,Sheet,MS Mild Steel,CR2,,1.60mm,Sheet-MS Mild Steel-CR2,,1.60mm,Sheet-MS Mild Steel-CR2-1.60mm
+Material_Type,Material_Name,Grade,Finishing,Thick/dia,Material Code,Wire Diameter,Thickness,Material Code,available_quantity
+Coil,SS Stainless Steel,304,Soap Coated,0.30mm ,Coil-SS Stainless Steel-304-SOAP COATED-0.30mm ,0.30mm, ,Coil-SS Stainless Steel-304-Soap Coated-0.30mm ,849
+Coil,SS Stainless Steel,304,Soap Coated,0.35mm ,Coil-SS Stainless Steel-304-SOAP COATED-0.35mm ,0.35mm, ,Coil-SS Stainless Steel-304-Soap Coated-0.35mm ,85
+Coil,SS Stainless Steel,304,Soap Coated,0.40mm ,Coil-SS Stainless Steel-304-SOAP COATED-0.40mm ,0.40mm, ,Coil-SS Stainless Steel-304-Soap Coated-0.40mm ,79
+Coil,SS Stainless Steel,304,Soap Coated,0.45mm ,Coil-SS Stainless Steel-304-SOAP COATED-0.45mm ,0.45mm, ,Coil-SS Stainless Steel-304-Soap Coated-0.45mm ,478
+Coil,SS Stainless Steel,304,Soap Coated,0.50mm ,Coil-SS Stainless Steel-304-SOAP COATED-0.50mm ,0.50mm, ,Coil-SS Stainless Steel-304-Soap Coated-0.50mm ,365
+Coil,ST Spring Steel,DH,,2.60mm ,Coil-ST Spring Steel-DH-2.60mm ,2.60mm, ,Coil-ST Spring Steel-DH-2.60mm ,503
+Sheet,MS Mild Steel,CR2,,3.00mm,Sheet-MS Mild Steel-CR2-3.00mm,,3.00mm,Sheet-MS Mild Steel-CR2-3.00mm,975
+Sheet,MS Mild Steel,CR2,,0.50mm,Sheet-MS Mild Steel-CR2-0.50mm,,0.50mm,Sheet-MS Mild Steel-CR2-0.50mm,298
+Sheet,MS Mild Steel,CR2,,1.00mm,Sheet-MS Mild Steel-CR2-1.00mm,,1.00mm,Sheet-MS Mild Steel-CR2-1.00mm,599
+Sheet,MS Mild Steel,CR2,,2.00mm,Sheet-MS Mild Steel-CR2-2.00mm,,2.00mm,Sheet-MS Mild Steel-CR2-2.00mm,99
+Coil,ST Spring Steel,DH,,1.40mm ,Coil-ST Spring Steel-DH-1.40mm ,1.40mm, ,Coil-ST Spring Steel-DH-1.40mm ,605
+Coil,ST Spring Steel,DH,,0.30mm ,Coil-ST Spring Steel-DH-0.30mm ,0.30mm, ,Coil-ST Spring Steel-DH-0.30mm ,592
+Coil,ST Spring Steel,DH,,0.40mm ,Coil-ST Spring Steel-DH-0.40mm ,0.40mm, ,Coil-ST Spring Steel-DH-0.40mm ,219
+Coil,ST Spring Steel,DH,,0.45mm ,Coil-ST Spring Steel-DH-0.45mm ,0.45mm, ,Coil-ST Spring Steel-DH-0.45mm ,203
+Coil,ST Spring Steel,DH,,2.80mm ,Coil-ST Spring Steel-DH-2.80mm ,2.80mm, ,Coil-ST Spring Steel-DH-2.80mm ,194
+Coil,ST Spring Steel,DH,,4.00mm ,Coil-ST Spring Steel-DH-4.00mm ,4.00mm, ,Coil-ST Spring Steel-DH-4.00mm ,127
+Coil,ST Spring Steel,DM,,5.80mm ,Coil-ST Spring Steel-DM-5.80mm ,5.80mm, ,Coil-ST Spring Steel-DM-5.80mm ,322
+Coil,ST Spring Steel,DM,,0.35mm ,Coil-ST Spring Steel-DM-0.35mm ,0.35mm, ,Coil-ST Spring Steel-DM-0.35mm ,326
+Coil,ST Spring Steel,DM,,0.50mm ,Coil-ST Spring Steel-DM-0.50mm ,0.50mm, ,Coil-ST Spring Steel-DM-0.50mm ,973
+Coil,MS Mild Steel,CR2,,1.60mm ,Coil-MS Mild Steel-CR2-1.60mm ,1.60mm, ,Coil-MS Mild Steel-CR2-1.60mm ,738
+Coil,ST Spring Steel,DM,,7.00mm ,Coil-ST Spring Steel-DM-7.00mm ,7.00mm, ,Coil-ST Spring Steel-DM-7.00mm ,525
+Coil,ST Spring Steel,DM,,1.20mm ,Coil-ST Spring Steel-DM-1.20mm ,1.20mm, ,Coil-ST Spring Steel-DM-1.20mm ,940
+Coil,ST Spring Steel,DM,,2.00mm ,Coil-ST Spring Steel-DM-2.00mm ,2.00mm, ,Coil-ST Spring Steel-DM-2.00mm ,621
+Coil,ST Spring Steel,DM,,2.80mm ,Coil-ST Spring Steel-DM-2.80mm ,2.80mm, ,Coil-ST Spring Steel-DM-2.80mm ,951
+Coil,SS Stainless Steel,304,Soap Coated,0.55mm ,Coil-SS Stainless Steel-304-SOAP COATED-0.55mm ,0.55mm, ,Coil-SS Stainless Steel-304-Soap Coated-0.55mm ,476
+Coil,SS Stainless Steel,304,Soap Coated,0.60mm ,Coil-SS Stainless Steel-304-SOAP COATED-0.60mm ,0.60mm, ,Coil-SS Stainless Steel-304-Soap Coated-0.60mm ,595
+Coil,SS Stainless Steel,304,Soap Coated,0.70mm ,Coil-SS Stainless Steel-304-SOAP COATED-0.70mm ,0.70mm, ,Coil-SS Stainless Steel-304-Soap Coated-0.70mm ,698
+Coil,SS Stainless Steel,304,Soap Coated,0.80mm ,Coil-SS Stainless Steel-304-SOAP COATED-0.80mm ,0.80mm, ,Coil-SS Stainless Steel-304-Soap Coated-0.80mm ,832
+Coil,SS Stainless Steel,304,Soap Coated,0.90mm ,Coil-SS Stainless Steel-304-SOAP COATED-0.90mm ,0.90mm, ,Coil-SS Stainless Steel-304-Soap Coated-0.90mm ,750
+Coil,MS Mild Steel Half Round,,,0.90mm ,Coil-MS Mild Steel Half Round-0.90mm ,0.90mm, ,Coil-MS Mild Steel Half Round-0.90mm ,368
+Coil,ST Spring Steel,DH,,1.00mm ,Coil-ST Spring Steel-DH-1.00mm ,1.00mm, ,Coil-ST Spring Steel-DH-1.00mm ,155
+Coil,ST Spring Steel,DM,,1.40mm ,Coil-ST Spring Steel-DM-1.40mm ,1.40mm, ,Coil-ST Spring Steel-DM-1.40mm ,90
+Coil,ST Spring Steel,DH,,1.50mm ,Coil-ST Spring Steel-DH-1.50mm ,1.50mm, ,Coil-ST Spring Steel-DH-1.50mm ,671
+Coil,ST Spring Steel,DH,,1.80mm ,Coil-ST Spring Steel-DH-1.80mm ,1.80mm, ,Coil-ST Spring Steel-DH-1.80mm ,587
+Coil,ST Spring Steel,DH,,2.00mm ,Coil-ST Spring Steel-DH-2.00mm ,2.00mm, ,Coil-ST Spring Steel-DH-2.00mm ,861
+Coil,ST Spring Steel,DH,,2.50mm ,Coil-ST Spring Steel-DH-2.50mm ,2.50mm, ,Coil-ST Spring Steel-DH-2.50mm ,320
+Coil,ST Spring Steel,DH,,3.80mm ,Coil-ST Spring Steel-DH-3.80mm ,3.80mm, ,Coil-ST Spring Steel-DH-3.80mm ,610
+Coil,ST Spring Steel,DH,,5.00mm ,Coil-ST Spring Steel-DH-5.00mm ,5.00mm, ,Coil-ST Spring Steel-DH-5.00mm ,819
+Coil,ST Spring Steel,DH,,1.60mm ,Coil-ST Spring Steel-DH-1.60mm ,1.60mm, ,Coil-ST Spring Steel-DH-1.60mm ,359
+Coil,ST Spring Steel,DM,,0.20mm ,Coil-ST Spring Steel-DM-0.20mm ,0.20mm, ,Coil-ST Spring Steel-DM-0.20mm ,165
+Coil,ST Spring Steel,DM,,5.00mm ,Coil-ST Spring Steel-DM-5.00mm ,5.00mm, ,Coil-ST Spring Steel-DM-5.00mm ,216
+Coil,SS Stainless Steel,304,Soap Coated,1.00mm ,Coil-SS Stainless Steel-304-SOAP COATED-1.00mm ,1.00mm, ,Coil-SS Stainless Steel-304-Soap Coated-1.00mm ,201
+Coil,SS Stainless Steel,304,Soap Coated,1.20mm ,Coil-SS Stainless Steel-304-SOAP COATED-1.20mm ,1.20mm, ,Coil-SS Stainless Steel-304-Soap Coated-1.20mm ,203
+Coil,SS Stainless Steel,304,Soap Coated,1.50mm ,Coil-SS Stainless Steel-304-SOAP COATED-1.50mm ,1.50mm, ,Coil-SS Stainless Steel-304-Soap Coated-1.50mm ,794
+Coil,SS Stainless Steel,304,Soap Coated,1.60mm ,Coil-SS Stainless Steel-304-SOAP COATED-1.60mm ,1.60mm, ,Coil-SS Stainless Steel-304-Soap Coated-1.60mm ,969
+Coil,SS Stainless Steel,304,Soap Coated,1.80mm ,Coil-SS Stainless Steel-304-SOAP COATED-1.80mm ,1.80mm, ,Coil-SS Stainless Steel-304-Soap Coated-1.80mm ,91
+Coil,SS Stainless Steel,304,Soap Coated,2.00mm ,Coil-SS Stainless Steel-304-SOAP COATED-2.00mm ,2.00mm, ,Coil-SS Stainless Steel-304-Soap Coated-2.00mm ,128
+Coil,ST Spring Steel,DH,,2.20mm ,Coil-ST Spring Steel-DH-2.20mm ,2.20mm, ,Coil-ST Spring Steel-DH-2.20mm ,701
+Coil,ST Spring Steel,DM,,3.20mm ,Coil-ST Spring Steel-DM-3.20mm ,3.20mm, ,Coil-ST Spring Steel-DM-3.20mm ,919
+Coil,ST Spring Steel,DH,,3.50mm ,Coil-ST Spring Steel-DH-3.50mm ,3.50mm, ,Coil-ST Spring Steel-DH-3.50mm ,741
+Coil,ST Spring Steel,DH,,0.80mm ,Coil-ST Spring Steel-DH-0.80mm ,0.80mm, ,Coil-ST Spring Steel-DH-0.80mm ,810
+Coil,ST Spring Steel,DH,,0.90mm ,Coil-ST Spring Steel-DH-0.90mm ,0.90mm, ,Coil-ST Spring Steel-DH-0.90mm ,562
+Coil,ST Spring Steel,DH,,1.20mm ,Coil-ST Spring Steel-DH-1.20mm ,1.20mm, ,Coil-ST Spring Steel-DH-1.20mm ,953
+Coil,ST Spring Steel,DH,,2.30mm ,Coil-ST Spring Steel-DH-2.30mm ,2.30mm, ,Coil-ST Spring Steel-DH-2.30mm ,809
+Coil,ST Spring Steel,DH,,3.00mm ,Coil-ST Spring Steel-DH-3.00mm ,3.00mm, ,Coil-ST Spring Steel-DH-3.00mm ,168
+Coil,ST Spring Steel,DH,,4.50mm ,Coil-ST Spring Steel-DH-4.50mm ,4.50mm, ,Coil-ST Spring Steel-DH-4.50mm ,285
+Coil,ST Spring Steel,DH,,6.00mm ,Coil-ST Spring Steel-DH-6.00mm ,6.00mm, ,Coil-ST Spring Steel-DH-6.00mm ,805
+Coil,SS Stainless Steel,304,Soap Coated,2.40mm ,Coil-SS Stainless Steel-304-SOAP COATED-2.40mm ,2.40mm, ,Coil-SS Stainless Steel-304-Soap Coated-2.40mm ,868
+Coil,SS Stainless Steel,304,Soap Coated,2.50mm ,Coil-SS Stainless Steel-304-SOAP COATED-2.50mm ,2.50mm, ,Coil-SS Stainless Steel-304-Soap Coated-2.50mm ,933
+Coil,SS Stainless Steel,304,Soap Coated,3.00mm ,Coil-SS Stainless Steel-304-SOAP COATED-3.00mm ,3.00mm, ,Coil-SS Stainless Steel-304-Soap Coated-3.00mm ,599
+Coil,SS Stainless Steel,304,Soap Coated,3.20mm ,Coil-SS Stainless Steel-304-SOAP COATED-3.20mm ,3.20mm, ,Coil-SS Stainless Steel-304-Soap Coated-3.20mm ,477
+Coil,SS Stainless Steel,304,Soap Coated,3.50mm ,Coil-SS Stainless Steel-304-SOAP COATED-3.50mm ,3.50mm, ,Coil-SS Stainless Steel-304-Soap Coated-3.50mm ,541
+Coil,SS Stainless Steel,304,Soap Coated,3.60mm ,Coil-SS Stainless Steel-304-SOAP COATED-3.60mm ,3.60mm, ,Coil-SS Stainless Steel-304-Soap Coated-3.60mm ,251
+Coil,SS Stainless Steel,304,Soap Coated,4.00mm ,Coil-SS Stainless Steel-304-SOAP COATED-4.00mm ,4.00mm, ,Coil-SS Stainless Steel-304-Soap Coated-4.00mm ,752
+Coil,SS Stainless Steel,304,Soap Coated,5.00mm ,Coil-SS Stainless Steel-304-SOAP COATED-5.00mm ,5.00mm, ,Coil-SS Stainless Steel-304-Soap Coated-5.00mm ,943
+Coil,SS Stainless Steel,304,Soap Coated,6.00mm ,Coil-SS Stainless Steel-304-SOAP COATED-6.00mm ,6.00mm, ,Coil-SS Stainless Steel-304-Soap Coated-6.00mm ,486
+Coil,ST Spring Steel,DM,,0.60mm ,Coil-ST Spring Steel-DM-0.60mm ,0.60mm, ,Coil-ST Spring Steel-DM-0.60mm ,303
+Coil,ST Spring Steel,DM,,0.70mm ,Coil-ST Spring Steel-DM-0.70mm ,0.70mm, ,Coil-ST Spring Steel-DM-0.70mm ,633
+Coil,ST Spring Steel,DM,,0.80mm ,Coil-ST Spring Steel-DM-0.80mm ,0.80mm, ,Coil-ST Spring Steel-DM-0.80mm ,573
+Coil,ST Spring Steel,DM,,0.90mm ,Coil-ST Spring Steel-DM-0.90mm ,0.90mm, ,Coil-ST Spring Steel-DM-0.90mm ,214
+Coil,ST Spring Steel,DM,,1.00mm ,Coil-ST Spring Steel-DM-1.00mm ,1.00mm, ,Coil-ST Spring Steel-DM-1.00mm ,904
+Coil,ST Spring Steel,DM,,1.30mm ,Coil-ST Spring Steel-DM-1.30mm ,1.30mm, ,Coil-ST Spring Steel-DM-1.30mm ,394
+Coil,ST Spring Steel,DM,,1.50mm ,Coil-ST Spring Steel-DM-1.50mm ,1.50mm, ,Coil-ST Spring Steel-DM-1.50mm ,258
+Coil,ST Spring Steel,DM,,1.70mm ,Coil-ST Spring Steel-DM-1.70mm ,1.70mm, ,Coil-ST Spring Steel-DM-1.70mm ,322
+Coil,ST Spring Steel,DM,,2.20mm ,Coil-ST Spring Steel-DM-2.20mm ,2.20mm, ,Coil-ST Spring Steel-DM-2.20mm ,696
+Coil,ST Spring Steel,DM,,2.50mm ,Coil-ST Spring Steel-DM-2.50mm ,2.50mm, ,Coil-ST Spring Steel-DM-2.50mm ,531
+Coil,ST Spring Steel,DM,,3.50mm ,Coil-ST Spring Steel-DM-3.50mm ,3.50mm, ,Coil-ST Spring Steel-DM-3.50mm ,732
+Coil,ST Spring Steel,DM,,3.60mm ,Coil-ST Spring Steel-DM-3.60mm ,3.60mm, ,Coil-ST Spring Steel-DM-3.60mm ,167
+Coil,ST Spring Steel,DM,,4.20mm ,Coil-ST Spring Steel-DM-4.20mm ,4.20mm, ,Coil-ST Spring Steel-DM-4.20mm ,516
+Coil,ST Spring Steel,DM,,4.80mm ,Coil-ST Spring Steel-DM-4.80mm ,4.80mm, ,Coil-ST Spring Steel-DM-4.80mm ,465
+Coil,ST Spring Steel,DM,,6.00mm ,Coil-ST Spring Steel-DM-6.00mm ,6.00mm, ,Coil-ST Spring Steel-DM-6.00mm ,994
+Coil,ST Spring Steel,DM,,6.50mm ,Coil-ST Spring Steel-DM-6.50mm ,6.50mm, ,Coil-ST Spring Steel-DM-6.50mm ,384
+Coil,ST Spring Steel,DM,,8.00mm ,Coil-ST Spring Steel-DM-8.00mm ,8.00mm, ,Coil-ST Spring Steel-DM-8.00mm ,958
+Coil,ST Spring Steel,DM,,10.00mm ,Coil-ST Spring Steel-DM-10.00mm ,10.00mm, ,Coil-ST Spring Steel-DM-10.00mm ,473
+Coil,PB Phosphor Bronze,,,0.20mm ,Coil-PB Phosphor Bronze-0.20mm ,0.20mm, ,Coil-PB Phosphor Bronze-0.20mm ,378
+Coil,PB Phosphor Bronze,,,0.30mm ,Coil-PB Phosphor Bronze-0.30mm ,0.30mm, ,Coil-PB Phosphor Bronze-0.30mm ,932
+Coil,SS Stainless Steel,304,Soap Coated,8.00mm ,Coil-SS Stainless Steel-304-SOAP COATED-8.00mm ,8.00mm, ,Coil-SS Stainless Steel-304-Soap Coated-8.00mm ,966
+Coil,GI Galvanized Iron,GI,,4.00mm ,Coil-GI Galvanized Iron-GI-4.00mm ,4.00mm, ,Coil-GI Galvanized Iron-GI-4.00mm ,91
+Coil,MS Mild Steel,CR2,,2.00mm ,Coil-MS Mild Steel-CR2-2.00mm ,2.00mm, ,Coil-MS Mild Steel-CR2-2.00mm ,175
+Coil,ST Spring Steel,DM,,1.60mm ,Coil-ST Spring Steel-DM-1.60mm ,1.60mm, ,Coil-ST Spring Steel-DM-1.60mm ,748
+Coil,SS Stainless Steel,304,Bright,0.35mm ,Coil-SS Stainless Steel-304-BRIGHT-0.35mm ,0.35mm, ,Coil-SS Stainless Steel-304-Bright-0.35mm ,163
+Coil,SS Stainless Steel,304,Bright,0.40mm ,Coil-SS Stainless Steel-304-BRIGHT-0.40mm ,0.40mm, ,Coil-SS Stainless Steel-304-Bright-0.40mm ,348
+Coil,SS Stainless Steel,304,Bright,0.45mm ,Coil-SS Stainless Steel-304-BRIGHT-0.45mm ,0.45mm, ,Coil-SS Stainless Steel-304-Bright-0.45mm ,371
+Coil,SS Stainless Steel,304,Bright,0.50mm ,Coil-SS Stainless Steel-304-BRIGHT-0.50mm ,0.50mm, ,Coil-SS Stainless Steel-304-Bright-0.50mm ,418
+Sheet,Aluminium,,,3.00mm,Sheet-Aluminium-3.00mm,,3.00mm,Sheet-Aluminium-3.00mm,864
+Sheet,Aluminium,,,0.90mm,Sheet-Aluminium-0.90mm,,0.90mm,Sheet-Aluminium-0.90mm,532
+Coil,ST Spring Steel,DM,,3.00mm,Coil-ST Spring Steel-DM,3.00mm,,Coil-ST Spring Steel-DM-3.00mm,673
+Coil,MS Mild Steel,,,5.00mm,Coil-MS Mild Steel,5.00mm,,Coil-MS Mild Steel-5.00mm,727
+Coil,MS Mild Steel,,,4.00mm,Coil-MS Mild Steel,4.00mm,,Coil-MS Mild Steel-4.00mm,966
+Coil,ST Spring Steel,DM,,3.80mm,Coil-ST Spring Steel-DM,3.80mm,,Coil-ST Spring Steel-DM-3.80mm,884
+Sheet,SS Stainless Steel,304,,1.50mm,Sheet-SS Stainless Steel-304,,1.50mm,Sheet-SS Stainless Steel-304-1.50mm,711
+Sheet,SS Stainless Steel,304,,0.50mm,Sheet-SS Stainless Steel-304,,0.50mm,Sheet-SS Stainless Steel-304-0.50mm,325
+Sheet,SS Stainless Steel,304,,1.00mm,Sheet-SS Stainless Steel-304,,1.00mm,Sheet-SS Stainless Steel-304-1.00mm,431
+Sheet,MS Mild Steel,CR2,,1.60mm,Sheet-MS Mild Steel-CR2,,1.60mm,Sheet-MS Mild Steel-CR2-1.60mm,86

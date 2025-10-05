@@ -2078,3 +2078,9 @@ INFO 2025-10-04 22:56:41,596 autoreload 55666 8633082048 /Users/jayakumarn/Docum
 INFO 2025-10-04 22:56:42,294 autoreload 60136 8633082048 Watching for file changes with StatReloader
 INFO 2025-10-04 22:56:51,247 autoreload 60136 8633082048 /Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/inventory/models.py changed, reloading.
 INFO 2025-10-04 22:56:51,935 autoreload 60852 8633082048 Watching for file changes with StatReloader
+INFO 2025-10-05 09:37:00,144 autoreload 18730 8550670528 Watching for file changes with StatReloader
+INFO 2025-10-05 09:51:37,029 autoreload 30514 8550670528 Watching for file changes with StatReloader
+INFO 2025-10-05 09:52:35,159 autoreload 30514 8550670528 /Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/microsprings_inventory_system/settings.py changed, reloading.
+INFO 2025-10-05 09:52:35,981 autoreload 31195 8550670528 Watching for file changes with StatReloader
+INFO 2025-10-05 09:52:44,036 autoreload 31467 8550670528 Watching for file changes with StatReloader
+WARNING 2025-10-05 09:52:48,178 log 31467 6230913024 Not Found: /favicon.ico
