@@ -6,18 +6,31 @@ from .models import RMStockBalance, RawMaterial
 
 class RawMaterialBasicSerializer(serializers.ModelSerializer):
     """Basic raw material serializer for nested relationships"""
-    material_name_display = serializers.CharField(source='get_material_name_display', read_only=True)
+    material_name_display = serializers.SerializerMethodField()
     material_type_display = serializers.CharField(source='get_material_type_display', read_only=True)
     finishing_display = serializers.CharField(source='get_finishing_display', read_only=True)
+    available_quantity = serializers.SerializerMethodField()
     
     class Meta:
         model = RawMaterial
         fields = [
             'id', 'material_code', 'material_name', 'material_name_display',
             'material_type', 'material_type_display', 'grade', 'wire_diameter_mm',
-            'thickness_mm', 'finishing', 'finishing_display', 'weight_kg', 'quantity'
+            'thickness_mm', 'finishing', 'finishing_display', 'weight_kg', 'available_quantity',
+            'length_mm', 'breadth_mm', 'quantity'
         ]
         read_only_fields = fields
+    
+    def get_material_name_display(self, obj):  # pragma: no cover - simple accessor
+        """Provide a consistent display label for material name"""
+        return obj.material_name
+
+    def get_available_quantity(self, obj):
+        """Get available quantity from RMStockBalance"""
+        stock_balance = RMStockBalance.objects.filter(raw_material=obj).first()
+        if stock_balance:
+            return float(stock_balance.available_quantity)
+        return 0.0
 
 
 class ProductListSerializer(serializers.ModelSerializer):
@@ -35,6 +48,7 @@ class ProductListSerializer(serializers.ModelSerializer):
             'id', 'internal_product_code', 'product_code', 'product_type', 
             'product_type_display', 'spring_type', 'spring_type_display',
             'material_details', 'customer_name', 'customer_id', 'stock_balance', 
+            'grams_per_product', 'length_mm', 'breadth_mm',
             'created_at', 'updated_at'
         ]
         read_only_fields = ['id', 'created_at', 'updated_at']
@@ -66,7 +80,8 @@ class ProductCreateUpdateSerializer(serializers.ModelSerializer):
         model = Product
         fields = [
             'id', 'internal_product_code', 'product_code', 'product_type', 
-            'spring_type', 'material', 'customer_c_id'
+            'spring_type', 'material', 'customer_c_id', 'grams_per_product',
+            'length_mm', 'breadth_mm'
         ]
         read_only_fields = ['id']
     
@@ -105,13 +120,13 @@ class ProductCreateUpdateSerializer(serializers.ModelSerializer):
 
 class RMStockBalanceSerializer(serializers.ModelSerializer):
     """RMStockBalance serializer for CRUD operations"""
-    product_details = ProductListSerializer(source='product', read_only=True)
-    product_internal_code = serializers.CharField(write_only=True, required=False)
+    raw_material_details = RawMaterialBasicSerializer(source='raw_material', read_only=True)
+    material_code = serializers.CharField(write_only=True, required=False)
     
     class Meta:
         model = RMStockBalance
         fields = [
-            'id', 'product', 'product_details', 'product_internal_code',
+            'id', 'raw_material', 'raw_material_details', 'material_code',
             'available_quantity', 'last_updated'
         ]
         read_only_fields = ['id', 'last_updated']
@@ -123,22 +138,22 @@ class RMStockBalanceSerializer(serializers.ModelSerializer):
         return value
     
     def create(self, validated_data):
-        """Create or update stock balance using bulk_create with conflict handling"""
-        product_internal_code = validated_data.pop('product_internal_code', None)
+        """Create or update stock balance using update_or_create"""
+        material_code = validated_data.pop('material_code', None)
         
-        if product_internal_code:
+        if material_code:
             try:
-                product = Product.objects.only("id").get(internal_product_code=product_internal_code)
-                validated_data['product'] = product
-            except Product.DoesNotExist:
-                raise serializers.ValidationError({"product_internal_code": "Product with this internal code does not exist."})
+                raw_material = RawMaterial.objects.only("id").get(material_code=material_code)
+                validated_data['raw_material'] = raw_material
+            except RawMaterial.DoesNotExist:
+                raise serializers.ValidationError({"material_code": "Raw material with this code does not exist."})
         
-        product = validated_data['product']
+        raw_material = validated_data['raw_material']
         available_quantity = validated_data['available_quantity']
         
-        # Use bulk_create with update_conflicts for upsert behavior
+        # Use update_or_create for upsert behavior
         stock_balance, created = RMStockBalance.objects.update_or_create(
-            product=product,
+            raw_material=raw_material,
             defaults={'available_quantity': available_quantity}
         )
         
@@ -146,34 +161,35 @@ class RMStockBalanceSerializer(serializers.ModelSerializer):
     
     def update(self, instance, validated_data):
         """Update stock balance"""
-        product_internal_code = validated_data.pop('product_internal_code', None)
+        material_code = validated_data.pop('material_code', None)
         
-        if product_internal_code:
+        if material_code:
             try:
-                product = Product.objects.only("id").get(internal_product_code=product_internal_code)
-                validated_data['product'] = product
-            except Product.DoesNotExist:
-                raise serializers.ValidationError({"product_internal_code": "Product with this internal code does not exist."})
+                raw_material = RawMaterial.objects.only("id").get(material_code=material_code)
+                validated_data['raw_material'] = raw_material
+            except RawMaterial.DoesNotExist:
+                raise serializers.ValidationError({"material_code": "Raw material with this code does not exist."})
         
         return super().update(instance, validated_data)
 
 
 class RMStockBalanceUpdateSerializer(serializers.Serializer):
-    """Serializer for bulk stock balance updates using internal_product_code"""
-    internal_product_code = serializers.CharField(max_length=120)
-    available_quantity = serializers.IntegerField(min_value=0)
+    """Serializer for bulk stock balance updates using material_code"""
+    material_code = serializers.CharField(max_length=120)
+    available_quantity = serializers.DecimalField(max_digits=10, decimal_places=3, min_value=0)
     
-    def validate_internal_product_code(self, value):
-        """Validate that product exists"""
+    def validate_material_code(self, value):
+        """Validate that raw material exists"""
         try:
-            Product.objects.only("id").get(internal_product_code=value)
-        except Product.DoesNotExist:
-            raise serializers.ValidationError("Product with this internal code does not exist.")
+            RawMaterial.objects.only("id").get(material_code=value)
+        except RawMaterial.DoesNotExist:
+            raise serializers.ValidationError("Raw material with this code does not exist.")
         return value
 
 
 class ProductStockDashboardSerializer(serializers.ModelSerializer):
     """Combined serializer for RM Store dashboard showing products with stock"""
+    material = RawMaterialBasicSerializer(read_only=True)
     material_name = serializers.CharField(read_only=True)
     material_type_display = serializers.CharField(read_only=True)
     product_type_display = serializers.CharField(source='get_product_type_display', read_only=True)
@@ -187,26 +203,28 @@ class ProductStockDashboardSerializer(serializers.ModelSerializer):
         fields = [
             'id', 'internal_product_code', 'product_code', 'product_type',
             'product_type_display', 'spring_type', 'spring_type_display',
-            'material_name', 'material_type_display', 'customer_name', 
+            'material', 'material_name', 'material_type_display', 'customer_name', 
             'customer_id', 'stock_info'
         ]
     
     def get_stock_info(self, obj):
-        """Get comprehensive stock information"""
+        """Get comprehensive stock information from material's stock balance"""
         try:
-            stock_balance = obj.stock_balances.first()
-            if stock_balance:
-                return {
-                    'available_quantity': stock_balance.available_quantity,
-                    'last_updated': stock_balance.last_updated,
-                    'stock_status': 'in_stock' if stock_balance.available_quantity > 0 else 'out_of_stock'
-                }
+            # Access stock balance through the material relationship
+            if obj.material and hasattr(obj.material, 'stock_balances'):
+                stock_balance = obj.material.stock_balances.first()
+                if stock_balance:
+                    return {
+                        'available_quantity': stock_balance.available_quantity,
+                        'last_updated': stock_balance.last_updated,
+                        'stock_status': 'in_stock' if stock_balance.available_quantity > 0 else 'out_of_stock'
+                    }
             return {
                 'available_quantity': 0,
                 'last_updated': None,
                 'stock_status': 'no_stock_record'
             }
-        except:
+        except Exception as e:
             return {
                 'available_quantity': 0,
                 'last_updated': None,

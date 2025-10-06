@@ -23,7 +23,7 @@ class RawMaterialAdmin(admin.ModelAdmin):
             'description': 'Fill these fields only for Coil type materials'
         }),
         ('Sheet Specifications', {
-            'fields': ('thickness_mm', 'quantity'),
+            'fields': ('thickness_mm',),
             'classes': ('collapse',),
             'description': 'Fill these fields only for Sheet type materials'
         }),
@@ -49,8 +49,6 @@ class RawMaterialAdmin(admin.ModelAdmin):
         elif obj.material_type == 'sheet':
             if obj.thickness_mm:
                 specs.append(f"t{obj.thickness_mm}mm")
-            if obj.quantity:
-                specs.append(f"{obj.quantity}kg")
         
         return ', '.join(specs) if specs else '-'
     

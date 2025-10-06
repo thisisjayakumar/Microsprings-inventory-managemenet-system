@@ -2,7 +2,8 @@ from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 from .views import (
     ManufacturingOrderViewSet, PurchaseOrderViewSet,
-    MOProcessExecutionViewSet, MOProcessStepExecutionViewSet, MOProcessAlertViewSet
+    MOProcessExecutionViewSet, MOProcessStepExecutionViewSet, MOProcessAlertViewSet,
+    BatchViewSet
 )
 
 # Create router and register viewsets
@@ -12,6 +13,7 @@ router.register(r'purchase-orders', PurchaseOrderViewSet, basename='purchaseorde
 router.register(r'process-executions', MOProcessExecutionViewSet, basename='processexecution')
 router.register(r'step-executions', MOProcessStepExecutionViewSet, basename='stepexecution')
 router.register(r'process-alerts', MOProcessAlertViewSet, basename='processalert')
+router.register(r'batches', BatchViewSet, basename='batch')
 
 app_name = 'manufacturing'
 

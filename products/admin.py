@@ -14,6 +14,20 @@ class ProductAdmin(admin.ModelAdmin):
         ('Product Information', {
             'fields': ('product_code', 'internal_product_code', 'product_type', 'spring_type', 'customer_c_id', 'material')
         }),
+        ('Product Specifications', {
+            'fields': ('grams_per_product', 'length_mm', 'breadth_mm'),
+            'classes': ('collapse',),
+            'description': 'Product-specific measurements and specifications.'
+        }),
+        ('Sheet Calculation (Press Components)', {
+            'fields': (
+                ('whole_sheet_length_mm', 'whole_sheet_breadth_mm'),
+                ('strip_length_mm', 'strip_breadth_mm'),
+                ('strips_per_sheet', 'pcs_per_strip')
+            ),
+            'classes': ('collapse',),
+            'description': 'Sheet calculation data for RM ordering. strips_per_sheet = how many strips from one sheet.'
+        }),
         ('Material Details (Read-only)', {
             'fields': ('get_material_details',),
             'classes': ('collapse',),

@@ -44,12 +44,26 @@ class RawMaterial(models.Model):
         blank=True,
         help_text="Required if material type is Sheet"
     )
-    quantity = models.DecimalField(
-        max_digits=10, 
-        decimal_places=3, 
-        null=True, 
+    
+    # Sheet dimensions (for sheet type only)
+    length_mm = models.DecimalField(
+        max_digits=10,
+        decimal_places=3,
+        null=True,
         blank=True,
-        help_text="Quantity for Sheet type kg"
+        help_text="Length in mm (for sheet type materials)"
+    )
+    breadth_mm = models.DecimalField(
+        max_digits=10,
+        decimal_places=3,
+        null=True,
+        blank=True,
+        help_text="Breadth in mm (for sheet type materials)"
+    )
+    quantity = models.PositiveIntegerField(
+        null=True,
+        blank=True,
+        help_text="Number of sheets (for sheet type materials)"
     )
     
     created_at = models.DateTimeField(auto_now_add=True)
@@ -68,8 +82,6 @@ class RawMaterial(models.Model):
         elif self.material_type == 'sheet':
             if self.thickness_mm:
                 specs.append(f"t{self.thickness_mm}mm")
-            if self.quantity:
-                specs.append(f"{self.quantity}kg")
         
         spec_str = f" ({', '.join(specs)})" if specs else ""
         material_display = self.material_name if self.material_name else "Unknown Material"
@@ -94,6 +106,9 @@ class RawMaterial(models.Model):
 
             if self.wire_diameter_mm:
                 errors['wire_diameter_mm'] = "Wire diameter should not be set for Sheet type materials"
+            
+            if self.weight_kg:
+                errors['weight_kg'] = "Weight should not be set for Sheet type materials (use quantity instead)"
         
         # Validate positive values for numeric fields
         if self.wire_diameter_mm is not None and self.wire_diameter_mm <= 0:
@@ -105,9 +120,6 @@ class RawMaterial(models.Model):
         if self.thickness_mm is not None and self.thickness_mm <= 0:
             errors['thickness_mm'] = "Thickness must be greater than 0"
             
-        if self.quantity is not None and self.quantity <= 0:
-            errors['quantity'] = "Quantity must be greater than 0"
-        
         if errors:
             raise ValidationError(errors)
 

@@ -7,15 +7,25 @@ class RawMaterialBasicSerializer(serializers.ModelSerializer):
     """Basic raw material serializer for nested relationships"""
     material_name_display = serializers.CharField(source='get_material_name_display', read_only=True)
     material_type_display = serializers.CharField(source='get_material_type_display', read_only=True)
+    available_quantity = serializers.SerializerMethodField()
     
     class Meta:
         model = RawMaterial
         fields = [
             'id', 'material_code', 'material_name', 'material_name_display',
             'material_type', 'material_type_display', 'grade', 'wire_diameter_mm',
-            'weight_kg', 'thickness_mm', 'quantity'
+            'weight_kg', 'thickness_mm', 'available_quantity'
         ]
         read_only_fields = fields
+    
+    def get_available_quantity(self, obj):
+        """Get available quantity from RMStockBalance"""
+        try:
+            from inventory.models import RMStockBalance
+            stock_balance = RMStockBalance.objects.get(raw_material=obj)
+            return float(stock_balance.available_quantity)
+        except RMStockBalance.DoesNotExist:
+            return 0.0
 
 
 class ProcessListSerializer(serializers.ModelSerializer):

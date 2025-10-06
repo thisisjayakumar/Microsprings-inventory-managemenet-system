@@ -46,6 +46,7 @@ class Command(BaseCommand):
                         product_type = row.get("Product_Type", "").strip()
                         material_code = row.get("Material_Code", "").strip()
                         cust_id = row.get("Cust_ID", "").strip()
+                        grams_per_product = row.get("gram/product", "").strip()
                         
                         # Map product type - stamp products are press components
                         mapped_product_type = "press_component" if product_type.lower() == "press component" else "press_component"
@@ -92,6 +93,19 @@ class Command(BaseCommand):
                                         )
                                     )
 
+                            # Parse grams_per_product
+                            grams_value = None
+                            if grams_per_product:
+                                try:
+                                    grams_value = float(grams_per_product)
+                                except (ValueError, TypeError):
+                                    self.stdout.write(
+                                        self.style.WARNING(
+                                            f"Row {row_num}: Invalid gram/product value '{grams_per_product}'. "
+                                            f"Setting to None."
+                                        )
+                                    )
+                            
                             # Create or update product
                             product, product_created = Product.objects.update_or_create(
                                 product_code=product_code,
@@ -101,6 +115,7 @@ class Command(BaseCommand):
                                     "material": material,
                                     "customer_c_id": customer,
                                     "internal_product_code": row.get("IPC_Code", "").strip() or None,
+                                    "grams_per_product": grams_value,
                                 }
                             )
                             

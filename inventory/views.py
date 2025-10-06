@@ -52,9 +52,9 @@ class ProductViewSet(viewsets.ModelViewSet):
     ordering = ['internal_product_code']
     
     def get_queryset(self):
-        """Optimized queryset with prefetch_related for stock balances"""
+        """Optimized queryset with prefetch_related for material stock balances"""
         return Product.objects.select_related('material', 'customer_c_id', 'created_by').prefetch_related(
-            Prefetch('stock_balances', queryset=RMStockBalance.objects.all())
+            Prefetch('material__stock_balances', queryset=RMStockBalance.objects.all())
         )
     
     def get_serializer_class(self):
@@ -92,13 +92,13 @@ class RMStockBalanceViewSet(viewsets.ModelViewSet):
     """
     permission_classes = [IsAuthenticated, IsRMStoreUser]
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
-    search_fields = ['product__product_code', 'product__internal_product_code']
+    search_fields = ['raw_material__material_code', 'raw_material__material_name']
     ordering_fields = ['available_quantity', 'last_updated']
     ordering = ['-last_updated']
     
     def get_queryset(self):
         """Optimized queryset with select_related"""
-        return RMStockBalance.objects.select_related('product', 'product__material')
+        return RMStockBalance.objects.select_related('raw_material')
     
     def get_serializer_class(self):
         """Use RMStockBalanceSerializer for all operations"""
@@ -107,8 +107,8 @@ class RMStockBalanceViewSet(viewsets.ModelViewSet):
     @action(detail=False, methods=['post'])
     def bulk_update(self, request):
         """
-        Bulk update stock balances using internal_product_code
-        Expected payload: [{"internal_product_code": "ABC123", "available_quantity": 100}, ...]
+        Bulk update stock balances using material_code
+        Expected payload: [{"material_code": "RM001", "available_quantity": 100}, ...]
         """
         serializer = RMStockBalanceUpdateSerializer(data=request.data, many=True)
         if serializer.is_valid():
@@ -116,18 +116,18 @@ class RMStockBalanceViewSet(viewsets.ModelViewSet):
             
             with transaction.atomic():
                 for item in serializer.validated_data:
-                    product = Product.objects.only("id").get(
-                        internal_product_code=item['internal_product_code']
+                    raw_material = RawMaterial.objects.only("id").get(
+                        material_code=item['material_code']
                     )
                     
-                    # Use bulk_create with update_conflicts as requested
+                    # Use update_or_create for upsert behavior
                     stock_balance, created = RMStockBalance.objects.update_or_create(
-                        product=product,
+                        raw_material=raw_material,
                         defaults={'available_quantity': item['available_quantity']}
                     )
                     
                     updated_records.append({
-                        'internal_product_code': item['internal_product_code'],
+                        'material_code': item['material_code'],
                         'available_quantity': stock_balance.available_quantity,
                         'created': created,
                         'last_updated': stock_balance.last_updated
@@ -141,26 +141,26 @@ class RMStockBalanceViewSet(viewsets.ModelViewSet):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
     @action(detail=False, methods=['post'])
-    def update_by_product_code(self, request):
+    def update_by_material_code(self, request):
         """
-        Update single stock balance using internal_product_code
-        Expected payload: {"internal_product_code": "ABC123", "available_quantity": 100}
+        Update single stock balance using material_code
+        Expected payload: {"material_code": "RM001", "available_quantity": 100}
         """
         serializer = RMStockBalanceUpdateSerializer(data=request.data)
         if serializer.is_valid():
-            product = Product.objects.only("id").get(
-                internal_product_code=serializer.validated_data['internal_product_code']
+            raw_material = RawMaterial.objects.only("id").get(
+                material_code=serializer.validated_data['material_code']
             )
             
-            # Use the requested bulk_create approach
+            # Use update_or_create for upsert behavior
             stock_balance, created = RMStockBalance.objects.update_or_create(
-                product=product,
+                raw_material=raw_material,
                 defaults={'available_quantity': serializer.validated_data['available_quantity']}
             )
             
             return Response({
                 'message': 'Stock balance updated successfully',
-                'internal_product_code': serializer.validated_data['internal_product_code'],
+                'material_code': serializer.validated_data['material_code'],
                 'available_quantity': stock_balance.available_quantity,
                 'created': created,
                 'last_updated': stock_balance.last_updated
@@ -176,6 +176,7 @@ class RawMaterialViewSet(viewsets.ReadOnlyModelViewSet):
     permission_classes = [IsAuthenticated, IsRMStoreUser]
     queryset = RawMaterial.objects.all()
     serializer_class = RawMaterialBasicSerializer
+    pagination_class = None
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     filterset_fields = ['material_type', 'material_name']
     search_fields = ['material_code', 'material_name', 'grade']
@@ -212,20 +213,26 @@ def health_check(request):
 @permission_classes([IsAuthenticated, IsRMStoreUser])
 def rm_store_dashboard_stats(request):
     """
-    Get dashboard statistics for RM Store users
+    Get dashboard statistics for RM Store users - Raw Materials focused
     """
     try:
-        total_products = Product.objects.count()
-        products_with_stock = RMStockBalance.objects.filter(available_quantity__gt=0).count()
-        products_out_of_stock = RMStockBalance.objects.filter(available_quantity=0).count()
-        products_no_stock_record = total_products - RMStockBalance.objects.count()
+        total_raw_materials = RawMaterial.objects.count()
+        materials_with_stock = RMStockBalance.objects.filter(available_quantity__gt=0).count()
+        materials_out_of_stock = RMStockBalance.objects.filter(available_quantity=0).count()
+        materials_no_stock_record = total_raw_materials - RMStockBalance.objects.count()
+        
+        # Material type breakdown
+        total_coils = RawMaterial.objects.filter(material_type='coil').count()
+        total_sheets = RawMaterial.objects.filter(material_type='sheet').count()
         
         return Response({
-            'total_products': total_products,
-            'products_with_stock': products_with_stock,
-            'products_out_of_stock': products_out_of_stock,
-            'products_no_stock_record': products_no_stock_record,
-            'total_stock_records': RMStockBalance.objects.count()
+            'total_raw_materials': total_raw_materials,
+            'materials_with_stock': materials_with_stock,
+            'materials_out_of_stock': materials_out_of_stock,
+            'materials_no_stock_record': materials_no_stock_record,
+            'total_stock_records': RMStockBalance.objects.count(),
+            'total_coils': total_coils,
+            'total_sheets': total_sheets
         })
     except Exception as e:
         return Response(

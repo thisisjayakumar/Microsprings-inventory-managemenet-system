@@ -89,7 +89,6 @@ class Command(BaseCommand):
                             "wire_diameter_mm": Decimal(wire_dia) if wire_dia else None,
                             "thickness_mm": Decimal(thickness) if thickness else None,
                             "weight_kg": weight_kg,
-                            "quantity": available_quantity,  # if you want to mirror available qty
                             "finishing": self._map_finishing(finishing),
                         },
                     )

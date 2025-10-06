@@ -11,7 +11,7 @@ from .permissions import IsManager, IsManagerOrSupervisor
 
 from .models import (
     ManufacturingOrder, PurchaseOrder, MOStatusHistory, POStatusHistory,
-    MOProcessExecution, MOProcessStepExecution, MOProcessAlert
+    MOProcessExecution, MOProcessStepExecution, MOProcessAlert, Batch
 )
 from .serializers import (
     ManufacturingOrderListSerializer, ManufacturingOrderDetailSerializer,
@@ -21,11 +21,13 @@ from .serializers import (
     ProductBasicSerializer, RawMaterialBasicSerializer, VendorBasicSerializer,
     ManufacturingOrderWithProcessesSerializer, MOProcessExecutionListSerializer,
     MOProcessExecutionDetailSerializer, MOProcessStepExecutionSerializer,
-    MOProcessAlertSerializer
+    MOProcessAlertSerializer, BatchListSerializer, BatchDetailSerializer
 )
 from products.models import Product
-from inventory.models import RawMaterial
+from inventory.models import RawMaterial, RMStockBalance
 from third_party.models import Vendor
+from .rm_calculator import RMCalculator
+from decimal import Decimal
 
 User = get_user_model()
 
@@ -112,6 +114,144 @@ class ManufacturingOrderViewSet(viewsets.ModelViewSet):
         
         serializer = self.get_serializer(mo)
         return Response(serializer.data)
+
+    @action(detail=True, methods=['post'], url_path='complete-rm-allocation', permission_classes=[IsAuthenticated])
+    def complete_rm_allocation(self, request, pk=None):
+        """
+        Complete RM allocation (RM Store only) - changes status to rm_allocated
+        """
+        mo = self.get_object()
+        
+        # Check if user is RM Store
+        user_roles = request.user.user_roles.values_list('role__name', flat=True)
+        if 'rm_store' not in user_roles:
+            return Response(
+                {'error': 'Only RM Store users can complete RM allocation'}, 
+                status=status.HTTP_403_FORBIDDEN
+            )
+        
+        # Validate MO is assigned to this RM Store user
+        if mo.assigned_rm_store != request.user:
+            return Response(
+                {'error': 'This MO is not assigned to you'}, 
+                status=status.HTTP_403_FORBIDDEN
+            )
+        
+        # Validate MO status
+        if mo.status not in ['on_hold', 'in_progress']:
+            return Response(
+                {'error': f'Cannot complete allocation for MO in {mo.status} status'}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        # Change status to rm_allocated
+        old_status = mo.status
+        mo.status = 'rm_allocated'
+        mo.rm_allocated_at = timezone.now()
+        mo.rm_allocated_by = request.user
+        mo.save()
+        
+        # Create status history
+        MOStatusHistory.objects.create(
+            mo=mo,
+            from_status=old_status,
+            to_status='rm_allocated',
+            changed_by=request.user,
+            notes=request.data.get('notes', 'All RM allocated to batches by RM Store')
+        )
+        
+        serializer = self.get_serializer(mo)
+        return Response({
+            'message': f'RM allocation completed for MO {mo.mo_id}',
+            'mo': serializer.data
+        })
+
+    @action(detail=True, methods=['post'], url_path='send-remaining-to-scrap', permission_classes=[IsAuthenticated])
+    def send_remaining_to_scrap(self, request, pk=None):
+        """
+        Send remaining RM to scrap for this MO
+        Expected payload: { "scrap_rm_kg": 0.26 } or { "send_all_remaining": true }
+        """
+        mo = self.get_object()
+        send_all = request.data.get('send_all_remaining', False)
+        scrap_rm_kg = request.data.get('scrap_rm_kg')
+        
+        # Calculate remaining RM
+        product = mo.product_code
+        total_rm_required = None
+        
+        if product.material_type == 'coil' and product.grams_per_product:
+            total_grams = mo.quantity * product.grams_per_product
+            base_rm_kg = Decimal(str(total_grams / 1000))
+            tolerance = mo.tolerance_percentage or Decimal('2.00')
+            tolerance_factor = Decimal('1') + (tolerance / Decimal('100'))
+            total_rm_required = float(base_rm_kg * tolerance_factor)
+        
+        if total_rm_required is None:
+            return Response(
+                {'error': 'Cannot calculate RM for this product type'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        # Calculate cumulative RM released from batches
+        batches = Batch.objects.filter(mo=mo).exclude(status='cancelled')
+        cumulative_rm_released = Decimal('0')
+        
+        for batch in batches:
+            batch_quantity_grams = batch.planned_quantity
+            batch_rm_base_kg = Decimal(str(batch_quantity_grams / 1000))
+            tolerance = mo.tolerance_percentage or Decimal('2.00')
+            tolerance_factor = Decimal('1') + (tolerance / Decimal('100'))
+            batch_rm = batch_rm_base_kg * tolerance_factor
+            cumulative_rm_released += batch_rm
+        
+        remaining_rm_kg = float(Decimal(str(total_rm_required)) - cumulative_rm_released)
+        
+        if remaining_rm_kg <= 0:
+            return Response(
+                {'error': 'No remaining RM to send to scrap'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        # Determine scrap amount
+        if send_all:
+            scrap_kg = remaining_rm_kg
+        elif scrap_rm_kg is not None:
+            try:
+                scrap_kg = float(scrap_rm_kg)
+                if scrap_kg <= 0:
+                    return Response(
+                        {'error': 'scrap_rm_kg must be positive'},
+                        status=status.HTTP_400_BAD_REQUEST
+                    )
+                if scrap_kg > remaining_rm_kg:
+                    return Response(
+                        {'error': f'Scrap amount ({scrap_kg} kg) exceeds remaining RM ({remaining_rm_kg:.3f} kg)'},
+                        status=status.HTTP_400_BAD_REQUEST
+                    )
+            except (ValueError, TypeError):
+                return Response(
+                    {'error': 'scrap_rm_kg must be a valid number'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+        else:
+            return Response(
+                {'error': 'Either scrap_rm_kg or send_all_remaining must be provided'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        # Add scrap to MO
+        scrap_grams = int(scrap_kg * 1000)
+        mo.scrap_rm_weight += scrap_grams
+        mo.save()
+        
+        serializer = self.get_serializer(mo)
+        return Response({
+            'message': f'Sent {scrap_kg:.3f} kg of RM to scrap for MO {mo.mo_id}',
+            'mo': serializer.data,
+            'scrap_rm_kg': mo.scrap_rm_weight / 1000,
+            'remaining_rm_after': max(0, remaining_rm_kg - scrap_kg)
+        })
 
     @action(detail=False, methods=['get'])
     def dashboard_stats(self, request):
@@ -226,13 +366,13 @@ class ManufacturingOrderViewSet(viewsets.ModelViewSet):
             
             # Serialize the data
             product_data = ProductBasicSerializer(product).data
-            bom_data = BOMDetailSerializer(bom_items, many=True).data
             
-            # Extract unique processes and materials
+            # Extract unique processes and materials (optimized)
             processes = []
             materials = []
+            process_steps = []
             process_ids = set()
-            material_codes = set()
+            material_ids = set()
             
             for bom_item in bom_items:
                 # Collect unique processes
@@ -244,27 +384,26 @@ class ManufacturingOrderViewSet(viewsets.ModelViewSet):
                     })
                     process_ids.add(bom_item.process_step.process.id)
                 
-                # Collect unique materials
-                if bom_item.material and bom_item.material.material_code not in material_codes:
-                    materials.append(RawMaterialBasicSerializer(bom_item.material).data)
-                    material_codes.add(bom_item.material.material_code)
+                # Collect unique materials with available_quantity
+                if bom_item.material and bom_item.material.id not in material_ids:
+                    material_data = RawMaterialBasicSerializer(bom_item.material).data
+                    materials.append(material_data)
+                    material_ids.add(bom_item.material.id)
+                
+                # Collect simplified process steps (without redundant material data)
+                process_steps.append({
+                    'process_step_name': bom_item.process_step.step_name,
+                    'process_name': bom_item.process_step.process.name,
+                    'sequence_order': bom_item.process_step.sequence_order,
+                    'material_id': bom_item.material.id if bom_item.material else None,
+                    'material_code': bom_item.material.material_code if bom_item.material else None
+                })
             
             response_data = {
                 'product': product_data,
-                'bom_items': bom_data,
+                'process_steps': sorted(process_steps, key=lambda x: x['sequence_order']),
                 'processes': processes,
-                'materials': materials,
-                'auto_populate_data': {
-                    'product_type': product.get_product_type_display() if hasattr(product, 'get_product_type_display') else '',
-                    'material_name': product.material_name if hasattr(product, 'material_name') else '',
-                    'material_type': product.material_type if hasattr(product, 'material_type') else '',
-                    'grade': product.grade if hasattr(product, 'grade') else '',
-                    'wire_diameter_mm': product.wire_diameter_mm if hasattr(product, 'wire_diameter_mm') else None,
-                    'thickness_mm': product.thickness_mm if hasattr(product, 'thickness_mm') else None,
-                    'finishing': product.finishing if hasattr(product, 'finishing') else '',
-                    'weight_kg': product.weight_kg if hasattr(product, 'weight_kg') else None,
-                    'material_type_display': product.material_type_display if hasattr(product, 'material_type_display') else ''
-                }
+                'materials': materials
             }
             
             return Response(response_data)
@@ -278,9 +417,23 @@ class ManufacturingOrderViewSet(viewsets.ModelViewSet):
     @action(detail=False, methods=['get'])
     def supervisors(self, request):
         """Get supervisors for dropdown"""
-        # You might want to filter by role/permission here
-        supervisors = User.objects.filter(is_active=True).order_by('first_name', 'last_name')
+        # Filter by supervisor role
+        supervisors = User.objects.filter(
+            is_active=True,
+            user_roles__role__name='supervisor'
+        ).distinct().order_by('first_name', 'last_name')
         serializer = UserDropdownSerializer(supervisors, many=True)
+        return Response(serializer.data)
+
+    @action(detail=False, methods=['get'])
+    def rm_store_users(self, request):
+        """Get RM store users for dropdown"""
+        # Filter by rm_store role
+        rm_store_users = User.objects.filter(
+            is_active=True,
+            user_roles__role__name='rm_store'
+        ).distinct().order_by('first_name', 'last_name')
+        serializer = UserDropdownSerializer(rm_store_users, many=True)
         return Response(serializer.data)
 
     @action(detail=False, methods=['get'])
@@ -292,6 +445,140 @@ class ManufacturingOrderViewSet(viewsets.ModelViewSet):
         customers = Customer.objects.filter(is_active=True).order_by('name')
         serializer = CustomerListSerializer(customers, many=True)
         return Response(serializer.data)
+
+    @action(detail=False, methods=['post'])
+    def calculate_rm_requirement(self, request):
+        """
+        Calculate RM requirement for a Manufacturing Order
+        Supports both coil and sheet materials
+        """
+        try:
+            product_code = request.data.get('product_code')
+            quantity = request.data.get('quantity')
+            tolerance_percentage = request.data.get('tolerance_percentage', 2.00)
+            scrap_percentage = request.data.get('scrap_percentage')
+            
+            if not product_code or not quantity:
+                return Response(
+                    {'error': 'product_code and quantity are required'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            
+            # Get product
+            try:
+                product = Product.objects.select_related('material').get(product_code=product_code)
+            except Product.DoesNotExist:
+                return Response(
+                    {'error': 'Product not found'},
+                    status=status.HTTP_404_NOT_FOUND
+                )
+            
+            material = product.material
+            if not material:
+                return Response(
+                    {'error': 'Product has no associated material'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            
+            # Get available stock
+            try:
+                stock_balance = RMStockBalance.objects.get(raw_material=material)
+                available_quantity = stock_balance.available_quantity
+            except RMStockBalance.DoesNotExist:
+                available_quantity = Decimal('0')
+            
+            calculator = RMCalculator()
+            
+            # Calculate based on material type
+            if material.material_type == 'coil':
+                # For coil materials
+                if not product.grams_per_product:
+                    return Response(
+                        {'error': 'Product must have grams_per_product defined for coil materials'},
+                        status=status.HTTP_400_BAD_REQUEST
+                    )
+                
+                calculation = calculator.calculate_rm_for_coil(
+                    quantity=int(quantity),
+                    grams_per_product=product.grams_per_product,
+                    tolerance_percentage=Decimal(str(tolerance_percentage)),
+                    scrap_percentage=Decimal(str(scrap_percentage)) if scrap_percentage else None
+                )
+                
+                # Check availability
+                availability = calculator.check_rm_availability(
+                    required_amount=calculation['final_required_kg'],
+                    available_amount=available_quantity,
+                    material_type='coil'
+                )
+                
+                return Response({
+                    'material_type': 'coil',
+                    'calculation': calculation,
+                    'availability': availability,
+                    'material_info': {
+                        'material_code': material.material_code,
+                        'material_name': material.material_name,
+                        'grade': material.grade,
+                        'wire_diameter_mm': str(material.wire_diameter_mm) if material.wire_diameter_mm else None,
+                    }
+                })
+            
+            elif material.material_type == 'sheet':
+                # For sheet materials
+                if not all([product.length_mm, product.breadth_mm, material.length_mm, material.breadth_mm]):
+                    return Response(
+                        {'error': 'Product and material must have length and breadth defined for sheet materials'},
+                        status=status.HTTP_400_BAD_REQUEST
+                    )
+                
+                calculation = calculator.calculate_rm_for_sheet(
+                    quantity=int(quantity),
+                    product_length_mm=product.length_mm,
+                    product_breadth_mm=product.breadth_mm,
+                    sheet_length_mm=material.length_mm,
+                    sheet_breadth_mm=material.breadth_mm,
+                    tolerance_percentage=Decimal(str(tolerance_percentage)),
+                    scrap_percentage=Decimal(str(scrap_percentage)) if scrap_percentage else None
+                )
+                
+                # Check availability (in sheets)
+                availability = calculator.check_rm_availability(
+                    required_amount=Decimal(str(calculation['final_required_sheets'])),
+                    available_amount=available_quantity,
+                    material_type='sheet'
+                )
+                
+                return Response({
+                    'material_type': 'sheet',
+                    'calculation': calculation,
+                    'availability': availability,
+                    'material_info': {
+                        'material_code': material.material_code,
+                        'material_name': material.material_name,
+                        'grade': material.grade,
+                        'thickness_mm': str(material.thickness_mm) if material.thickness_mm else None,
+                        'length_mm': str(material.length_mm) if material.length_mm else None,
+                        'breadth_mm': str(material.breadth_mm) if material.breadth_mm else None,
+                    }
+                })
+            
+            else:
+                return Response(
+                    {'error': 'Invalid material type'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+                
+        except ValueError as e:
+            return Response(
+                {'error': str(e)},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        except Exception as e:
+            return Response(
+                {'error': f'Calculation error: {str(e)}'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
 
     @action(detail=True, methods=['get'])
     def process_tracking(self, request, pk=None):
@@ -364,19 +651,42 @@ class ManufacturingOrderViewSet(viewsets.ModelViewSet):
             )
         
         # Only allow updates for certain statuses
-        if mo.status not in ['submitted', 'gm_approved', 'mo_approved', 'on_hold', 'rm_allocated']:
+        if mo.status not in ['on_hold', 'rm_allocated']:
             return Response(
-                {'error': f'Cannot update MO in {mo.status} status'}, 
+                {'error': f'Cannot update MO in {mo.status} status. MO must be in On Hold or RM Allocated status to update.'}, 
                 status=status.HTTP_400_BAD_REQUEST
             )
         
         # Update allowed fields
-        allowed_fields = ['assigned_supervisor', 'shift']
+        allowed_fields = ['assigned_rm_store', 'assigned_supervisor', 'shift']
         updated_fields = []
         
         for field in allowed_fields:
             if field in request.data:
-                if field == 'assigned_supervisor':
+                if field == 'assigned_rm_store':
+                    # Validate rm_store user exists and has rm_store role
+                    rm_store_id = request.data[field]
+                    
+                    # Handle empty string or None (clearing the rm_store user)
+                    if not rm_store_id or rm_store_id == '':
+                        mo.assigned_rm_store = None
+                        updated_fields.append(field)
+                    else:
+                        try:
+                            rm_store_user = User.objects.get(id=rm_store_id)
+                            if not rm_store_user.user_roles.filter(role__name='rm_store').exists():
+                                return Response(
+                                    {'error': 'Selected user is not an RM store user'}, 
+                                    status=status.HTTP_400_BAD_REQUEST
+                                )
+                            mo.assigned_rm_store = rm_store_user
+                            updated_fields.append(field)
+                        except User.DoesNotExist:
+                            return Response(
+                                {'error': 'RM store user not found'}, 
+                                status=status.HTTP_400_BAD_REQUEST
+                            )
+                elif field == 'assigned_supervisor':
                     # Validate supervisor exists and has supervisor role
                     supervisor_id = request.data[field]
                     
@@ -432,7 +742,7 @@ class ManufacturingOrderViewSet(viewsets.ModelViewSet):
                 Alert.objects.create(
                     alert_rule=alert_rule,
                     title=f'{mo.mo_id} is assigned to you',
-                    message=f'Manufacturing Order {mo.mo_id} has been assigned to you. Product: {mo.product_code.display_name}, Quantity: {mo.quantity}',
+                    message=f'Manufacturing Order {mo.mo_id} has been assigned to you. Product: {mo.product_code.product_code}, Quantity: {mo.quantity}',
                     severity='medium',
                     related_object_type='mo',
                     related_object_id=str(mo.id),
@@ -459,10 +769,10 @@ class ManufacturingOrderViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_403_FORBIDDEN
             )
         
-        # Check current status
-        if mo.status not in ['submitted', 'on_hold', 'gm_approved']:
+        # Check current status - can only approve when RM is allocated
+        if mo.status != 'rm_allocated':
             return Response(
-                {'error': f'Cannot approve MO in {mo.status} status'}, 
+                {'error': f'Cannot approve MO in {mo.status} status. MO must be in RM Allocated status to approve.'}, 
                 status=status.HTTP_400_BAD_REQUEST
             )
         
@@ -473,29 +783,50 @@ class ManufacturingOrderViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST
             )
         
-        # Update MO status
+        # Update MO status to in_progress and set actual start date
         old_status = mo.status
-        mo.status = 'mo_approved'
+        mo.status = 'in_progress'
+        mo.actual_start_date = timezone.now()
         mo.save()
+        
+        # Reduce RM quantities based on mo.rm_required_kg
+        if mo.rm_required_kg > 0:
+            try:
+                from inventory.models import RawMaterial
+                # Find the raw material associated with this MO's product
+                raw_material = mo.product_code.material
+                if raw_material and raw_material.quantity_on_hand >= mo.rm_required_kg:
+                    raw_material.quantity_on_hand -= mo.rm_required_kg
+                    raw_material.save()
+                else:
+                    return Response(
+                        {'error': 'Insufficient raw material quantity available'}, 
+                        status=status.HTTP_400_BAD_REQUEST
+                    )
+            except Exception as e:
+                return Response(
+                    {'error': f'Error reducing RM quantity: {str(e)}'}, 
+                    status=status.HTTP_400_BAD_REQUEST
+                )
         
         # Create status history
         MOStatusHistory.objects.create(
             mo=mo,
             from_status=old_status,
-            to_status='mo_approved',
+            to_status='in_progress',
             changed_by=request.user,
-            notes=request.data.get('notes', 'MO approved by manager')
+            notes=request.data.get('notes', 'MO approved by manager - Production started')
         )
         
         # Create notification for supervisor
         from notifications.models import Alert, AlertRule
         
-        # Create or get alert rule for MO approval notifications
+        # Create or get alert rule for production start notifications
         alert_rule, created = AlertRule.objects.get_or_create(
-            name='MO Approval Notification',
+            name='Production Start Notification',
             alert_type='custom',
             defaults={
-                'trigger_condition': {'event': 'mo_approved'},
+                'trigger_condition': {'event': 'production_started'},
                 'notification_methods': ['in_app']
             }
         )
@@ -503,8 +834,8 @@ class ManufacturingOrderViewSet(viewsets.ModelViewSet):
         # Create alert for supervisor
         Alert.objects.create(
             alert_rule=alert_rule,
-            title=f'Manufacturing Order {mo.mo_id} Assigned',
-            message=f'Manufacturing Order {mo.mo_id} has been approved and assigned to you. Product: {mo.product_code.product_code}, Quantity: {mo.quantity}',
+            title=f'Production Started: {mo.mo_id}',
+            message=f'Manufacturing Order {mo.mo_id} has been approved and production has started. You are assigned as supervisor. Product: {mo.product_code.product_code}, Quantity: {mo.quantity}',
             severity='medium',
             related_object_type='mo',
             related_object_id=str(mo.id)
@@ -518,6 +849,97 @@ class ManufacturingOrderViewSet(viewsets.ModelViewSet):
         return Response({
             'message': 'MO approved successfully and supervisor notified',
             'mo': serializer.data
+        })
+
+    @action(detail=True, methods=['post'], permission_classes=[IsAuthenticated])
+    def rm_approve(self, request, pk=None):
+        """Approve MO for RM allocation (RM Store user only)"""
+        mo = self.get_object()
+        
+        # Check if user is rm_store
+        user_roles = request.user.user_roles.values_list('role__name', flat=True)
+        if 'rm_store' not in user_roles:
+            return Response(
+                {'error': 'Only RM store users can approve RM allocation'}, 
+                status=status.HTTP_403_FORBIDDEN
+            )
+        
+        # Check current status - can only approve when on_hold
+        if mo.status != 'on_hold':
+            return Response(
+                {'error': f'Cannot approve RM allocation for MO in {mo.status} status. MO must be in On Hold status.'}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        # Check if assigned to this rm_store user
+        if mo.assigned_rm_store != request.user:
+            return Response(
+                {'error': 'You can only approve MOs assigned to you'}, 
+                status=status.HTTP_403_FORBIDDEN
+            )
+        
+        # Update MO status to rm_allocated
+        old_status = mo.status
+        mo.status = 'rm_allocated'
+        mo.rm_allocated_at = timezone.now()
+        mo.rm_allocated_by = request.user
+        mo.save()
+        
+        # Create status history
+        MOStatusHistory.objects.create(
+            mo=mo,
+            from_status=old_status,
+            to_status='rm_allocated',
+            changed_by=request.user,
+            notes=request.data.get('notes', 'Raw materials verified and allocated by RM store')
+        )
+        
+        serializer = ManufacturingOrderWithProcessesSerializer(mo)
+        return Response({
+            'message': 'RM allocation approved successfully!',
+            'mo': serializer.data
+        })
+
+    @action(detail=False, methods=['get'], permission_classes=[IsAuthenticated])
+    def rm_store_dashboard(self, request):
+        """Get MOs assigned to current RM Store user grouped by status"""
+        # Check if user is rm_store
+        user_roles = request.user.user_roles.values_list('role__name', flat=True)
+        if 'rm_store' not in user_roles:
+            return Response(
+                {'error': 'Only RM store users can access this dashboard'}, 
+                status=status.HTTP_403_FORBIDDEN
+            )
+        
+        # Get MOs assigned to this RM store user
+        base_queryset = ManufacturingOrder.objects.filter(
+            assigned_rm_store=request.user
+        ).select_related(
+            'product_code', 'product_code__customer_c_id', 'customer_c_id',
+            'assigned_supervisor', 'created_by'
+        ).prefetch_related('batches')
+        
+        # Separate by status
+        on_hold_mos = base_queryset.filter(status='on_hold').order_by('-created_at')
+        in_progress_mos = base_queryset.filter(status='in_progress').order_by('-created_at')
+        # For RM Store, "completed" means rm_allocated or fully completed
+        completed_mos = base_queryset.filter(status__in=['rm_allocated', 'completed']).order_by('-created_at')
+        
+        # Serialize data
+        on_hold_serializer = ManufacturingOrderListSerializer(on_hold_mos, many=True)
+        in_progress_serializer = ManufacturingOrderListSerializer(in_progress_mos, many=True)
+        completed_serializer = ManufacturingOrderListSerializer(completed_mos, many=True)
+        
+        return Response({
+            'summary': {
+                'pending_approvals': on_hold_mos.count(),
+                'in_progress': in_progress_mos.count(),
+                'completed': completed_mos.count(),
+                'total': base_queryset.count()
+            },
+            'on_hold': on_hold_serializer.data,
+            'in_progress': in_progress_serializer.data,
+            'completed': completed_serializer.data
         })
 
     @action(detail=False, methods=['get'])
@@ -1025,3 +1447,318 @@ class MOProcessAlertViewSet(viewsets.ModelViewSet):
         
         serializer = self.get_serializer(alerts, many=True)
         return Response(serializer.data)
+
+
+class BatchViewSet(viewsets.ModelViewSet):
+    """
+    ViewSet for Batch management - RM Store users can create batches
+    """
+    permission_classes = [IsAuthenticated]
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
+    filterset_fields = ['mo', 'status', 'assigned_operator', 'assigned_supervisor']
+    search_fields = ['batch_id', 'mo__mo_id', 'product_code__product_code']
+    ordering_fields = ['created_at', 'planned_start_date', 'status', 'progress_percentage']
+    ordering = ['-created_at']
+
+    def get_queryset(self):
+        """Optimized queryset with select_related and prefetch_related"""
+        queryset = Batch.objects.select_related(
+            'mo', 'product_code', 'assigned_operator', 'assigned_supervisor', 
+            'created_by', 'current_process_step'
+        ).prefetch_related('mo__product_code')
+        
+        # Filter by MO if specified
+        mo_id = self.request.query_params.get('mo_id')
+        if mo_id:
+            queryset = queryset.filter(mo_id=mo_id)
+        
+        return queryset
+
+    def get_serializer_class(self):
+        """Use different serializers for list and detail views"""
+        if self.action == 'list':
+            return BatchListSerializer
+        return BatchDetailSerializer
+
+    def perform_create(self, serializer):
+        """Create batch - automatically handled by serializer"""
+        serializer.save()
+
+    @action(detail=False, methods=['get'], url_path='mo-batch-summary/(?P<mo_id>[^/.]+)')
+    def mo_batch_summary(self, request, mo_id=None):
+        """
+        Get comprehensive batch summary for an MO including:
+        - Total RM required for MO (with tolerance)
+        - Cumulative RM released across all batches
+        - Remaining RM that can be allocated
+        - % completion based on batches
+        """
+        try:
+            mo = ManufacturingOrder.objects.select_related('product_code').get(id=mo_id)
+        except ManufacturingOrder.DoesNotExist:
+            return Response(
+                {'error': 'Manufacturing Order not found'},
+                status=status.HTTP_404_NOT_FOUND
+            )
+        
+        product = mo.product_code
+        
+        # Calculate total RM required for entire MO
+        total_rm_required = None
+        rm_unit = None
+        
+        if product.material_type == 'coil' and product.grams_per_product:
+            # For coil-based products (springs)
+            total_grams = mo.quantity * product.grams_per_product
+            base_rm_kg = Decimal(str(total_grams / 1000))
+            
+            # Apply tolerance
+            tolerance = mo.tolerance_percentage or Decimal('2.00')
+            tolerance_factor = Decimal('1') + (tolerance / Decimal('100'))
+            total_rm_required = float(base_rm_kg * tolerance_factor)
+            rm_unit = 'kg'
+            
+        elif product.material_type == 'sheet' and product.pcs_per_strip:
+            # For sheet-based products (press components)
+            strips_calc = product.calculate_strips_required(mo.quantity)
+            total_rm_required = strips_calc.get('strips_required', 0)
+            rm_unit = 'strips'
+        
+        # Get all batches for this MO
+        batches = Batch.objects.filter(mo=mo).exclude(status='cancelled')
+        
+        # Calculate cumulative RM released and scrapped
+        cumulative_rm_released = Decimal('0')
+        cumulative_scrap_rm = Decimal('0')
+        batch_details = []
+        
+        for batch in batches:
+            batch_rm = Decimal('0')
+            
+            # NOTE: planned_quantity is now stored in GRAMS (not pieces)
+            # User enters RM in kg, frontend converts to grams
+            batch_quantity_grams = batch.planned_quantity
+            
+            # Convert grams to kg
+            batch_rm_base_kg = Decimal(str(batch_quantity_grams / 1000))
+            
+            # Apply tolerance
+            tolerance = mo.tolerance_percentage or Decimal('2.00')
+            tolerance_factor = Decimal('1') + (tolerance / Decimal('100'))
+            batch_rm = batch_rm_base_kg * tolerance_factor
+
+            cumulative_rm_released += batch_rm
+            
+            # Add scrap RM (stored in grams)
+            batch_scrap_kg = Decimal(str(batch.scrap_rm_weight / 1000))
+            cumulative_scrap_rm += batch_scrap_kg
+            
+            batch_details.append({
+                'batch_id': batch.batch_id,
+                'planned_quantity': batch.planned_quantity,  # in grams
+                'rm_base_kg': float(batch_rm_base_kg),
+                'rm_released': float(batch_rm),
+                'scrap_rm_kg': float(batch_scrap_kg),
+                'status': batch.status,
+                'created_at': batch.created_at
+            })
+        
+        # Add MO-level scrap (remaining RM sent to scrap)
+        mo_scrap_kg = Decimal(str(mo.scrap_rm_weight / 1000))
+        
+        # Calculate remaining and percentage
+        remaining_rm = None
+        completion_percentage = 0
+        
+        if total_rm_required is not None:
+            # Remaining = Total - Released - Already scrapped at MO level
+            remaining_rm = float(Decimal(str(total_rm_required)) - cumulative_rm_released - mo_scrap_kg)
+            if remaining_rm < 0:
+                remaining_rm = 0
+            
+            if total_rm_required > 0:
+                completion_percentage = min(
+                    100, 
+                    float((cumulative_rm_released / Decimal(str(total_rm_required))) * Decimal('100'))
+                )
+        
+        return Response({
+            'mo_id': mo.mo_id,
+            'mo_quantity': mo.quantity,
+            'material_type': product.material_type,
+            'total_rm_required': total_rm_required,
+            'rm_unit': rm_unit,
+            'cumulative_rm_released': float(cumulative_rm_released),
+            'cumulative_scrap_rm': float(cumulative_scrap_rm),
+            'mo_scrap_rm': float(mo_scrap_kg),
+            'remaining_rm': remaining_rm,
+            'completion_percentage': round(completion_percentage, 2),
+            'batch_count': batches.count(),
+            'batches': batch_details,
+            'tolerance_percentage': float(mo.tolerance_percentage) if mo.tolerance_percentage else 2.00
+        })
+    
+    @action(detail=True, methods=['post'], url_path='add-scrap-rm')
+    def add_scrap_rm(self, request, pk=None):
+        """
+        Add scrap RM weight to a batch
+        Expected payload: { "scrap_rm_kg": 1.5 }
+        """
+        batch = self.get_object()
+        scrap_rm_kg = request.data.get('scrap_rm_kg')
+        
+        if scrap_rm_kg is None:
+            return Response(
+                {'error': 'scrap_rm_kg is required'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        try:
+            scrap_rm_kg = float(scrap_rm_kg)
+            if scrap_rm_kg < 0:
+                return Response(
+                    {'error': 'scrap_rm_kg must be non-negative'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+        except (ValueError, TypeError):
+            return Response(
+                {'error': 'scrap_rm_kg must be a valid number'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        # Convert kg to grams and add to existing scrap
+        scrap_rm_grams = int(scrap_rm_kg * 1000)
+        batch.scrap_rm_weight += scrap_rm_grams
+        batch.save()
+        
+        serializer = self.get_serializer(batch)
+        return Response({
+            'message': f'Added {scrap_rm_kg} kg of scrap RM to batch {batch.batch_id}',
+            'batch': serializer.data,
+            'total_scrap_rm_kg': batch.scrap_rm_weight / 1000
+        })
+    
+    @action(detail=False, methods=['get'])
+    def by_mo(self, request):
+        """Get batches for a specific MO"""
+        mo_id = request.query_params.get('mo_id')
+        if not mo_id:
+            return Response(
+                {'error': 'mo_id is required'}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        batches = self.get_queryset().filter(mo_id=mo_id)
+        serializer = self.get_serializer(batches, many=True)
+        
+        # Calculate summary
+        total_planned = sum(b.planned_quantity for b in batches)
+        total_completed = sum(b.actual_quantity_completed for b in batches)
+        
+        return Response({
+            'batches': serializer.data,
+            'summary': {
+                'total_batches': batches.count(),
+                'total_planned_quantity': total_planned,
+                'total_completed_quantity': total_completed,
+                'completion_percentage': (total_completed / total_planned * 100) if total_planned > 0 else 0
+            }
+        })
+
+    @action(detail=True, methods=['post'])
+    def start_batch(self, request, pk=None):
+        """Start a batch - updates status to in_process"""
+        batch = self.get_object()
+        
+        if batch.status != 'created':
+            return Response(
+                {'error': 'Batch can only be started from created status'}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        batch.status = 'in_process'
+        batch.actual_start_date = timezone.now()
+        batch.save()
+        
+        serializer = self.get_serializer(batch)
+        return Response(serializer.data)
+
+    @action(detail=True, methods=['post'])
+    def complete_batch(self, request, pk=None):
+        """Complete a batch"""
+        batch = self.get_object()
+        data = request.data
+        
+        if batch.status not in ['in_process', 'quality_check']:
+            return Response(
+                {'error': 'Batch must be in process or quality check to complete'}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        batch.status = 'completed'
+        batch.actual_end_date = timezone.now()
+        batch.actual_quantity_completed = data.get('actual_quantity_completed', batch.planned_quantity)
+        batch.scrap_quantity = data.get('scrap_quantity', 0)
+        batch.progress_percentage = 100
+        batch.save()
+        
+        # Check if MO is fully completed
+        mo = batch.mo
+        total_completed = sum(b.actual_quantity_completed for b in mo.batches.filter(status='completed'))
+        if total_completed >= mo.quantity:
+            mo.status = 'completed'
+            mo.actual_end_date = timezone.now()
+            mo.save()
+            
+            # Create status history
+            MOStatusHistory.objects.create(
+                mo=mo,
+                from_status='in_progress',
+                to_status='completed',
+                changed_by=request.user,
+                notes=f'MO completed with batch: {batch.batch_id}'
+            )
+        
+        serializer = self.get_serializer(batch)
+        return Response(serializer.data)
+
+    @action(detail=True, methods=['patch'])
+    def update_progress(self, request, pk=None):
+        """Update batch progress"""
+        batch = self.get_object()
+        data = request.data
+        
+        if 'progress_percentage' in data:
+            progress = float(data['progress_percentage'])
+            if not (0 <= progress <= 100):
+                return Response(
+                    {'error': 'Progress must be between 0 and 100'}, 
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            batch.progress_percentage = progress
+        
+        if 'actual_quantity_completed' in data:
+            batch.actual_quantity_completed = data['actual_quantity_completed']
+        
+        if 'notes' in data:
+            batch.notes = data['notes']
+        
+        batch.save()
+        
+        serializer = self.get_serializer(batch)
+        return Response(serializer.data)
+
+    @action(detail=False, methods=['get'])
+    def dashboard_stats(self, request):
+        """Get batch statistics"""
+        queryset = self.get_queryset()
+        
+        stats = {
+            'total': queryset.count(),
+            'created': queryset.filter(status='created').count(),
+            'in_process': queryset.filter(status='in_process').count(),
+            'completed': queryset.filter(status='completed').count(),
+            'overdue': sum(1 for batch in queryset if batch.is_overdue)
+        }
+        
+        return Response(stats)

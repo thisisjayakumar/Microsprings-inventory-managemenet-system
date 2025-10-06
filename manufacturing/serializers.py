@@ -1,8 +1,10 @@
 from rest_framework import serializers
 from django.contrib.auth import get_user_model
+from django.utils import timezone
+from decimal import Decimal
 from .models import (
     ManufacturingOrder, PurchaseOrder, MOStatusHistory, POStatusHistory,
-    MOProcessExecution, MOProcessStepExecution, MOProcessAlert
+    MOProcessExecution, MOProcessStepExecution, MOProcessAlert, Batch
 )
 from products.models import Product
 from inventory.models import RawMaterial
@@ -39,7 +41,9 @@ class ProductBasicSerializer(serializers.ModelSerializer):
             'id', 'product_code', 'product_type', 'product_type_display', 
             'material_type', 'material_type_display', 'material_name', 'grade', 
             'wire_diameter_mm', 'thickness_mm', 'finishing', 'weight_kg', 
-            'customer_name', 'customer_id'
+            'customer_name', 'customer_id', 'grams_per_product', 'length_mm', 'breadth_mm',
+            'whole_sheet_length_mm', 'whole_sheet_breadth_mm', 'strip_length_mm', 
+            'strip_breadth_mm', 'strips_per_sheet', 'pcs_per_strip'
         ]
         read_only_fields = fields
 
@@ -48,15 +52,26 @@ class RawMaterialBasicSerializer(serializers.ModelSerializer):
     """Basic raw material serializer for nested relationships"""
     material_name_display = serializers.CharField(source='get_material_name_display', read_only=True)
     material_type_display = serializers.CharField(source='get_material_type_display', read_only=True)
+    available_quantity = serializers.SerializerMethodField()
     
     class Meta:
         model = RawMaterial
         fields = [
-            'id', 'material_name', 'material_name_display',
+            'id', 'material_code', 'material_name', 'material_name_display',
             'material_type', 'material_type_display', 'grade', 'wire_diameter_mm',
-            'weight_kg', 'thickness_mm', 'quantity', 'finishing'
+            'weight_kg', 'thickness_mm', 'finishing', 'available_quantity',
+            'length_mm', 'breadth_mm', 'quantity'
         ]
         read_only_fields = fields
+    
+    def get_available_quantity(self, obj):
+        """Get available quantity from RMStockBalance"""
+        try:
+            from inventory.models import RMStockBalance
+            stock_balance = RMStockBalance.objects.get(raw_material=obj)
+            return float(stock_balance.available_quantity)
+        except RMStockBalance.DoesNotExist:
+            return 0.0
 
 
 class VendorBasicSerializer(serializers.ModelSerializer):
@@ -92,22 +107,53 @@ class POStatusHistorySerializer(serializers.ModelSerializer):
         read_only_fields = fields
 
 
+class BatchListSerializer(serializers.ModelSerializer):
+    """Optimized serializer for Batch list view"""
+    mo_id = serializers.CharField(source='mo.mo_id', read_only=True)
+    product_code_display = serializers.CharField(source='product_code.product_code', read_only=True)
+    assigned_operator_name = serializers.CharField(source='assigned_operator.get_full_name', read_only=True)
+    assigned_supervisor_name = serializers.CharField(source='assigned_supervisor.get_full_name', read_only=True)
+    status_display = serializers.CharField(source='get_status_display', read_only=True)
+    completion_percentage = serializers.ReadOnlyField()
+    is_overdue = serializers.ReadOnlyField()
+    remaining_quantity = serializers.ReadOnlyField()
+    
+    class Meta:
+        model = Batch
+        fields = [
+            'id', 'batch_id', 'mo', 'mo_id', 'product_code', 'product_code_display',
+            'planned_quantity', 'actual_quantity_started', 'actual_quantity_completed',
+            'scrap_quantity', 'scrap_rm_weight', 'status', 'status_display', 'progress_percentage',
+            'completion_percentage', 'remaining_quantity', 'assigned_operator',
+            'assigned_operator_name', 'assigned_supervisor', 'assigned_supervisor_name',
+            'planned_start_date', 'planned_end_date', 'actual_start_date', 'actual_end_date',
+            'is_overdue', 'created_at', 'updated_at'
+        ]
+        read_only_fields = ['batch_id', 'created_at', 'updated_at']
+
+
 class ManufacturingOrderListSerializer(serializers.ModelSerializer):
     """Optimized serializer for MO list view"""
     product_code = ProductBasicSerializer(read_only=True)
+    assigned_rm_store = UserBasicSerializer(read_only=True)
     assigned_supervisor = UserBasicSerializer(read_only=True)
     created_by = UserBasicSerializer(read_only=True)
     status_display = serializers.CharField(source='get_status_display', read_only=True)
     priority_display = serializers.CharField(source='get_priority_display', read_only=True)
     shift_display = serializers.CharField(source='get_shift_display', read_only=True)
+    batches = BatchListSerializer(many=True, read_only=True)
+    material_type = serializers.CharField(source='product_code.material_type', read_only=True)
+    material_name = serializers.CharField(source='product_code.material.material_name', read_only=True)
     
     class Meta:
         model = ManufacturingOrder
         fields = [
             'id', 'mo_id', 'date_time', 'product_code', 'quantity', 'status', 
             'status_display', 'priority', 'priority_display', 'shift', 'shift_display',
-            'assigned_supervisor', 'planned_start_date', 'planned_end_date',
-            'delivery_date', 'created_by', 'created_at'
+            'assigned_rm_store', 'assigned_supervisor', 'planned_start_date', 'planned_end_date',
+            'delivery_date', 'created_by', 'created_at', 'strips_required', 
+            'total_pieces_from_strips', 'excess_pieces', 'tolerance_percentage',
+            'material_type', 'material_name', 'batches'
         ]
         read_only_fields = ['mo_id', 'date_time']
 
@@ -115,6 +161,7 @@ class ManufacturingOrderListSerializer(serializers.ModelSerializer):
 class ManufacturingOrderDetailSerializer(serializers.ModelSerializer):
     """Detailed serializer for MO create/update/detail view"""
     product_code = ProductBasicSerializer(read_only=True)
+    assigned_rm_store = UserBasicSerializer(read_only=True)
     assigned_supervisor = UserBasicSerializer(read_only=True)
     created_by = UserBasicSerializer(read_only=True)
     gm_approved_by = UserBasicSerializer(read_only=True)
@@ -132,6 +179,7 @@ class ManufacturingOrderDetailSerializer(serializers.ModelSerializer):
     
     # Write-only fields for creation
     product_code_id = serializers.IntegerField(write_only=True)
+    assigned_rm_store_id = serializers.IntegerField(write_only=True, required=False)
     assigned_supervisor_id = serializers.IntegerField(write_only=True, required=False)
     customer_id = serializers.IntegerField(write_only=True, required=False)
     
@@ -141,7 +189,9 @@ class ManufacturingOrderDetailSerializer(serializers.ModelSerializer):
             'id', 'mo_id', 'date_time', 'product_code', 'product_code_id', 'quantity',
             'product_type', 'material_name', 'material_type', 'grade', 'wire_diameter_mm',
             'thickness_mm', 'finishing', 'manufacturer_brand', 'weight_kg',
-            'loose_fg_stock', 'rm_required_kg', 'assigned_supervisor', 'assigned_supervisor_id',
+            'loose_fg_stock', 'rm_required_kg', 'tolerance_percentage', 'scrap_percentage', 
+            'rm_released_kg', 'strips_required', 'total_pieces_from_strips', 'excess_pieces',
+            'assigned_rm_store', 'assigned_rm_store_id', 'assigned_supervisor', 'assigned_supervisor_id',
             'shift', 'shift_display', 'planned_start_date', 'planned_end_date',
             'actual_start_date', 'actual_end_date', 'status', 'status_display',
             'priority', 'priority_display', 'customer', 'customer_id', 'customer_name', 
@@ -159,6 +209,7 @@ class ManufacturingOrderDetailSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         """Create MO with auto-population of product details"""
         product_code_id = validated_data.pop('product_code_id')
+        assigned_rm_store_id = validated_data.pop('assigned_rm_store_id', None)
         assigned_supervisor_id = validated_data.pop('assigned_supervisor_id', None)
         customer_id = validated_data.pop('customer_id', None)
         
@@ -189,6 +240,14 @@ class ManufacturingOrderDetailSerializer(serializers.ModelSerializer):
                 created_by=self.context['request'].user
             )
         
+        # Handle optional rm_store user
+        rm_store_user = None
+        if assigned_rm_store_id:
+            try:
+                rm_store_user = User.objects.get(id=assigned_rm_store_id)
+            except User.DoesNotExist:
+                raise serializers.ValidationError("Invalid rm_store user reference")
+        
         # Handle optional supervisor
         supervisor = None
         if assigned_supervisor_id:
@@ -209,6 +268,7 @@ class ManufacturingOrderDetailSerializer(serializers.ModelSerializer):
         # Auto-populate product details
         validated_data.update({
             'product_code': product,
+            'assigned_rm_store': rm_store_user,
             'assigned_supervisor': supervisor,
             'customer_c_id': customer,
             'customer_name': customer.name if customer else validated_data.get('customer_name', ''),
@@ -224,10 +284,14 @@ class ManufacturingOrderDetailSerializer(serializers.ModelSerializer):
             'created_by': self.context['request'].user
         })
         
-        # Set default RM required (can be updated later)
-        validated_data['rm_required_kg'] = validated_data['quantity'] * 0.001  # Default 1g per unit
+        # Create the MO instance
+        mo = super().create(validated_data)
         
-        return super().create(validated_data)
+        # Calculate RM requirements (including sheet calculations)
+        mo.calculate_rm_requirements()
+        mo.save()
+        
+        return mo
 
     def update(self, instance, validated_data):
         """Update MO with status change tracking"""
@@ -255,6 +319,15 @@ class ManufacturingOrderDetailSerializer(serializers.ModelSerializer):
             except Product.DoesNotExist:
                 raise serializers.ValidationError("Invalid product reference")
         
+        # Handle rm_store change
+        if 'assigned_rm_store_id' in validated_data:
+            rm_store_id = validated_data.pop('assigned_rm_store_id')
+            try:
+                rm_store_user = User.objects.get(id=rm_store_id)
+                validated_data['assigned_rm_store'] = rm_store_user
+            except User.DoesNotExist:
+                raise serializers.ValidationError("Invalid rm_store user reference")
+        
         # Handle supervisor change
         if 'assigned_supervisor_id' in validated_data:
             supervisor_id = validated_data.pop('assigned_supervisor_id')
@@ -265,6 +338,11 @@ class ManufacturingOrderDetailSerializer(serializers.ModelSerializer):
                 raise serializers.ValidationError("Invalid supervisor reference")
         
         instance = super().update(instance, validated_data)
+        
+        # Recalculate RM requirements if quantity or product changed
+        if 'quantity' in validated_data or 'product_code' in validated_data:
+            instance.calculate_rm_requirements()
+            instance.save()
         
         # Create status history if status changed
         if old_status != new_status:
@@ -403,11 +481,12 @@ class MOProcessAlertSerializer(serializers.ModelSerializer):
 
 class ManufacturingOrderWithProcessesSerializer(serializers.ModelSerializer):
     """Enhanced MO serializer with process execution details"""
-    product_code_display = serializers.CharField(source='product_code.display_name', read_only=True)
+    product_code_display = serializers.CharField(source='product_code.product_code', read_only=True)
     product_code_value = serializers.CharField(source='product_code.product_code', read_only=True)
     status_display = serializers.CharField(source='get_status_display', read_only=True)
     priority_display = serializers.CharField(source='get_priority_display', read_only=True)
     shift_display = serializers.CharField(source='get_shift_display', read_only=True)
+    assigned_rm_store_name = serializers.CharField(source='assigned_rm_store.get_full_name', read_only=True)
     assigned_supervisor_name = serializers.CharField(source='assigned_supervisor.get_full_name', read_only=True)
     created_by_name = serializers.CharField(source='created_by.get_full_name', read_only=True)
     process_executions = MOProcessExecutionListSerializer(many=True, read_only=True)
@@ -420,8 +499,9 @@ class ManufacturingOrderWithProcessesSerializer(serializers.ModelSerializer):
             'id', 'mo_id', 'date_time', 'product_code', 'product_code_display', 'product_code_value',
             'quantity', 'product_type', 'material_name', 'material_type', 'grade',
             'wire_diameter_mm', 'thickness_mm', 'finishing', 'manufacturer_brand',
-            'weight_kg', 'loose_fg_stock', 'rm_required_kg', 'assigned_supervisor',
-            'assigned_supervisor_name', 'shift', 'shift_display', 'planned_start_date',
+            'weight_kg', 'loose_fg_stock', 'rm_required_kg', 'strips_required', 
+            'total_pieces_from_strips', 'excess_pieces', 'assigned_rm_store',
+            'assigned_rm_store_name', 'assigned_supervisor', 'assigned_supervisor_name', 'shift', 'shift_display', 'planned_start_date',
             'planned_end_date', 'actual_start_date', 'actual_end_date', 'status',
             'status_display', 'priority', 'priority_display', 'customer_name',
             'delivery_date', 'special_instructions', 'created_at', 'created_by',
@@ -594,3 +674,152 @@ class UserDropdownSerializer(serializers.ModelSerializer):
         if obj.first_name and obj.last_name:
             return f"{obj.first_name} {obj.last_name}"
         return obj.email
+
+
+class BatchDetailSerializer(serializers.ModelSerializer):
+    """Detailed serializer for Batch create/update/detail view"""
+    mo_details = ManufacturingOrderListSerializer(source='mo', read_only=True)
+    product_details = ProductBasicSerializer(source='product_code', read_only=True)
+    assigned_operator = UserBasicSerializer(read_only=True)
+    assigned_supervisor = UserBasicSerializer(read_only=True)
+    created_by = UserBasicSerializer(read_only=True)
+    status_display = serializers.CharField(source='get_status_display', read_only=True)
+    completion_percentage = serializers.ReadOnlyField()
+    is_overdue = serializers.ReadOnlyField()
+    remaining_quantity = serializers.ReadOnlyField()
+    
+    # Write-only fields for creation
+    mo_id = serializers.IntegerField(write_only=True)
+    assigned_operator_id = serializers.IntegerField(write_only=True, required=False)
+    assigned_supervisor_id = serializers.IntegerField(write_only=True, required=False)
+    
+    class Meta:
+        model = Batch
+        fields = [
+            'id', 'batch_id', 'mo', 'mo_id', 'mo_details', 'product_code', 'product_details',
+            'planned_quantity', 'actual_quantity_started', 'actual_quantity_completed',
+            'scrap_quantity', 'scrap_rm_weight', 'planned_start_date', 'planned_end_date', 
+            'actual_start_date', 'actual_end_date', 'status', 'status_display',
+            'progress_percentage', 'current_process_step', 'assigned_operator',
+            'assigned_operator_id', 'assigned_supervisor', 'assigned_supervisor_id',
+            'total_processing_time_minutes', 'notes', 'completion_percentage',
+            'is_overdue', 'remaining_quantity', 'created_by', 'created_at', 'updated_at'
+        ]
+        read_only_fields = ['batch_id', 'mo', 'product_code', 'created_at', 'updated_at']
+    
+    def create(self, validated_data):
+        """Create batch with RM release calculation"""
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.info(f"Creating batch with validated_data: {validated_data}")
+        
+        mo_id = validated_data.pop('mo_id')
+        assigned_operator_id = validated_data.pop('assigned_operator_id', None)
+        assigned_supervisor_id = validated_data.pop('assigned_supervisor_id', None)
+        
+        try:
+            mo = ManufacturingOrder.objects.select_related('product_code', 'product_code__material').get(id=mo_id)
+        except ManufacturingOrder.DoesNotExist:
+            raise serializers.ValidationError("Manufacturing Order not found")
+        
+        # Validate MO status - should be on_hold or in_progress
+        if mo.status not in ['on_hold', 'in_progress']:
+            raise serializers.ValidationError(
+                f"Cannot create batch for MO in {mo.status} status. MO must be in On Hold or In Progress status."
+            )
+        
+        # Handle operator assignment
+        operator = None
+        if assigned_operator_id:
+            try:
+                operator = User.objects.get(id=assigned_operator_id)
+            except User.DoesNotExist:
+                raise serializers.ValidationError("Invalid operator reference")
+        
+        # Handle supervisor assignment
+        supervisor = None
+        if assigned_supervisor_id:
+            try:
+                supervisor = User.objects.get(id=assigned_supervisor_id)
+            except User.DoesNotExist:
+                raise serializers.ValidationError("Invalid supervisor reference")
+        
+        # Calculate RM to release for this batch
+        # NOTE: planned_quantity now stores RM in grams (integer) directly from user input
+        # User enters RM amount in kg, frontend converts to grams and sends as integer
+        
+        product = mo.product_code
+        batch_quantity_grams = validated_data.get('planned_quantity')
+        
+        # Convert grams to kg for logging/tracking
+        rm_base_kg = Decimal(str(batch_quantity_grams / 1000))
+        
+        # Apply tolerance to calculate final RM
+        tolerance = mo.tolerance_percentage or Decimal('2.00')
+        tolerance_factor = Decimal('1') + (tolerance / Decimal('100'))
+        rm_final_kg = rm_base_kg * tolerance_factor
+        
+        logger.info(f"Batch RM allocation: Base={rm_base_kg}kg, Tolerance={tolerance}%, Final={rm_final_kg}kg")
+        
+        # Don't add rm_released_kg to validated_data - Batch model doesn't have this field
+        # The RM tracking is done via planned_quantity (in grams)
+        
+        # Create the batch
+        batch = Batch.objects.create(
+            mo=mo,
+            product_code=mo.product_code,
+            assigned_operator=operator,
+            assigned_supervisor=supervisor,
+            created_by=self.context['request'].user,
+            **validated_data
+        )
+        
+        # Update MO status to in_progress if this is the first batch
+        if mo.batches.count() == 1:  # This is the first batch
+            mo.status = 'in_progress'
+            mo.actual_start_date = timezone.now()
+            mo.save()
+            
+            # Create status history
+            from .models import MOStatusHistory
+            MOStatusHistory.objects.create(
+                mo=mo,
+                from_status='on_hold',
+                to_status='in_progress',
+                changed_by=self.context['request'].user,
+                notes=f'First batch created: {batch.batch_id}'
+            )
+            
+            # TODO: Create notification for supervisor if assigned
+            # Note: Notification system can be implemented later using Alert model
+            if mo.assigned_supervisor:
+                logger.info(f"Batch {batch.batch_id} created for MO {mo.mo_id} - Supervisor: {mo.assigned_supervisor.email}")
+        
+        return batch
+    
+    def update(self, instance, validated_data):
+        """Update batch"""
+        # Handle operator change
+        if 'assigned_operator_id' in validated_data:
+            operator_id = validated_data.pop('assigned_operator_id')
+            try:
+                operator = User.objects.get(id=operator_id) if operator_id else None
+                instance.assigned_operator = operator
+            except User.DoesNotExist:
+                raise serializers.ValidationError("Invalid operator reference")
+        
+        # Handle supervisor change
+        if 'assigned_supervisor_id' in validated_data:
+            supervisor_id = validated_data.pop('assigned_supervisor_id')
+            try:
+                supervisor = User.objects.get(id=supervisor_id) if supervisor_id else None
+                instance.assigned_supervisor = supervisor
+            except User.DoesNotExist:
+                raise serializers.ValidationError("Invalid supervisor reference")
+        
+        # Update other fields
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
+        
+        instance.save()
+        return instance

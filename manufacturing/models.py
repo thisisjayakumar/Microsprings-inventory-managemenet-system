@@ -1,6 +1,7 @@
 from django.db import models
 from django.contrib.auth import get_user_model
 from django.utils import timezone
+from decimal import Decimal
 import uuid
 
 User = get_user_model()
@@ -13,6 +14,7 @@ class ManufacturingOrder(models.Model):
     """
     STATUS_CHOICES = [
         ('submitted', 'Submitted'),
+        ('rm_allocated', 'RM Allocated'),
         ('mo_approved', 'MO Approved'),
         ('in_progress', 'In Progress'),
         ('completed', 'Completed'),
@@ -65,7 +67,57 @@ class ManufacturingOrder(models.Model):
     loose_fg_stock = models.PositiveIntegerField(default=0, help_text="Available finished goods stock")
     rm_required_kg = models.DecimalField(max_digits=10, decimal_places=3, default=0, help_text="Raw material required in kg")
     
+    # Sheet-based RM Requirements (for press components using sheet materials)
+    strips_required = models.PositiveIntegerField(
+        null=True,
+        blank=True,
+        help_text="Number of strips required for this MO (for press components)"
+    )
+    total_pieces_from_strips = models.PositiveIntegerField(
+        null=True,
+        blank=True,
+        help_text="Total pieces that will be produced from strips"
+    )
+    excess_pieces = models.PositiveIntegerField(
+        null=True,
+        blank=True,
+        help_text="Excess pieces due to strip constraints"
+    )
+    
+    # RM Calculation Parameters
+    tolerance_percentage = models.DecimalField(
+        max_digits=5,
+        decimal_places=2,
+        default=2.00,
+        help_text="Tolerance percentage for RM loss during process (e.g., 2.00 for ±2%)"
+    )
+    scrap_percentage = models.DecimalField(
+        max_digits=5,
+        decimal_places=2,
+        null=True,
+        blank=True,
+        help_text="Expected scrap percentage (optional, can be predicted from previous MOs)"
+    )
+    scrap_rm_weight = models.PositiveIntegerField(
+        default=0,
+        help_text="Raw material weight sent to scrap for this MO (in grams)"
+    )
+    
+    # RM Release/Receive Tracking
+    rm_released_kg = models.DecimalField(
+        max_digits=10,
+        decimal_places=3,
+        null=True,
+        blank=True,
+        help_text="Actual RM released by RM Store Manager (in kg or sheets)"
+    )
+    
     # Assignment (optional - assigned later in workflow)
+    assigned_rm_store = models.ForeignKey(
+        User, on_delete=models.PROTECT, null=True, blank=True,
+        related_name='rm_store_mo_orders',
+        help_text="RM Store user to verify and allocate raw materials"
+    )
     assigned_supervisor = models.ForeignKey(
         User, on_delete=models.PROTECT, null=True, blank=True,
         related_name='supervised_mo_orders',
@@ -140,6 +192,36 @@ class ManufacturingOrder(models.Model):
 
     def __str__(self):
         return f"{self.mo_id} - {self.product_code.product_code} (Qty: {self.quantity})"
+    
+    def calculate_rm_requirements(self):
+        """
+        Calculate raw material requirements based on product type and material type
+        For sheet-based products, calculates strips required for MO and sheets for RM ordering
+        For coil-based products, calculates weight in kg
+        """
+        if not self.product_code:
+            return
+        
+        product = self.product_code
+        
+        # For sheet-based press components - calculate strips for MO
+        if product.product_type == 'press_component' and product.material_type == 'sheet':
+            if product.pcs_per_strip and product.pcs_per_strip > 0:
+                strip_calc = product.calculate_strips_required(self.quantity)
+                self.strips_required = strip_calc.get('strips_required', 0)
+                self.total_pieces_from_strips = strip_calc.get('total_pieces_from_strips', 0)
+                self.excess_pieces = strip_calc.get('excess_pieces', 0)
+        
+        # For coil-based products (springs)
+        elif product.material_type == 'coil' and product.grams_per_product:
+            # Calculate based on grams per product
+            total_grams = self.quantity * product.grams_per_product
+            self.rm_required_kg = Decimal(str(total_grams / 1000))  # Convert to kg
+            
+            # Apply tolerance if set
+            if self.tolerance_percentage:
+                tolerance_factor = Decimal('1') + (Decimal(str(self.tolerance_percentage)) / Decimal('100'))
+                self.rm_required_kg = self.rm_required_kg * tolerance_factor
 
 
 class PurchaseOrder(models.Model):
@@ -148,15 +230,11 @@ class PurchaseOrder(models.Model):
     Based on the Production Head Functions workflow
     """
     STATUS_CHOICES = [
-        ('draft', 'Draft'),
+        ('on_hold', 'On Hold'),
         ('submitted', 'Submitted'),
-        ('gm_approved', 'GM Approved'),
-        ('gm_created_po', 'GM Created PO'),
-        ('vendor_confirmed', 'Vendor Confirmed'),
-        ('partially_received', 'Partially Received'),
+        ('approved', 'Approved'),
         ('completed', 'Completed'),
-        ('cancelled', 'Cancelled'),
-        ('rejected', 'Rejected')
+        ('cancelled', 'Cancelled')
     ]
     
     MATERIAL_TYPE_CHOICES = [
@@ -215,28 +293,21 @@ class PurchaseOrder(models.Model):
     total_amount = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True)
     
     # Status
-    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='draft')
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='on_hold')
     
     # Workflow tracking
     submitted_at = models.DateTimeField(null=True, blank=True)
-    gm_approved_at = models.DateTimeField(null=True, blank=True)
-    gm_approved_by = models.ForeignKey(
+    approved_at = models.DateTimeField(null=True, blank=True)
+    approved_by = models.ForeignKey(
         User, on_delete=models.SET_NULL, null=True, blank=True,
-        related_name='gm_approved_po_orders'
+        related_name='approved_po_orders'
     )
-    po_created_at = models.DateTimeField(null=True, blank=True)
-    po_created_by = models.ForeignKey(
+    cancelled_at = models.DateTimeField(null=True, blank=True)
+    cancelled_by = models.ForeignKey(
         User, on_delete=models.SET_NULL, null=True, blank=True,
-        related_name='po_created_orders'
+        related_name='cancelled_po_orders'
     )
-    
-    # Rejection handling
-    rejected_at = models.DateTimeField(null=True, blank=True)
-    rejected_by = models.ForeignKey(
-        User, on_delete=models.SET_NULL, null=True, blank=True,
-        related_name='rejected_po_orders'
-    )
-    rejection_reason = models.TextField(blank=True)
+    cancellation_reason = models.TextField(blank=True, help_text="Reason for cancellation")
     
     # Additional details
     terms_conditions = models.TextField(blank=True)
@@ -592,6 +663,10 @@ class Batch(models.Model):
     scrap_quantity = models.PositiveIntegerField(
         default=0,
         help_text="Quantity scrapped during production"
+    )
+    scrap_rm_weight = models.PositiveIntegerField(
+        default=0,
+        help_text="Raw material weight sent to scrap (in grams)"
     )
     
     # Timing

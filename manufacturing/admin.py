@@ -34,7 +34,8 @@ class ManufacturingOrderAdmin(admin.ModelAdmin):
     list_filter = ('status', 'priority', 'shift', 'material_type', 'product_code__customer_c_id__industry_type', 'created_at')
     search_fields = ('mo_id', 'product_code__product_code', 'product_code__customer_c_id__name', 'product_code__customer_c_id__c_id', 'customer_name')
     readonly_fields = ('mo_id', 'date_time', 'product_type', 'material_name', 'material_type', 'grade', 
-                      'wire_diameter_mm', 'thickness_mm', 'finishing', 'manufacturer_brand', 'weight_kg', 'customer_name')
+                      'wire_diameter_mm', 'thickness_mm', 'finishing', 'manufacturer_brand', 'weight_kg', 
+                      'customer_name', 'strips_required', 'total_pieces_from_strips', 'excess_pieces')
     ordering = ('-created_at',)
     inlines = [BatchInline]
     
@@ -65,7 +66,12 @@ class ManufacturingOrderAdmin(admin.ModelAdmin):
             'classes': ('collapse',)
         }),
         ('Raw Material Requirements', {
-            'fields': ('loose_fg_stock', 'rm_required_kg')
+            'fields': ('loose_fg_stock', 'rm_required_kg', 'tolerance_percentage', 'scrap_percentage')
+        }),
+        ('Sheet-based Requirements (Press Components)', {
+            'fields': ('strips_required', 'total_pieces_from_strips', 'excess_pieces'),
+            'classes': ('collapse',),
+            'description': 'Strips required for this MO. Auto-calculated based on pcs_per_strip.'
         }),
         ('Assignment & Planning', {
             'fields': ('assigned_supervisor', 'shift', 'planned_start_date', 'planned_end_date', 
@@ -75,7 +81,7 @@ class ManufacturingOrderAdmin(admin.ModelAdmin):
             'fields': ('status', 'priority')
         }),
         ('Customer & Business Details', {
-            'fields': ('customer', 'customer_name', 'delivery_date', 'special_instructions')
+            'fields': ('customer_c_id', 'customer_name', 'delivery_date', 'special_instructions')
         }),
         ('Workflow Tracking', {
             'fields': ('submitted_at', 'gm_approved_at', 'gm_approved_by', 'rm_allocated_at', 'rm_allocated_by'),
