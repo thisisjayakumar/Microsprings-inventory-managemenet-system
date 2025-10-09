@@ -3,16 +3,23 @@ from rest_framework.decorators import api_view, permission_classes, action
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from django_filters.rest_framework import DjangoFilterBackend
-from django.db.models import Q, Prefetch
+from django.db.models import Q, Prefetch, Sum
 from django.db import transaction
 from django.contrib.auth import get_user_model
+from django.utils import timezone
 
 from products.models import Product
-from .models import RMStockBalance, RawMaterial
+from .models import (
+    RMStockBalance, RawMaterial, InventoryTransaction,
+    GRMReceipt, HeatNumber, RMStockBalanceHeat, InventoryTransactionHeat
+)
 from .serializers import (
     ProductListSerializer, ProductCreateUpdateSerializer,
     RMStockBalanceSerializer, RMStockBalanceUpdateSerializer,
-    ProductStockDashboardSerializer, RawMaterialBasicSerializer
+    ProductStockDashboardSerializer, RawMaterialBasicSerializer,
+    InventoryTransactionSerializer, GRMReceiptSerializer, GRMReceiptCreateSerializer,
+    GRMReceiptListSerializer, HeatNumberSerializer, RMStockBalanceHeatSerializer,
+    InventoryTransactionHeatSerializer
 )
 from authentication.models import UserRole, Role
 
@@ -200,6 +207,32 @@ class RawMaterialViewSet(viewsets.ReadOnlyModelViewSet):
         return Response(data)
 
 
+class InventoryTransactionViewSet(viewsets.ReadOnlyModelViewSet):
+    """ViewSet for listing inventory transactions"""
+    permission_classes = [IsAuthenticated, IsRMStoreUser]
+    serializer_class = InventoryTransactionSerializer
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
+    filterset_fields = ['transaction_type', 'reference_type']
+    search_fields = ['transaction_id', 'product__product_code', 'manufacturing_order__mo_id']
+    ordering_fields = ['transaction_datetime', 'created_at']
+    ordering = ['-transaction_datetime']
+
+    def get_queryset(self):
+        queryset = InventoryTransaction.objects.select_related(
+            'product', 'manufacturing_order', 'location_from', 'location_to', 'created_by'
+        )
+
+        start_date = self.request.query_params.get('start_date')
+        end_date = self.request.query_params.get('end_date')
+
+        if start_date:
+            queryset = queryset.filter(transaction_datetime__gte=start_date)
+        if end_date:
+            queryset = queryset.filter(transaction_datetime__lte=end_date)
+
+        return queryset
+
+
 @api_view(['GET'])
 @permission_classes([AllowAny])
 def health_check(request):
@@ -238,4 +271,242 @@ def rm_store_dashboard_stats(request):
         return Response(
             {'error': 'Failed to fetch dashboard stats', 'detail': str(e)}, 
             status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )
+
+
+@api_view(['GET'])
+@permission_classes([AllowAny])  # Temporarily allow any access for testing
+def test_grm_api(request):
+    """Test endpoint to check if GRM API is working"""
+    try:
+        # Simple test without complex queries
+        return Response({
+            'message': 'GRM API is working',
+            'status': 'success',
+            'timestamp': timezone.now().isoformat(),
+            'user': request.user.username if request.user.is_authenticated else 'anonymous'
+        })
+    except Exception as e:
+        return Response({
+            'error': 'GRM API test failed',
+            'detail': str(e)
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+@api_view(['GET'])
+@permission_classes([AllowAny])  # Temporarily allow any access for testing
+def test_grm_models(request):
+    """Test endpoint to check if GRM models are accessible"""
+    try:
+        grm_count = GRMReceipt.objects.count()
+        heat_count = HeatNumber.objects.count()
+        return Response({
+            'message': 'GRM Models are accessible',
+            'grm_receipts_count': grm_count,
+            'heat_numbers_count': heat_count,
+            'status': 'success'
+        })
+    except Exception as e:
+        return Response({
+            'error': 'GRM Models test failed',
+            'detail': str(e)
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+# GRM and Heat Number ViewSets
+
+class GRMReceiptViewSet(viewsets.ModelViewSet):
+    """
+    ViewSet for managing GRM Receipts
+    """
+    permission_classes = [IsAuthenticated, IsRMStoreUser]
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
+    filterset_fields = ['status', 'quality_check_passed', 'received_by']
+    search_fields = ['grm_number', 'truck_number', 'driver_name', 'purchase_order__po_id']
+    ordering_fields = ['receipt_date', 'created_at', 'grm_number']
+    ordering = ['-receipt_date']
+    
+    def get_serializer_class(self):
+        if self.action == 'create':
+            return GRMReceiptCreateSerializer
+        elif self.action == 'list':
+            return GRMReceiptListSerializer
+        return GRMReceiptSerializer
+    
+    def get_queryset(self):
+        return GRMReceipt.objects.select_related(
+            'purchase_order', 'purchase_order__vendor_name', 'received_by', 'quality_check_by'
+        ).prefetch_related('heat_numbers', 'heat_numbers__raw_material')
+    
+    @action(detail=True, methods=['post'])
+    def complete_receipt(self, request, pk=None):
+        """Mark GRM receipt as completed"""
+        grm_receipt = self.get_object()
+        
+        if grm_receipt.status == 'completed':
+            return Response({'error': 'GRM receipt is already completed'}, 
+                          status=status.HTTP_400_BAD_REQUEST)
+        
+        grm_receipt.status = 'completed'
+        grm_receipt.save()
+        
+        # Update stock balances for all heat numbers
+        for heat_number in grm_receipt.heat_numbers.all():
+            heat_number.update_stock_balance()
+        
+        serializer = self.get_serializer(grm_receipt)
+        return Response(serializer.data)
+    
+    @action(detail=True, methods=['post'])
+    def quality_check(self, request, pk=None):
+        """Perform quality check on GRM receipt"""
+        grm_receipt = self.get_object()
+        
+        quality_passed = request.data.get('quality_check_passed', False)
+        grm_receipt.quality_check_passed = quality_passed
+        grm_receipt.quality_check_by = request.user
+        grm_receipt.quality_check_date = timezone.now()
+        grm_receipt.save()
+        
+        serializer = self.get_serializer(grm_receipt)
+        return Response(serializer.data)
+
+
+class HeatNumberViewSet(viewsets.ModelViewSet):
+    """
+    ViewSet for managing Heat Numbers
+    """
+    permission_classes = [IsAuthenticated, IsRMStoreUser]
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
+    filterset_fields = ['is_available', 'raw_material__material_type', 'grm_receipt__status']
+    search_fields = ['heat_number', 'raw_material__material_code', 'grm_receipt__grm_number']
+    ordering_fields = ['created_at', 'heat_number', 'total_weight_kg']
+    ordering = ['-created_at']
+    
+    def get_queryset(self):
+        return HeatNumber.objects.select_related(
+            'grm_receipt', 'raw_material'
+        )
+    
+    @action(detail=True, methods=['post'])
+    def consume_quantity(self, request, pk=None):
+        """Consume quantity from heat number"""
+        heat_number = self.get_object()
+        
+        quantity_kg = request.data.get('quantity_kg', 0)
+        if quantity_kg <= 0:
+            return Response({'error': 'Quantity must be greater than 0'}, 
+                          status=status.HTTP_400_BAD_REQUEST)
+        
+        available_quantity = heat_number.get_available_quantity_kg()
+        if quantity_kg > available_quantity:
+            return Response({'error': 'Insufficient quantity available'}, 
+                          status=status.HTTP_400_BAD_REQUEST)
+        
+        heat_number.consumed_quantity_kg += quantity_kg
+        heat_number.save()
+        
+        # Update stock balance
+        heat_number.update_stock_balance()
+        
+        serializer = self.get_serializer(heat_number)
+        return Response(serializer.data)
+    
+    @action(detail=True, methods=['post'])
+    def update_location(self, request, pk=None):
+        """Update storage location for heat number"""
+        heat_number = self.get_object()
+        
+        storage_location = request.data.get('storage_location', '')
+        rack_number = request.data.get('rack_number', '')
+        shelf_number = request.data.get('shelf_number', '')
+        
+        heat_number.storage_location = storage_location
+        heat_number.rack_number = rack_number
+        heat_number.shelf_number = shelf_number
+        heat_number.save()
+        
+        serializer = self.get_serializer(heat_number)
+        return Response(serializer.data)
+
+
+class RMStockBalanceHeatViewSet(viewsets.ReadOnlyModelViewSet):
+    """
+    ViewSet for Heat-tracked stock balances
+    """
+    permission_classes = [IsAuthenticated, IsRMStoreUser]
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
+    filterset_fields = ['raw_material__material_type']
+    search_fields = ['raw_material__material_code', 'raw_material__material_name']
+    ordering_fields = ['last_updated', 'total_available_quantity_kg']
+    ordering = ['-last_updated']
+    
+    def get_queryset(self):
+        return RMStockBalanceHeat.objects.select_related('raw_material')
+    
+    @action(detail=False, methods=['get'])
+    def dashboard_stats(self, request):
+        """Get dashboard statistics for heat-tracked stock"""
+        try:
+            total_materials = RMStockBalanceHeat.objects.count()
+            materials_with_stock = RMStockBalanceHeat.objects.filter(
+                total_available_quantity_kg__gt=0
+            ).count()
+            materials_out_of_stock = RMStockBalanceHeat.objects.filter(
+                total_available_quantity_kg=0
+            ).count()
+            
+            # Total quantities
+            total_kg = RMStockBalanceHeat.objects.aggregate(
+                total=Sum('total_available_quantity_kg')
+            )['total'] or 0
+            
+            total_coils = RMStockBalanceHeat.objects.aggregate(
+                total=Sum('total_coils_available')
+            )['total'] or 0
+            
+            total_sheets = RMStockBalanceHeat.objects.aggregate(
+                total=Sum('total_sheets_available')
+            )['total'] or 0
+            
+            # Heat numbers count
+            total_heat_numbers = HeatNumber.objects.filter(is_available=True).count()
+            
+            return Response({
+                'total_materials': total_materials,
+                'materials_with_stock': materials_with_stock,
+                'materials_out_of_stock': materials_out_of_stock,
+                'total_kg': float(total_kg),
+                'total_coils': total_coils,
+                'total_sheets': total_sheets,
+                'total_heat_numbers': total_heat_numbers
+            })
+        except Exception as e:
+            return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+    
+    @action(detail=True, methods=['post'])
+    def refresh_balance(self, request, pk=None):
+        """Refresh stock balance from heat numbers"""
+        stock_balance = self.get_object()
+        stock_balance.update_from_heat_numbers()
+        
+        serializer = self.get_serializer(stock_balance)
+        return Response(serializer.data)
+
+
+class InventoryTransactionHeatViewSet(viewsets.ReadOnlyModelViewSet):
+    """
+    ViewSet for Heat-tracked inventory transactions
+    """
+    permission_classes = [IsAuthenticated, IsRMStoreUser]
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
+    filterset_fields = ['grm_number', 'heat_number__raw_material__material_type']
+    search_fields = ['grm_number', 'heat_number__heat_number', 'inventory_transaction__transaction_id']
+    ordering_fields = ['inventory_transaction__transaction_datetime']
+    ordering = ['-inventory_transaction__transaction_datetime']
+    
+    def get_queryset(self):
+        return InventoryTransactionHeat.objects.select_related(
+            'inventory_transaction', 'heat_number', 'heat_number__raw_material',
+            'heat_number__grm_receipt'
         )

@@ -2,7 +2,10 @@ from django.contrib import admin
 from django.utils.html import format_html
 from django.db import models
 from django.forms import TextInput, Textarea
-from .models import RawMaterial, Location, InventoryTransaction, RMStockBalance
+from .models import (
+    RawMaterial, Location, InventoryTransaction, RMStockBalance,
+    GRMReceipt, HeatNumber, RMStockBalanceHeat, InventoryTransactionHeat
+)
 
 
 @admin.register(RawMaterial)
@@ -183,6 +186,174 @@ class RMStockBalanceAdmin(admin.ModelAdmin):
     
     def get_queryset(self, request):
         return super().get_queryset(request).select_related('raw_material')
+
+
+class HeatNumberInline(admin.TabularInline):
+    model = HeatNumber
+    extra = 1
+    fields = ('heat_number', 'raw_material', 'coils_received', 'total_weight_kg', 'sheets_received', 'quality_certificate_number')
+    readonly_fields = ('created_at', 'updated_at')
+
+
+@admin.register(GRMReceipt)
+class GRMReceiptAdmin(admin.ModelAdmin):
+    list_display = (
+        'grm_number', 'purchase_order', 'truck_number', 'driver_name', 
+        'status', 'total_items_received', 'total_items_expected', 'receipt_date'
+    )
+    list_filter = ('status', 'receipt_date', 'quality_check_passed', 'received_by')
+    search_fields = ('grm_number', 'purchase_order__po_id', 'truck_number', 'driver_name')
+    ordering = ('-receipt_date',)
+    readonly_fields = ('grm_number', 'created_at', 'updated_at')
+    date_hierarchy = 'receipt_date'
+    inlines = [HeatNumberInline]
+    
+    fieldsets = (
+        ('GRM Information', {
+            'fields': ('grm_number', 'purchase_order', 'status')
+        }),
+        ('Delivery Details', {
+            'fields': ('truck_number', 'driver_name', 'driver_contact', 'receipt_date', 'received_by')
+        }),
+        ('Receipt Tracking', {
+            'fields': ('total_items_received', 'total_items_expected')
+        }),
+        ('Quality Control', {
+            'fields': ('quality_check_passed', 'quality_check_by', 'quality_check_date'),
+            'classes': ('collapse',)
+        }),
+        ('Additional Information', {
+            'fields': ('notes', 'created_at', 'updated_at'),
+            'classes': ('collapse',)
+        }),
+    )
+    
+    def save_model(self, request, obj, form, change):
+        if not change:  # Only set received_by for new objects
+            obj.received_by = request.user
+        super().save_model(request, obj, form, change)
+    
+    def get_queryset(self, request):
+        return super().get_queryset(request).select_related(
+            'purchase_order', 'received_by', 'quality_check_by'
+        )
+
+
+@admin.register(HeatNumber)
+class HeatNumberAdmin(admin.ModelAdmin):
+    list_display = (
+        'heat_number', 'grm_receipt', 'raw_material', 'total_weight_kg', 
+        'coils_received', 'sheets_received', 'is_available', 'get_available_quantity'
+    )
+    list_filter = ('is_available', 'raw_material__material_type', 'grm_receipt__status', 'created_at')
+    search_fields = ('heat_number', 'raw_material__material_code', 'grm_receipt__grm_number')
+    ordering = ('-created_at',)
+    readonly_fields = ('created_at', 'updated_at')
+    raw_id_fields = ('grm_receipt', 'raw_material')
+    
+    fieldsets = (
+        ('Heat Number Details', {
+            'fields': ('heat_number', 'grm_receipt', 'raw_material')
+        }),
+        ('Quantities', {
+            'fields': ('coils_received', 'total_weight_kg', 'sheets_received', 'consumed_quantity_kg')
+        }),
+        ('Quality Information', {
+            'fields': ('quality_certificate_number', 'test_certificate_date'),
+            'classes': ('collapse',)
+        }),
+        ('Storage Location', {
+            'fields': ('storage_location', 'rack_number', 'shelf_number'),
+            'classes': ('collapse',)
+        }),
+        ('Status', {
+            'fields': ('is_available',)
+        }),
+        ('Timestamps', {
+            'fields': ('created_at', 'updated_at'),
+            'classes': ('collapse',)
+        }),
+    )
+    
+    def get_available_quantity(self, obj):
+        """Show available quantity with color coding"""
+        available = obj.get_available_quantity_kg()
+        if available <= 0:
+            color = 'red'
+        elif available < obj.total_weight_kg * 0.2:  # Less than 20% remaining
+            color = 'orange'
+        else:
+            color = 'green'
+        
+        return format_html(
+            '<span style="color: {}; font-weight: bold;">{:.2f} kg</span>',
+            color, available
+        )
+    
+    get_available_quantity.short_description = 'Available Quantity'
+    
+    def get_queryset(self, request):
+        return super().get_queryset(request).select_related(
+            'grm_receipt', 'raw_material'
+        )
+
+
+@admin.register(RMStockBalanceHeat)
+class RMStockBalanceHeatAdmin(admin.ModelAdmin):
+    list_display = (
+        'raw_material', 'total_available_quantity_kg', 'total_coils_available', 
+        'total_sheets_available', 'active_heat_numbers_count', 'last_updated'
+    )
+    list_filter = ('last_updated', 'raw_material__material_type')
+    search_fields = ('raw_material__material_code',)
+    ordering = ('-last_updated',)
+    raw_id_fields = ('raw_material',)
+    readonly_fields = ('last_updated',)
+    
+    fieldsets = (
+        ('Raw Material', {
+            'fields': ('raw_material',)
+        }),
+        ('Aggregate Stock Levels', {
+            'fields': (
+                'total_available_quantity_kg', 'total_coils_available', 
+                'total_sheets_available', 'active_heat_numbers_count'
+            )
+        }),
+        ('Tracking', {
+            'fields': ('last_transaction', 'last_updated'),
+            'classes': ('collapse',)
+        }),
+    )
+    
+    def get_queryset(self, request):
+        return super().get_queryset(request).select_related('raw_material')
+
+
+@admin.register(InventoryTransactionHeat)
+class InventoryTransactionHeatAdmin(admin.ModelAdmin):
+    list_display = (
+        'inventory_transaction', 'heat_number', 'grm_number', 'quantity_kg', 
+        'coils_count', 'sheets_count'
+    )
+    list_filter = ('grm_number', 'heat_number__raw_material__material_type')
+    search_fields = ('grm_number', 'heat_number__heat_number', 'inventory_transaction__transaction_id')
+    ordering = ('-inventory_transaction__transaction_datetime',)
+    raw_id_fields = ('inventory_transaction', 'heat_number')
+    
+    fieldsets = (
+        ('Transaction Link', {
+            'fields': ('inventory_transaction', 'heat_number', 'grm_number')
+        }),
+        ('Quantities', {
+            'fields': ('quantity_kg', 'coils_count', 'sheets_count')
+        }),
+    )
+    
+    def get_queryset(self, request):
+        return super().get_queryset(request).select_related(
+            'inventory_transaction', 'heat_number', 'heat_number__raw_material'
+        )
 
 
 # Custom admin site configuration

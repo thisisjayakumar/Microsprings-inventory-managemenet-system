@@ -5,7 +5,7 @@ from inventory.models import RawMaterial
 
 class RawMaterialBasicSerializer(serializers.ModelSerializer):
     """Basic raw material serializer for nested relationships"""
-    material_name_display = serializers.CharField(source='get_material_name_display', read_only=True)
+    material_name_display = serializers.CharField(source='material_name', read_only=True)
     material_type_display = serializers.CharField(source='get_material_type_display', read_only=True)
     available_quantity = serializers.SerializerMethodField()
     

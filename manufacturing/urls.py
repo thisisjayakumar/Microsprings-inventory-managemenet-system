@@ -5,6 +5,7 @@ from .views import (
     MOProcessExecutionViewSet, MOProcessStepExecutionViewSet, MOProcessAlertViewSet,
     BatchViewSet
 )
+from .batch_process_views import BatchProcessExecutionViewSet
 
 # Create router and register viewsets
 router = DefaultRouter()
@@ -14,6 +15,7 @@ router.register(r'process-executions', MOProcessExecutionViewSet, basename='proc
 router.register(r'step-executions', MOProcessStepExecutionViewSet, basename='stepexecution')
 router.register(r'process-alerts', MOProcessAlertViewSet, basename='processalert')
 router.register(r'batches', BatchViewSet, basename='batch')
+router.register(r'batch-process-executions', BatchProcessExecutionViewSet, basename='batchprocessexecution')
 
 app_name = 'manufacturing'
 

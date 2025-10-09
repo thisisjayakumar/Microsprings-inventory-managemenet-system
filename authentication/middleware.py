@@ -279,18 +279,19 @@ class APIRateLimitMiddleware(MiddlewareMixin):
         # Get client identifier
         client_id = self.get_client_identifier(request)
         
-        # Rate limit: 1000 requests per hour per client
+        # Rate limit: 200 requests per minute per client (increased from 1000/hour)
         cache_key = f'rate_limit_{client_id}'
         current_requests = cache.get(cache_key, 0)
         
-        if current_requests >= 1000:
+        if current_requests >= 200:
             return JsonResponse({
                 'error': 'Rate limit exceeded',
-                'code': 'RATE_LIMITED'
+                'code': 'RATE_LIMITED',
+                'retry_after': 60  # seconds
             }, status=429)
         
         # Increment counter
-        cache.set(cache_key, current_requests + 1, 3600)  # 1 hour
+        cache.set(cache_key, current_requests + 1, 60)  # 1 minute window
         
         return None
     

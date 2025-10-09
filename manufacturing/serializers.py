@@ -50,7 +50,7 @@ class ProductBasicSerializer(serializers.ModelSerializer):
 
 class RawMaterialBasicSerializer(serializers.ModelSerializer):
     """Basic raw material serializer for nested relationships"""
-    material_name_display = serializers.CharField(source='get_material_name_display', read_only=True)
+    material_name_display = serializers.CharField(source='material_name', read_only=True)
     material_type_display = serializers.CharField(source='get_material_type_display', read_only=True)
     available_quantity = serializers.SerializerMethodField()
     
@@ -407,6 +407,7 @@ class MOProcessExecutionListSerializer(serializers.ModelSerializer):
     process_code = serializers.IntegerField(source='process.code', read_only=True)
     status_display = serializers.CharField(source='get_status_display', read_only=True)
     assigned_operator_name = serializers.CharField(source='assigned_operator.get_full_name', read_only=True)
+    assigned_supervisor_name = serializers.CharField(source='assigned_supervisor.get_full_name', read_only=True)
     duration_minutes = serializers.ReadOnlyField()
     is_overdue = serializers.ReadOnlyField()
     step_count = serializers.SerializerMethodField()
@@ -418,8 +419,8 @@ class MOProcessExecutionListSerializer(serializers.ModelSerializer):
             'id', 'process', 'process_name', 'process_code', 'status', 
             'status_display', 'sequence_order', 'planned_start_time', 
             'planned_end_time', 'actual_start_time', 'actual_end_time',
-            'assigned_operator', 'assigned_operator_name', 'progress_percentage',
-            'duration_minutes', 'is_overdue', 'step_count', 'completed_steps',
+            'assigned_operator', 'assigned_operator_name', 'assigned_supervisor', 'assigned_supervisor_name',
+            'progress_percentage', 'duration_minutes', 'is_overdue', 'step_count', 'completed_steps',
             'created_at', 'updated_at'
         ]
         read_only_fields = ['created_at', 'updated_at']
@@ -437,6 +438,7 @@ class MOProcessExecutionDetailSerializer(serializers.ModelSerializer):
     process_code = serializers.IntegerField(source='process.code', read_only=True)
     status_display = serializers.CharField(source='get_status_display', read_only=True)
     assigned_operator_name = serializers.CharField(source='assigned_operator.get_full_name', read_only=True)
+    assigned_supervisor_name = serializers.CharField(source='assigned_supervisor.get_full_name', read_only=True)
     duration_minutes = serializers.ReadOnlyField()
     is_overdue = serializers.ReadOnlyField()
     step_executions = MOProcessStepExecutionSerializer(many=True, read_only=True)
@@ -448,8 +450,8 @@ class MOProcessExecutionDetailSerializer(serializers.ModelSerializer):
             'id', 'process', 'process_name', 'process_code', 'status', 
             'status_display', 'sequence_order', 'planned_start_time', 
             'planned_end_time', 'actual_start_time', 'actual_end_time',
-            'assigned_operator', 'assigned_operator_name', 'progress_percentage',
-            'notes', 'duration_minutes', 'is_overdue', 'step_executions',
+            'assigned_operator', 'assigned_operator_name', 'assigned_supervisor', 'assigned_supervisor_name',
+            'progress_percentage', 'notes', 'duration_minutes', 'is_overdue', 'step_executions',
             'alerts', 'created_at', 'updated_at'
         ]
         read_only_fields = ['created_at', 'updated_at']
@@ -516,17 +518,33 @@ class ManufacturingOrderWithProcessesSerializer(serializers.ModelSerializer):
         if not executions:
             return 0
         
-        total_progress = sum(exec.progress_percentage for exec in executions)
-        return round(total_progress / len(executions), 2)
+        total_progress = 0
+        valid_processes = 0
+        
+        for exec in executions:
+            progress = exec.progress_percentage
+            if progress is not None and not (isinstance(progress, float) and (progress != progress or progress < 0)):  # Check for NaN and negative
+                total_progress += float(progress)
+                valid_processes += 1
+        
+        if valid_processes == 0:
+            return 0
+        
+        return round(total_progress / valid_processes, 2)
     
     def get_active_process(self, obj):
         """Get currently active process"""
         active_exec = obj.process_executions.filter(status='in_progress').first()
         if active_exec:
+            progress = active_exec.progress_percentage
+            # Handle NaN values
+            if progress is None or (isinstance(progress, float) and progress != progress):
+                progress = 0
+                
             return {
                 'id': active_exec.id,
                 'process_name': active_exec.process.name,
-                'progress_percentage': active_exec.progress_percentage,
+                'progress_percentage': progress,
                 'assigned_operator': active_exec.assigned_operator.get_full_name() if active_exec.assigned_operator else None
             }
         return None
@@ -537,9 +555,8 @@ class PurchaseOrderDetailSerializer(serializers.ModelSerializer):
     rm_code = RawMaterialBasicSerializer(read_only=True)
     vendor_name = VendorBasicSerializer(read_only=True)
     created_by = UserBasicSerializer(read_only=True)
-    gm_approved_by = UserBasicSerializer(read_only=True)
-    po_created_by = UserBasicSerializer(read_only=True)
-    rejected_by = UserBasicSerializer(read_only=True)
+    approved_by = UserBasicSerializer(read_only=True)
+    cancelled_by = UserBasicSerializer(read_only=True)
     status_history = POStatusHistorySerializer(many=True, read_only=True)
     
     # Display fields
@@ -559,18 +576,17 @@ class PurchaseOrderDetailSerializer(serializers.ModelSerializer):
             'sheet_roll_auto', 'qty_sheets_auto', 'vendor_name', 'vendor_name_id',
             'vendor_address_auto', 'gst_no_auto', 'mob_no_auto', 'expected_date',
             'quantity_ordered', 'unit_price', 'total_amount', 'status', 'status_display',
-            'submitted_at', 'gm_approved_at', 'gm_approved_by', 'po_created_at',
-            'po_created_by', 'rejected_at', 'rejected_by', 'rejection_reason',
+            'submitted_at', 'approved_at', 'approved_by', 'cancelled_at',
+            'cancelled_by', 'cancellation_reason',
             'terms_conditions', 'notes', 'created_at', 'created_by', 'updated_at',
             'status_history'
         ]
         read_only_fields = [
-            'po_id', 'date_time', 'material_type', 'material_auto', 'grade_auto',
-            'wire_diameter_mm_auto', 'thickness_mm_auto', 'finishing_auto',
-            'manufacturer_brand_auto', 'kg_auto', 'sheet_roll_auto', 'qty_sheets_auto',
+            'po_id', 'date_time', 'material_type', 'material_auto', 'grade_auto', 'finishing_auto',
+            'wire_diameter_mm_auto', 'thickness_mm_auto', 'kg_auto', 'sheet_roll_auto', 'qty_sheets_auto',
             'vendor_address_auto', 'gst_no_auto', 'mob_no_auto', 'total_amount',
-            'submitted_at', 'gm_approved_at', 'gm_approved_by', 'po_created_at',
-            'po_created_by', 'rejected_at', 'rejected_by', 'created_at', 'updated_at'
+            'submitted_at', 'approved_at', 'approved_by', 'cancelled_at',
+            'cancelled_by', 'created_at', 'updated_at'
         ]
 
     def create(self, validated_data):
@@ -584,9 +600,24 @@ class PurchaseOrderDetailSerializer(serializers.ModelSerializer):
         except (RawMaterial.DoesNotExist, Vendor.DoesNotExist) as e:
             raise serializers.ValidationError(f"Invalid reference: {str(e)}")
         
+        # Auto-populate material details
         validated_data.update({
             'rm_code': rm_code,
+            'material_type': getattr(rm_code, 'material_type', ''),
+            'material_auto': getattr(rm_code, 'material_name', ''),
+            'grade_auto': getattr(rm_code, 'grade', ''),
+            'finishing_auto': getattr(rm_code, 'finishing', '') or '',
+            'wire_diameter_mm_auto': getattr(rm_code, 'wire_diameter_mm', None),
+            'thickness_mm_auto': getattr(rm_code, 'thickness_mm', None),
+            'kg_auto': getattr(rm_code, 'weight_per_unit_kg', None),
+        })
+        
+        # Auto-populate vendor details
+        validated_data.update({
             'vendor_name': vendor,
+            'vendor_address_auto': getattr(vendor, 'address', ''),
+            'gst_no_auto': getattr(vendor, 'gst_no', ''),
+            'mob_no_auto': getattr(vendor, 'contact_no', ''),
             'created_by': self.context['request'].user
         })
         

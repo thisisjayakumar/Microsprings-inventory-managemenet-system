@@ -4,6 +4,7 @@ python3 manage.py setup_demo_users
 
 python3 manage.py import_raw_materials management_data/rawmaterials.csv
 
+python3 manage.py import_vendors_from_csv management_data/vendors.csv
 python3 manage.py import_customers_from_csv management_data/customers_with_ids.csv
 
 python3 manage.py import_spring_processes management_data/spring_process.csv

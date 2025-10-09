@@ -86,3 +86,44 @@ class IsManagerOrSupervisor(BasePermission):
             cache.set(cache_key, user_role, 300)  # Cache for 5 minutes
         
         return user_role
+
+
+class IsManagerOrRMStore(BasePermission):
+    """
+    Custom permission to allow managers and production heads to create/edit purchase orders and RM Store users to view/update status.
+    """
+    
+    def has_permission(self, request, view):
+        # Check if user is authenticated
+        if not request.user or not request.user.is_authenticated:
+            return False
+        
+        # Get user role
+        user_role = self._get_user_role(request.user)
+        
+        # Managers and Production Heads can do everything
+        if user_role in ['admin', 'manager', 'production_head']:
+            return True
+        
+        # RM Store users can view and update status
+        if user_role == 'rm_store':
+            # Allow read operations
+            if request.method in ['GET', 'HEAD', 'OPTIONS']:
+                return True
+            # Allow status changes
+            if request.method == 'POST' and 'change_status' in request.path:
+                return True
+        
+        return False
+    
+    def _get_user_role(self, user):
+        """Get user role with caching"""
+        cache_key = f'user_role_{user.id}'
+        user_role = cache.get(cache_key)
+        
+        if not user_role:
+            active_role = user.user_roles.filter(is_active=True).select_related('role').first()
+            user_role = active_role.role.name if active_role else None
+            cache.set(cache_key, user_role, 300)  # Cache for 5 minutes
+        
+        return user_role

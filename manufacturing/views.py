@@ -7,7 +7,7 @@ from django.db.models import Q, Prefetch, Sum
 from django.contrib.auth import get_user_model
 from django.utils import timezone
 
-from .permissions import IsManager, IsManagerOrSupervisor
+from .permissions import IsManager, IsManagerOrSupervisor, IsManagerOrRMStore
 
 from .models import (
     ManufacturingOrder, PurchaseOrder, MOStatusHistory, POStatusHistory,
@@ -26,6 +26,7 @@ from .serializers import (
 from products.models import Product
 from inventory.models import RawMaterial, RMStockBalance
 from third_party.models import Vendor
+from processes.models import Process
 from .rm_calculator import RMCalculator
 from decimal import Decimal
 
@@ -60,6 +61,49 @@ class ManufacturingOrderViewSet(viewsets.ModelViewSet):
             queryset = queryset.filter(created_at__gte=start_date)
         if end_date:
             queryset = queryset.filter(created_at__lte=end_date)
+        
+        # Filter based on user role and department
+        user = self.request.user
+        user_roles = user.user_roles.filter(is_active=True).values_list('role__name', flat=True)
+        
+        # Admin, manager, production_head can see all MOs
+        if any(role in ['admin', 'manager', 'production_head'] for role in user_roles):
+            return queryset
+        
+        # Supervisors can only see MOs assigned to them or processes in their department
+        if 'supervisor' in user_roles:
+            try:
+                user_profile = user.userprofile
+                from authentication.models import ProcessSupervisor
+                
+                # Get processes this supervisor can handle
+                process_supervisor = ProcessSupervisor.objects.filter(
+                    supervisor=user,
+                    department=user_profile.department,
+                    is_active=True
+                ).first()
+                
+                if process_supervisor:
+                    # Filter to only show MOs with processes this supervisor handles
+                    queryset = queryset.filter(
+                        Q(assigned_supervisor=user) | 
+                        Q(process_executions__process__name__in=process_supervisor.process_names)
+                    ).distinct()
+                else:
+                    # If no process supervisor record, only show assigned MOs
+                    queryset = queryset.filter(assigned_supervisor=user)
+                    
+            except Exception as e:
+                # If there's an error, only show assigned MOs
+                queryset = queryset.filter(assigned_supervisor=user)
+        
+        # RM Store and FG Store users can only see MOs assigned to them
+        elif any(role in ['rm_store', 'fg_store'] for role in user_roles):
+            queryset = queryset.filter(assigned_supervisor=user)
+        
+        # Other users see no MOs
+        else:
+            queryset = queryset.none()
             
         return queryset
 
@@ -144,21 +188,38 @@ class ManufacturingOrderViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST
             )
         
-        # Change status to rm_allocated
+        # Handle status change based on current status
         old_status = mo.status
-        mo.status = 'rm_allocated'
-        mo.rm_allocated_at = timezone.now()
-        mo.rm_allocated_by = request.user
-        mo.save()
         
-        # Create status history
-        MOStatusHistory.objects.create(
-            mo=mo,
-            from_status=old_status,
-            to_status='rm_allocated',
-            changed_by=request.user,
-            notes=request.data.get('notes', 'All RM allocated to batches by RM Store')
-        )
+        # Only change status to rm_allocated if MO is not already in progress
+        if mo.status != 'in_progress':
+            mo.status = 'rm_allocated'
+            mo.rm_allocated_at = timezone.now()
+            mo.rm_allocated_by = request.user
+            mo.save()
+            
+            # Create status history
+            MOStatusHistory.objects.create(
+                mo=mo,
+                from_status=old_status,
+                to_status='rm_allocated',
+                changed_by=request.user,
+                notes=request.data.get('notes', 'All RM allocated to batches by RM Store')
+            )
+        else:
+            # For in-progress MOs, just update the allocation fields without changing status
+            mo.rm_allocated_at = timezone.now()
+            mo.rm_allocated_by = request.user
+            mo.save()
+            
+            # Create status history to track the RM allocation completion
+            MOStatusHistory.objects.create(
+                mo=mo,
+                from_status=old_status,
+                to_status=old_status,  # Status remains the same
+                changed_by=request.user,
+                notes=request.data.get('notes', 'RM allocation completed for in-progress MO - status unchanged')
+            )
         
         serializer = self.get_serializer(mo)
         return Response({
@@ -337,7 +398,7 @@ class ManufacturingOrderViewSet(viewsets.ModelViewSet):
                     'product_type': bom_item.type,
                     'material': material,
                     'material_type': material.material_type if material else '',
-                    'material_name': material.get_material_name_display() if material else '',
+                    'material_name': material.material_name if material else '',
                     'grade': material.grade if material else '',
                     'wire_diameter_mm': material.wire_diameter_mm if material else None,
                     'thickness_mm': material.thickness_mm if material else None,
@@ -592,9 +653,10 @@ class ManufacturingOrderViewSet(viewsets.ModelViewSet):
         """Initialize process executions for an MO based on product BOM"""
         mo = self.get_object()
         
-        if mo.status != 'rm_allocated':
+        # Allow initialization when status is rm_allocated or in_progress
+        if mo.status not in ['rm_allocated', 'in_progress']:
             return Response(
-                {'error': 'MO must be in rm_allocated status to initialize processes'}, 
+                {'error': f'MO must be in rm_allocated or in_progress status to initialize processes. Current status: {mo.status}'}, 
                 status=status.HTTP_400_BAD_REQUEST
             )
         
@@ -603,18 +665,24 @@ class ManufacturingOrderViewSet(viewsets.ModelViewSet):
         bom_items = BOM.objects.filter(
             product_code=mo.product_code.product_code,
             is_active=True
-        ).select_related('process_step__process').distinct('process_step__process')
+        ).select_related('process_step__process')
         
-        if not bom_items:
+        if not bom_items.exists():
             return Response(
                 {'error': 'No processes found for this product'}, 
                 status=status.HTTP_400_BAD_REQUEST
             )
         
-        # Create process executions
-        sequence = 1
+        # Get unique processes (avoid duplicates)
+        unique_processes = {}
         for bom_item in bom_items:
             process = bom_item.process_step.process
+            if process.id not in unique_processes:
+                unique_processes[process.id] = process
+        
+        # Create process executions
+        sequence = 1
+        for process in unique_processes.values():
             
             # Check if execution already exists
             execution, created = MOProcessExecution.objects.get_or_create(
@@ -629,10 +697,11 @@ class ManufacturingOrderViewSet(viewsets.ModelViewSet):
             if created:
                 sequence += 1
         
-        # Update MO status
-        mo.status = 'in_progress'
-        mo.actual_start_date = timezone.now()
-        mo.save()
+        # Update MO status and actual start date only if not already in_progress
+        if mo.status == 'rm_allocated':
+            mo.status = 'in_progress'
+            mo.actual_start_date = timezone.now()
+            mo.save()
         
         serializer = ManufacturingOrderWithProcessesSerializer(mo)
         return Response(serializer.data)
@@ -792,12 +861,38 @@ class ManufacturingOrderViewSet(viewsets.ModelViewSet):
         # Reduce RM quantities based on mo.rm_required_kg
         if mo.rm_required_kg > 0:
             try:
-                from inventory.models import RawMaterial
+                from inventory.models import RawMaterial, RMStockBalance, InventoryTransaction
+                from inventory.utils import generate_transaction_id
+                
                 # Find the raw material associated with this MO's product
                 raw_material = mo.product_code.material
                 if raw_material and raw_material.quantity_on_hand >= mo.rm_required_kg:
+                    # Update raw material quantity
                     raw_material.quantity_on_hand -= mo.rm_required_kg
                     raw_material.save()
+                    
+                    # Update RM stock balance
+                    stock_balance, created = RMStockBalance.objects.get_or_create(
+                        raw_material=raw_material,
+                        defaults={'available_quantity': 0}
+                    )
+                    stock_balance.available_quantity -= mo.rm_required_kg
+                    stock_balance.save()
+                    
+                    # Create inventory transaction for MO allocation
+                    transaction_id = generate_transaction_id('MO')
+                    InventoryTransaction.objects.create(
+                        transaction_id=transaction_id,
+                        transaction_type='consumption',
+                        product=mo.product_code,
+                        manufacturing_order=mo,
+                        quantity=mo.rm_required_kg,
+                        transaction_datetime=timezone.now(),
+                        created_by=request.user,
+                        reference_type='mo',
+                        reference_id=str(mo.id),
+                        notes=f'RM allocation for MO {mo.mo_id} - Production start'
+                    )
                 else:
                     return Response(
                         {'error': 'Insufficient raw material quantity available'}, 
@@ -921,9 +1016,14 @@ class ManufacturingOrderViewSet(viewsets.ModelViewSet):
         
         # Separate by status
         on_hold_mos = base_queryset.filter(status='on_hold').order_by('-created_at')
-        in_progress_mos = base_queryset.filter(status='in_progress').order_by('-created_at')
-        # For RM Store, "completed" means rm_allocated or fully completed
-        completed_mos = base_queryset.filter(status__in=['rm_allocated', 'completed']).order_by('-created_at')
+        # In progress MOs that don't have RM allocation completed yet
+        in_progress_mos = base_queryset.filter(status='in_progress', rm_allocated_at__isnull=True).order_by('-created_at')
+        # For RM Store, "completed" means rm_allocated OR in_progress with rm_allocated_at set OR fully completed
+        completed_mos = base_queryset.filter(
+            Q(status='rm_allocated') | 
+            Q(status='completed') | 
+            Q(status='in_progress', rm_allocated_at__isnull=False)
+        ).order_by('-created_at')
         
         # Serialize data
         on_hold_serializer = ManufacturingOrderListSerializer(on_hold_mos, many=True)
@@ -944,7 +1044,7 @@ class ManufacturingOrderViewSet(viewsets.ModelViewSet):
 
     @action(detail=False, methods=['get'])
     def supervisor_dashboard(self, request):
-        """Get MOs assigned to current supervisor"""
+        """Get MOs assigned to current supervisor with process filtering"""
         # Check if user is supervisor
         if not request.user.user_roles.filter(role__name='supervisor').exists():
             return Response(
@@ -952,11 +1052,38 @@ class ManufacturingOrderViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_403_FORBIDDEN
             )
         
-        # Get MOs assigned to this supervisor
-        assigned_mos = self.get_queryset().filter(
-            assigned_supervisor=request.user,
-            status__in=['gm_approved', 'mo_approved', 'rm_allocated', 'in_progress', 'on_hold']
-        ).order_by('-created_at')
+        # Get MOs assigned to this supervisor or with processes in their department
+        try:
+            user_profile = request.user.userprofile
+            from authentication.models import ProcessSupervisor
+            
+            # Get processes this supervisor can handle
+            process_supervisor = ProcessSupervisor.objects.filter(
+                supervisor=request.user,
+                department=user_profile.department,
+                is_active=True
+            ).first()
+            
+            if process_supervisor:
+                # Filter MOs with processes this supervisor handles
+                assigned_mos = self.get_queryset().filter(
+                    Q(assigned_supervisor=request.user) | 
+                    Q(process_executions__process__name__in=process_supervisor.process_names),
+                    status__in=['gm_approved', 'mo_approved', 'rm_allocated', 'in_progress', 'on_hold']
+                ).distinct().order_by('-created_at')
+            else:
+                # If no process supervisor record, only show assigned MOs
+                assigned_mos = self.get_queryset().filter(
+                    assigned_supervisor=request.user,
+                    status__in=['gm_approved', 'mo_approved', 'rm_allocated', 'in_progress', 'on_hold']
+                ).order_by('-created_at')
+                
+        except Exception as e:
+            # If there's an error, only show assigned MOs
+            assigned_mos = self.get_queryset().filter(
+                assigned_supervisor=request.user,
+                status__in=['gm_approved', 'mo_approved', 'rm_allocated', 'in_progress', 'on_hold']
+            ).order_by('-created_at')
         
         # Separate by status
         approved_mos = assigned_mos.exclude(status='in_progress')
@@ -1023,11 +1150,12 @@ class ManufacturingOrderViewSet(viewsets.ModelViewSet):
             bom_items = BOM.objects.filter(
                 product_code=mo.product_code.product_code,
                 is_active=True
-            ).select_related('process_step__process').distinct('process_step__process')
+            ).select_related('process_step__process').values('process_step__process').distinct()
             
             sequence = 1
             for bom_item in bom_items:
-                process = bom_item.process_step.process
+                process_id = bom_item['process_step__process']
+                process = Process.objects.get(id=process_id)
                 
                 MOProcessExecution.objects.get_or_create(
                     mo=mo,
@@ -1050,9 +1178,9 @@ class ManufacturingOrderViewSet(viewsets.ModelViewSet):
 class PurchaseOrderViewSet(viewsets.ModelViewSet):
     """
     ViewSet for Purchase Orders with optimized queries and filtering
-    Only managers can create/edit POs
+    Managers can create/edit POs, RM Store users can view and update status
     """
-    permission_classes = [IsManager]
+    permission_classes = [IsManagerOrRMStore]
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     filterset_fields = ['status', 'material_type', 'vendor_name', 'expected_date']
     search_fields = ['po_id', 'rm_code__product_code', 'vendor_name__name']
@@ -1062,8 +1190,7 @@ class PurchaseOrderViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         """Optimized queryset with select_related and prefetch_related"""
         queryset = PurchaseOrder.objects.select_related(
-            'rm_code', 'vendor_name', 'created_by', 'gm_approved_by', 
-            'po_created_by', 'rejected_by'
+            'rm_code', 'vendor_name', 'created_by', 'approved_by', 'cancelled_by'
         ).prefetch_related(
             Prefetch('status_history', queryset=POStatusHistory.objects.select_related('changed_by'))
         )
@@ -1075,8 +1202,21 @@ class PurchaseOrderViewSet(viewsets.ModelViewSet):
             queryset = queryset.filter(created_at__gte=start_date)
         if end_date:
             queryset = queryset.filter(created_at__lte=end_date)
-            
-        return queryset
+        
+        # Filter based on user role
+        user = self.request.user
+        user_roles = user.user_roles.filter(is_active=True).values_list('role__name', flat=True)
+        
+        # Admin, manager, production_head can see all POs
+        if any(role in ['admin', 'manager', 'production_head'] for role in user_roles):
+            return queryset
+        
+        # RM Store users can see all POs (they need to manage incoming materials)
+        if 'rm_store' in user_roles:
+            return queryset
+        
+        # Other users see no POs
+        return queryset.none()
 
     def get_serializer_class(self):
         """Use different serializers for list and detail views"""
@@ -1106,16 +1246,13 @@ class PurchaseOrderViewSet(viewsets.ModelViewSet):
         # Update workflow timestamps based on status
         if new_status == 'submitted':
             po.submitted_at = timezone.now()
-        elif new_status == 'gm_approved':
-            po.gm_approved_at = timezone.now()
-            po.gm_approved_by = request.user
-        elif new_status == 'gm_created_po':
-            po.po_created_at = timezone.now()
-            po.po_created_by = request.user
-        elif new_status == 'rejected':
-            po.rejected_at = timezone.now()
-            po.rejected_by = request.user
-            po.rejection_reason = rejection_reason
+        elif new_status == 'approved':
+            po.approved_at = timezone.now()
+            po.approved_by = request.user
+        elif new_status == 'cancelled':
+            po.cancelled_at = timezone.now()
+            po.cancelled_by = request.user
+            po.cancellation_reason = rejection_reason
         
         po.save()
         
@@ -1138,13 +1275,14 @@ class PurchaseOrderViewSet(viewsets.ModelViewSet):
         
         stats = {
             'total': queryset.count(),
-            'draft': queryset.filter(status='draft').count(),
-            'gm_approved': queryset.filter(status='gm_approved').count(),
+            'on_hold': queryset.filter(status='on_hold').count(),
+            'submitted': queryset.filter(status='submitted').count(),
+            'approved': queryset.filter(status='approved').count(),
             'completed': queryset.filter(status='completed').count(),
-            'rejected': queryset.filter(status='rejected').count(),
+            'cancelled': queryset.filter(status='cancelled').count(),
             'overdue': queryset.filter(
                 expected_date__lt=timezone.now().date(),
-                status__in=['draft', 'submitted', 'gm_approved', 'gm_created_po']
+                status__in=['on_hold', 'submitted', 'approved']
             ).count(),
             'total_value': queryset.aggregate(
                 total=Sum('total_amount')
@@ -1209,16 +1347,61 @@ class MOProcessExecutionViewSet(viewsets.ModelViewSet):
     """
     permission_classes = [IsAuthenticated]
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
-    filterset_fields = ['mo', 'process', 'status', 'assigned_operator']
+    filterset_fields = ['mo', 'process', 'status', 'assigned_operator', 'assigned_supervisor']
     search_fields = ['mo__mo_id', 'process__name', 'assigned_operator__first_name', 'assigned_operator__last_name']
     ordering_fields = ['sequence_order', 'planned_start_time', 'actual_start_time', 'progress_percentage']
     ordering = ['mo', 'sequence_order']
 
     def get_queryset(self):
         """Optimized queryset with select_related and prefetch_related"""
-        return MOProcessExecution.objects.select_related(
-            'mo', 'process', 'assigned_operator'
+        queryset = MOProcessExecution.objects.select_related(
+            'mo', 'process', 'assigned_operator', 'assigned_supervisor'
         ).prefetch_related('step_executions', 'alerts')
+        
+        # Filter based on user role and department
+        user = self.request.user
+        user_roles = user.user_roles.filter(is_active=True).values_list('role__name', flat=True)
+        
+        # Admin, manager, production_head can see all processes
+        if any(role in ['admin', 'manager', 'production_head'] for role in user_roles):
+            return queryset
+        
+        # Supervisors can only see processes assigned to them or their department
+        if 'supervisor' in user_roles:
+            try:
+                user_profile = user.userprofile
+                from authentication.models import ProcessSupervisor
+                
+                # Get processes this supervisor can handle
+                process_supervisor = ProcessSupervisor.objects.filter(
+                    supervisor=user,
+                    department=user_profile.department,
+                    is_active=True
+                ).first()
+                
+                if process_supervisor:
+                    # Filter to only show processes this supervisor handles
+                    queryset = queryset.filter(
+                        Q(assigned_supervisor=user) | 
+                        Q(process__name__in=process_supervisor.process_names)
+                    )
+                else:
+                    # If no process supervisor record, only show assigned processes
+                    queryset = queryset.filter(assigned_supervisor=user)
+                    
+            except Exception as e:
+                # If there's an error, only show assigned processes
+                queryset = queryset.filter(assigned_supervisor=user)
+        
+        # RM Store and FG Store users can only see processes assigned to them
+        elif any(role in ['rm_store', 'fg_store'] for role in user_roles):
+            queryset = queryset.filter(assigned_supervisor=user)
+        
+        # Other users see no processes
+        else:
+            queryset = queryset.none()
+            
+        return queryset
 
     def get_serializer_class(self):
         """Use different serializers for list and detail views"""
@@ -1237,10 +1420,20 @@ class MOProcessExecutionViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST
             )
         
+        # Check if user can access this process
+        if not execution.can_user_access(request.user):
+            return Response(
+                {'error': 'You do not have permission to access this process'}, 
+                status=status.HTTP_403_FORBIDDEN
+            )
+        
         execution.status = 'in_progress'
         execution.actual_start_time = timezone.now()
         execution.assigned_operator = request.user
         execution.save()
+        
+        # Create inventory transaction for process consumption
+        self._create_process_consumption_transaction(execution, request.user)
         
         # Create step executions if they don't exist
         process_steps = execution.process.process_steps.all().order_by('sequence_order')
@@ -1253,10 +1446,10 @@ class MOProcessExecutionViewSet(viewsets.ModelViewSet):
         
         serializer = self.get_serializer(execution)
         return Response(serializer.data)
-
+    
     @action(detail=True, methods=['post'])
     def complete_process(self, request, pk=None):
-        """Complete a process execution"""
+        """Complete a process execution and move to next process or FG store"""
         execution = self.get_object()
         
         if execution.status != 'in_progress':
@@ -1265,18 +1458,197 @@ class MOProcessExecutionViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST
             )
         
+        # Check if user can access this process
+        if not execution.can_user_access(request.user):
+            return Response(
+                {'error': 'You do not have permission to access this process'}, 
+                status=status.HTTP_403_FORBIDDEN
+            )
+        
+        # Complete the process and move to next
+        result = execution.complete_and_move_to_next(request.user)
+        
+        serializer = self.get_serializer(execution)
+        response_data = {
+            'process_execution': serializer.data,
+            'movement_result': result
+        }
+        
+        return Response(response_data)
+
+    def _create_process_consumption_transaction(self, execution, user):
+        """Create inventory transaction for process consumption"""
+        try:
+            from inventory.models import InventoryTransaction, RMStockBalance
+            from inventory.utils import generate_transaction_id
+            
+            # Get the raw material associated with the MO's product
+            mo = execution.mo
+            raw_material = mo.product_code.material
+            
+            if not raw_material:
+                return
+            
+            # Calculate consumption quantity (this could be based on BOM or process requirements)
+            # For now, we'll use a small amount per process - this should be configurable
+            consumption_quantity = 1.0  # kg or pieces
+            
+            # Create transaction ID
+            transaction_id = generate_transaction_id('PROC')
+            
+            # Create inventory transaction
+            transaction = InventoryTransaction.objects.create(
+                transaction_id=transaction_id,
+                transaction_type='consumption',
+                product=mo.product_code,  # This should be the raw material product
+                manufacturing_order=mo,
+                quantity=consumption_quantity,
+                transaction_datetime=timezone.now(),
+                created_by=user,
+                reference_type='process',
+                reference_id=str(execution.id),
+                notes=f'Process consumption for {execution.process.name}'
+            )
+            
+            # Update stock balance
+            stock_balance, created = RMStockBalance.objects.get_or_create(
+                raw_material=raw_material,
+                defaults={'available_quantity': 0}
+            )
+            
+            if stock_balance.available_quantity >= consumption_quantity:
+                stock_balance.available_quantity -= consumption_quantity
+                stock_balance.save()
+            else:
+                # Log warning but don't fail the process
+                print(f"Warning: Insufficient stock for {raw_material.material_code}. Required: {consumption_quantity}, Available: {stock_balance.available_quantity}")
+                
+        except Exception as e:
+            print(f"Error creating process consumption transaction: {e}")
+            # Don't fail the process start if inventory transaction fails
+
+    def _create_process_completion_transaction(self, execution, user):
+        """Create inventory transaction for process completion"""
+        try:
+            from inventory.models import InventoryTransaction
+            from inventory.utils import generate_transaction_id
+            
+            # Create transaction ID
+            transaction_id = generate_transaction_id('PROC_COMP')
+            
+            # Create inventory transaction for process completion
+            transaction = InventoryTransaction.objects.create(
+                transaction_id=transaction_id,
+                transaction_type='production',
+                product=execution.mo.product_code,
+                manufacturing_order=execution.mo,
+                quantity=execution.mo.quantity,  # This should be calculated based on actual output
+                transaction_datetime=timezone.now(),
+                created_by=user,
+                reference_type='process',
+                reference_id=str(execution.id),
+                notes=f'Process completion for {execution.process.name}'
+            )
+                
+        except Exception as e:
+            print(f"Error creating process completion transaction: {e}")
+            # Don't fail the process completion if inventory transaction fails
+
+    def _update_process_progress_based_on_batches(self, execution):
+        """Update process progress based on batch completion status"""
+        try:
+            mo = execution.mo
+            mo_batches = mo.batches.exclude(status='cancelled')
+            
+            if not mo_batches.exists():
+                return
+            
+            # Count batches that have completed this process
+            completed_batches = 0
+            total_batches = mo_batches.count()
+            
+            for batch in mo_batches:
+                batch_proc_key = f"PROCESS_{execution.id}_STATUS"
+                if f"{batch_proc_key}:completed;" in (batch.notes or ""):
+                    completed_batches += 1
+            
+            # Calculate progress percentage
+            if total_batches > 0:
+                progress_percentage = (completed_batches / total_batches) * 100
+                execution.progress_percentage = progress_percentage
+                execution.save()
+                
+        except Exception as e:
+            print(f"Error updating process progress based on batches: {e}")
+
+    @action(detail=True, methods=['post'], permission_classes=[IsAuthenticated])
+    def complete_process(self, request, pk=None):
+        """Complete a process execution"""
+        execution = self.get_object()
+        
+        # Check if user has permission (supervisor or operator assigned to this process)
+        user_roles = request.user.user_roles.values_list('role__name', flat=True)
+        if 'supervisor' not in user_roles and execution.assigned_operator != request.user:
+            return Response(
+                {'error': 'Only supervisors or assigned operators can complete processes'}, 
+                status=status.HTTP_403_FORBIDDEN
+            )
+        
+        if execution.status != 'in_progress':
+            return Response(
+                {
+                    'error': 'Process must be in progress to complete',
+                    'message': f'Process must be in progress to complete. Current status: {execution.status}',
+                    'current_status': execution.status
+                }, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
         # Check if all steps are completed
         incomplete_steps = execution.step_executions.exclude(status='completed').count()
         if incomplete_steps > 0:
+            incomplete_step_names = list(execution.step_executions.exclude(status='completed').values_list('process_step__step_name', flat=True))
             return Response(
-                {'error': f'{incomplete_steps} steps are still incomplete'}, 
+                {
+                    'error': f'{incomplete_steps} steps are still incomplete',
+                    'message': f'{incomplete_steps} steps are still incomplete: {", ".join(incomplete_step_names)}',
+                    'incomplete_steps': incomplete_step_names
+                }, 
                 status=status.HTTP_400_BAD_REQUEST
             )
+        
+        # For batch-based production, check if all batches have completed this process
+        mo = execution.mo
+        mo_batches = mo.batches.exclude(status='cancelled')
+        
+        if mo_batches.exists():
+            # Check if all batches have completed this process
+            all_batches_completed_process = True
+            for batch in mo_batches:
+                batch_proc_key = f"PROCESS_{execution.id}_STATUS"
+                if f"{batch_proc_key}:completed;" not in (batch.notes or ""):
+                    all_batches_completed_process = False
+                    break
+            
+            if not all_batches_completed_process:
+                return Response(
+                    {
+                        'error': 'Cannot complete process - not all batches have completed this process',
+                        'message': 'All batches must complete this process before marking the process as completed'
+                    }, 
+                    status=status.HTTP_400_BAD_REQUEST
+                )
         
         execution.status = 'completed'
         execution.actual_end_time = timezone.now()
         execution.progress_percentage = 100
         execution.save()
+        
+        # Update process progress based on batch completion
+        self._update_process_progress_based_on_batches(execution)
+        
+        # Create inventory transaction for process completion
+        self._create_process_completion_transaction(execution, request.user)
         
         serializer = self.get_serializer(execution)
         return Response(serializer.data)
@@ -1481,8 +1853,30 @@ class BatchViewSet(viewsets.ModelViewSet):
         return BatchDetailSerializer
 
     def perform_create(self, serializer):
-        """Create batch - automatically handled by serializer"""
-        serializer.save()
+        """Create batch with location tracking"""
+        batch = serializer.save()
+        
+        # Create batch at RM store location initially
+        try:
+            from inventory.location_tracker import LocationTracker
+            
+            location_result = LocationTracker.create_item_at_location(
+                item_type='batch',
+                item_id=batch.id,
+                location_code='RM_STORE',
+                quantity=batch.quantity,
+                user=self.request.user,
+                reference_type='mo',
+                reference_id=batch.mo.id,
+                notes=f'Batch {batch.batch_id} created for MO {batch.mo.mo_id}'
+            )
+            
+            if not location_result['success']:
+                print(f"Warning: Failed to create batch location: {location_result.get('error')}")
+                
+        except Exception as e:
+            print(f"Error creating batch location: {e}")
+            # Don't fail batch creation if location tracking fails
 
     @action(detail=False, methods=['get'], url_path='mo-batch-summary/(?P<mo_id>[^/.]+)')
     def mo_batch_summary(self, request, mo_id=None):

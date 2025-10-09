@@ -9,6 +9,13 @@ router = DefaultRouter()
 router.register(r'products', views.ProductViewSet, basename='product')
 router.register(r'stock-balances', views.RMStockBalanceViewSet, basename='stock-balance')
 router.register(r'raw-materials', views.RawMaterialViewSet, basename='raw-material')
+router.register(r'transactions', views.InventoryTransactionViewSet, basename='inventory-transaction')
+
+# GRM and Heat Number endpoints
+router.register(r'grm-receipts', views.GRMReceiptViewSet, basename='grm-receipt')
+router.register(r'heat-numbers', views.HeatNumberViewSet, basename='heat-number')
+router.register(r'stock-balances-heat', views.RMStockBalanceHeatViewSet, basename='stock-balance-heat')
+router.register(r'transactions-heat', views.InventoryTransactionHeatViewSet, basename='inventory-transaction-heat')
 
 urlpatterns = [
     # Health check
@@ -16,6 +23,10 @@ urlpatterns = [
     
     # Dashboard stats
     path('dashboard/stats/', views.rm_store_dashboard_stats, name='dashboard_stats'),
+    
+    # Test endpoints
+    path('test-grm/', views.test_grm_api, name='test_grm_api'),
+    path('test-grm-models/', views.test_grm_models, name='test_grm_models'),
     
     # Include router URLs
     path('', include(router.urls)),

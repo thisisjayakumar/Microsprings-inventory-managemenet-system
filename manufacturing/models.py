@@ -263,8 +263,8 @@ class PurchaseOrder(models.Model):
         max_digits=8, decimal_places=3, null=True, blank=True,
         help_text="Auto-filled for coil"
     )
-    finishing_auto = models.CharField(max_length=100, blank=True, help_text="Auto-filled finishing")
-    manufacturer_brand_auto = models.CharField(max_length=100, blank=True, help_text="Auto-filled manufacturer")
+    finishing_auto = models.CharField(max_length=100, blank=True, null=True, help_text="Auto-filled finishing")
+    manufacturer_brand_auto = models.CharField(max_length=100, blank=True, null=True, help_text="Auto-filled manufacturer")
     kg_auto = models.DecimalField(max_digits=10, decimal_places=3, null=True, blank=True, help_text="Auto-filled weight")
     
     # For Sheet materials  
@@ -272,7 +272,7 @@ class PurchaseOrder(models.Model):
         max_digits=8, decimal_places=3, null=True, blank=True,
         help_text="Auto-filled for sheet"
     )
-    sheet_roll_auto = models.CharField(max_length=50, blank=True, help_text="Auto-filled sheet/roll info")
+    sheet_roll_auto = models.CharField(max_length=50, blank=True, null=True, help_text="Auto-filled sheet/roll info")
     qty_sheets_auto = models.PositiveIntegerField(null=True, blank=True, help_text="Auto-filled number of sheets")
     
     # Vendor details (filtered based on material availability)
@@ -282,9 +282,9 @@ class PurchaseOrder(models.Model):
         related_name='purchase_orders',
         help_text="Only show vendors who have this material"
     )
-    vendor_address_auto = models.TextField(blank=True, help_text="Auto-filled from vendor")
-    gst_no_auto = models.CharField(max_length=15, blank=True, help_text="Auto-filled from vendor")
-    mob_no_auto = models.CharField(max_length=17, blank=True, help_text="Auto-filled from vendor")
+    vendor_address_auto = models.TextField(blank=True, null=True, help_text="Auto-filled from vendor")
+    gst_no_auto = models.CharField(max_length=15, blank=True, null=True, help_text="Auto-filled from vendor")
+    mob_no_auto = models.CharField(max_length=17, blank=True, null=True, help_text="Auto-filled from vendor")
     
     # Order details
     expected_date = models.DateField(help_text="Expected delivery date")
@@ -342,7 +342,7 @@ class PurchaseOrder(models.Model):
         # Auto-populate fields based on rm_code selection
         if self.rm_code:
             self.material_type = self.rm_code.material_type
-            self.material_auto = self.rm_code.get_material_name_display()
+            self.material_auto = self.rm_code.material_name
             self.grade_auto = self.rm_code.grade
             
             if self.rm_code.material_type == 'coil':
@@ -440,6 +440,11 @@ class MOProcessExecution(models.Model):
         User, on_delete=models.SET_NULL, null=True, blank=True,
         related_name='assigned_process_executions'
     )
+    assigned_supervisor = models.ForeignKey(
+        User, on_delete=models.SET_NULL, null=True, blank=True,
+        related_name='supervised_process_executions',
+        help_text="Supervisor assigned to this specific process"
+    )
     
     # Progress tracking
     progress_percentage = models.DecimalField(max_digits=5, decimal_places=2, default=0)
@@ -470,6 +475,129 @@ class MOProcessExecution(models.Model):
         if self.planned_end_time and self.status not in ['completed', 'skipped']:
             return timezone.now() > self.planned_end_time
         return False
+    
+    def can_user_access(self, user):
+        """Check if user can access this process execution"""
+        from authentication.models import ProcessSupervisor
+        
+        # Admin, manager, production_head can access all processes
+        user_roles = user.user_roles.filter(is_active=True).values_list('role__name', flat=True)
+        if any(role in ['admin', 'manager', 'production_head'] for role in user_roles):
+            return True
+        
+        # Check if user is assigned as supervisor for this process
+        if self.assigned_supervisor == user:
+            return True
+        
+        # Check if user is a supervisor for this process's department
+        if 'supervisor' in user_roles:
+            try:
+                user_profile = user.userprofile
+                process_supervisor = ProcessSupervisor.objects.get(
+                    supervisor=user,
+                    department=user_profile.department,
+                    is_active=True
+                )
+                # Check if this process matches the supervisor's process names
+                return self.process.name in process_supervisor.process_names
+            except:
+                pass
+        
+        return False
+    
+    def get_next_process_execution(self):
+        """Get the next process execution in sequence"""
+        return MOProcessExecution.objects.filter(
+            mo=self.mo,
+            sequence_order__gt=self.sequence_order
+        ).order_by('sequence_order').first()
+    
+    def complete_and_move_to_next(self, completed_by_user):
+        """Complete this process and move MO to next process or FG store"""
+        from authentication.models import ProcessSupervisor
+        
+        # Mark this process as completed
+        self.status = 'completed'
+        self.actual_end_time = timezone.now()
+        self.save()
+        
+        # Get next process execution
+        next_process = self.get_next_process_execution()
+        
+        if next_process:
+            # Move to next process - assign appropriate supervisor
+            next_process_department = self._get_process_department(next_process.process.name)
+            
+            if next_process_department:
+                # Find supervisor for next process department
+                next_supervisor = self._find_supervisor_for_department(next_process_department)
+                if next_supervisor:
+                    next_process.assigned_supervisor = next_supervisor
+                    next_process.status = 'pending'
+                    next_process.save()
+                    
+                    # Update MO assigned_supervisor to next supervisor
+                    self.mo.assigned_supervisor = next_supervisor
+                    self.mo.save()
+                    
+                    return {
+                        'moved_to_next_process': True,
+                        'next_process': next_process.process.name,
+                        'next_supervisor': next_supervisor.full_name,
+                        'next_process_execution_id': next_process.id
+                    }
+        
+        # No next process - move to FG store
+        fg_store_users = User.objects.filter(
+            user_roles__role__name='fg_store',
+            user_roles__is_active=True
+        ).first()
+        
+        if fg_store_users:
+            self.mo.assigned_supervisor = fg_store_users
+            self.mo.status = 'completed'
+            self.mo.actual_end_date = timezone.now()
+            self.mo.save()
+            
+            return {
+                'moved_to_fg_store': True,
+                'fg_store_user': fg_store_users.full_name,
+                'mo_completed': True
+            }
+        
+        return {
+            'moved_to_fg_store': False,
+            'error': 'No FG store user found'
+        }
+    
+    def _get_process_department(self, process_name):
+        """Map process name to department"""
+        process_department_mapping = {
+            'Coiling Setup': 'coiling',
+            'Coiling Operation': 'coiling', 
+            'Coiling QC': 'coiling',
+            'Tempering Setup': 'tempering',
+            'Tempering Process': 'tempering',
+            'Tempering QC': 'tempering',
+            'Plating Preparation': 'plating',
+            'Plating Process': 'plating',
+            'Plating QC': 'plating',
+            'Packing Setup': 'packing',
+            'Packing Process': 'packing',
+            'Label Printing': 'packing'
+        }
+        return process_department_mapping.get(process_name)
+    
+    def _find_supervisor_for_department(self, department):
+        """Find an active supervisor for the given department"""
+        from authentication.models import ProcessSupervisor
+        
+        process_supervisor = ProcessSupervisor.objects.filter(
+            department=department,
+            is_active=True
+        ).first()
+        
+        return process_supervisor.supervisor if process_supervisor else None
 
 
 class MOProcessStepExecution(models.Model):
