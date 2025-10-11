@@ -447,6 +447,13 @@ class HeatNumber(models.Model):
     # Quality Information
     test_certificate_date = models.DateField(null=True, blank=True)
     
+    # Individual items (coils/sheets) details
+    items = models.JSONField(
+        default=list,
+        blank=True,
+        help_text="List of individual coil/sheet items with number and weight"
+    )
+    
     # Status
     is_available = models.BooleanField(default=True, help_text="Is this heat number still available for use")
     consumed_quantity_kg = models.DecimalField(

@@ -5793,3 +5793,177 @@ Traceback (most recent call last):
 django.core.exceptions.ImproperlyConfigured: Field name `notes` is not valid for model `GRMReceipt` in `inventory.serializers.GRMReceiptSerializer`.
 INFO 2025-10-09 22:32:08,727 autoreload 63185 8532861120 /Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/inventory/serializers.py changed, reloading.
 INFO 2025-10-09 22:32:09,461 autoreload 64137 8532861120 Watching for file changes with StatReloader
+INFO 2025-10-10 21:24:07,020 autoreload 14654 8704106688 Watching for file changes with StatReloader
+WARNING 2025-10-10 21:24:27,172 log 14654 6127104000 Unauthorized: /api/manufacturing/api/manufacturing-orders/products/
+WARNING 2025-10-10 21:24:27,172 log 14654 6143930368 Unauthorized: /api/manufacturing/api/purchase-orders/raw_materials/
+WARNING 2025-10-10 21:24:27,172 log 14654 6177583104 Unauthorized: /api/manufacturing/api/manufacturing-orders/dashboard_stats/
+WARNING 2025-10-10 21:24:27,172 log 14654 6160756736 Unauthorized: /api/manufacturing/api/purchase-orders/vendors/
+WARNING 2025-10-10 21:24:27,177 log 14654 6194409472 Unauthorized: /api/manufacturing/api/manufacturing-orders/products/
+WARNING 2025-10-10 21:24:57,529 log 14654 6211235840 Unauthorized: /api/auth/profile/
+INFO 2025-10-10 21:28:23,144 autoreload 14654 8704106688 /Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/manufacturing/models.py changed, reloading.
+INFO 2025-10-10 21:28:23,877 autoreload 21378 8704106688 Watching for file changes with StatReloader
+INFO 2025-10-10 21:50:52,330 autoreload 21378 8704106688 /Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/manufacturing/models.py changed, reloading.
+INFO 2025-10-10 21:50:53,360 autoreload 58775 8704106688 Watching for file changes with StatReloader
+INFO 2025-10-10 21:50:59,188 autoreload 58775 8704106688 /Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/manufacturing/models.py changed, reloading.
+INFO 2025-10-10 21:50:59,909 autoreload 58894 8704106688 Watching for file changes with StatReloader
+INFO 2025-10-10 21:56:32,456 autoreload 58894 8704106688 /Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/manufacturing/views.py changed, reloading.
+INFO 2025-10-10 21:56:33,309 autoreload 67686 8704106688 Watching for file changes with StatReloader
+INFO 2025-10-10 21:58:44,701 autoreload 71421 8704106688 Watching for file changes with StatReloader
+INFO 2025-10-10 22:08:48,390 autoreload 71421 8704106688 /Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/manufacturing/models.py changed, reloading.
+INFO 2025-10-10 22:08:49,364 autoreload 87528 8704106688 Watching for file changes with StatReloader
+WARNING 2025-10-10 22:33:01,469 log 87528 6194327552 Unauthorized: /api/manufacturing/api/purchase-orders/
+WARNING 2025-10-10 22:34:27,337 log 87528 6211153920 Unauthorized: /api/manufacturing/api/purchase-orders/
+WARNING 2025-10-10 22:34:27,343 log 87528 6211153920 Unauthorized: /api/manufacturing/api/purchase-orders/
+INFO 2025-10-10 22:49:57,919 autoreload 87528 8704106688 /Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/notifications/models.py changed, reloading.
+INFO 2025-10-10 22:49:59,440 autoreload 53829 8704106688 Watching for file changes with StatReloader
+INFO 2025-10-10 22:50:06,456 autoreload 53829 8704106688 /Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/notifications/models.py changed, reloading.
+INFO 2025-10-10 22:50:07,129 autoreload 54082 8704106688 Watching for file changes with StatReloader
+INFO 2025-10-10 22:58:24,688 autoreload 67639 8704106688 Watching for file changes with StatReloader
+INFO 2025-10-10 23:01:13,624 autoreload 67639 8704106688 /Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/notifications/models.py changed, reloading.
+INFO 2025-10-10 23:01:14,523 autoreload 73214 8704106688 Watching for file changes with StatReloader
+INFO 2025-10-10 23:01:19,412 autoreload 73214 8704106688 /Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/notifications/models.py changed, reloading.
+INFO 2025-10-10 23:01:20,101 autoreload 73323 8704106688 Watching for file changes with StatReloader
+WARNING 2025-10-10 23:36:34,670 log 73323 6195343360 Unauthorized: /api/inventory/raw-materials/dropdown/
+WARNING 2025-10-10 23:40:28,518 log 73323 6245822464 Unauthorized: /api/inventory/grm-receipts/
+INFO 2025-10-10 23:53:49,239 autoreload 73323 8704106688 /Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/manufacturing/models.py changed, reloading.
+INFO 2025-10-10 23:53:50,220 autoreload 57082 8704106688 Watching for file changes with StatReloader
+INFO 2025-10-10 23:54:18,437 autoreload 57082 8704106688 /Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/inventory/models.py changed, reloading.
+INFO 2025-10-10 23:54:19,178 autoreload 57930 8704106688 Watching for file changes with StatReloader
+INFO 2025-10-10 23:54:22,717 autoreload 57930 8704106688 /Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/inventory/serializers.py changed, reloading.
+INFO 2025-10-10 23:54:23,349 autoreload 57999 8704106688 Watching for file changes with StatReloader
+INFO 2025-10-10 23:54:26,910 autoreload 57999 8704106688 /Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/inventory/serializers.py changed, reloading.
+INFO 2025-10-10 23:54:27,524 autoreload 58168 8704106688 Watching for file changes with StatReloader
+INFO 2025-10-10 23:54:30,003 autoreload 58168 8704106688 /Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/inventory/serializers.py changed, reloading.
+INFO 2025-10-10 23:54:30,647 autoreload 58228 8704106688 Watching for file changes with StatReloader
+INFO 2025-10-10 23:54:35,263 autoreload 58228 8704106688 /Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/inventory/views.py changed, reloading.
+INFO 2025-10-10 23:54:35,855 autoreload 58410 8704106688 Watching for file changes with StatReloader
+INFO 2025-10-10 23:54:52,218 autoreload 58410 8704106688 /Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/inventory/models.py changed, reloading.
+INFO 2025-10-10 23:54:57,179 autoreload 58840 8704106688 Watching for file changes with StatReloader
+INFO 2025-10-10 23:55:05,132 autoreload 59261 8704106688 Watching for file changes with StatReloader
+INFO 2025-10-10 23:55:53,426 autoreload 59261 8704106688 /Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/manufacturing/admin.py changed, reloading.
+INFO 2025-10-10 23:55:54,213 autoreload 60605 8704106688 Watching for file changes with StatReloader
+INFO 2025-10-10 23:55:56,807 autoreload 60605 8704106688 /Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/manufacturing/admin.py changed, reloading.
+INFO 2025-10-10 23:55:57,520 autoreload 60675 8704106688 Watching for file changes with StatReloader
+INFO 2025-10-10 23:55:59,058 autoreload 60675 8704106688 /Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/inventory/admin.py changed, reloading.
+INFO 2025-10-10 23:55:59,736 autoreload 60815 8704106688 Watching for file changes with StatReloader
+INFO 2025-10-10 23:56:03,310 autoreload 60815 8704106688 /Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/inventory/admin.py changed, reloading.
+INFO 2025-10-10 23:56:03,968 autoreload 60903 8704106688 Watching for file changes with StatReloader
+INFO 2025-10-10 23:56:10,696 autoreload 60903 8704106688 /Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/manufacturing/serializers.py changed, reloading.
+INFO 2025-10-10 23:56:11,430 autoreload 61133 8704106688 Watching for file changes with StatReloader
+INFO 2025-10-10 23:56:17,169 autoreload 61133 8704106688 /Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/manufacturing/serializers.py changed, reloading.
+INFO 2025-10-10 23:56:17,770 autoreload 61242 8704106688 Watching for file changes with StatReloader
+INFO 2025-10-10 23:56:22,383 autoreload 61242 8704106688 /Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/inventory/serializers.py changed, reloading.
+INFO 2025-10-10 23:56:23,321 autoreload 61441 8704106688 Watching for file changes with StatReloader
+INFO 2025-10-10 23:56:27,828 autoreload 61441 8704106688 /Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/manufacturing/admin.py changed, reloading.
+INFO 2025-10-10 23:56:28,435 autoreload 61606 8704106688 Watching for file changes with StatReloader
+INFO 2025-10-10 23:56:35,730 autoreload 61980 8704106688 Watching for file changes with StatReloader
+INFO 2025-10-11 00:09:06,957 autoreload 82084 8704106688 Watching for file changes with StatReloader
+WARNING 2025-10-11 00:10:39,037 log 82084 6180450304 Unauthorized: /api/inventory/grm-receipts/
+ERROR 2025-10-11 00:10:40,106 log 82084 6180450304 Internal Server Error: /api/inventory/grm-receipts/
+Traceback (most recent call last):
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/django/core/handlers/exception.py", line 55, in inner
+    response = get_response(request)
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/django/core/handlers/base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/django/views/decorators/csrf.py", line 65, in _view_wrapper
+    return view_func(request, *args, **kwargs)
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/rest_framework/viewsets.py", line 124, in view
+    return self.dispatch(request, *args, **kwargs)
+           ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/rest_framework/views.py", line 509, in dispatch
+    response = self.handle_exception(exc)
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/rest_framework/views.py", line 469, in handle_exception
+    self.raise_uncaught_exception(exc)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/rest_framework/views.py", line 480, in raise_uncaught_exception
+    raise exc
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/rest_framework/views.py", line 506, in dispatch
+    response = handler(request, *args, **kwargs)
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/rest_framework/mixins.py", line 18, in create
+    serializer.is_valid(raise_exception=True)
+    ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/rest_framework/serializers.py", line 223, in is_valid
+    self._validated_data = self.run_validation(self.initial_data)
+                           ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/rest_framework/serializers.py", line 442, in run_validation
+    value = self.to_internal_value(data)
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/rest_framework/serializers.py", line 495, in to_internal_value
+    for field in fields:
+                 ^^^^^^
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/rest_framework/serializers.py", line 378, in _writable_fields
+    for field in self.fields.values():
+                 ^^^^^^^^^^^
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/django/utils/functional.py", line 47, in __get__
+    res = instance.__dict__[self.name] = self.func(instance)
+                                         ~~~~~~~~~^^^^^^^^^^
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/rest_framework/serializers.py", line 372, in fields
+    for key, value in self.get_fields().items():
+                      ~~~~~~~~~~~~~~~^^
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/rest_framework/serializers.py", line 1103, in get_fields
+    field_class, field_kwargs = self.build_field(
+                                ~~~~~~~~~~~~~~~~^
+        source, info, model, depth
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/rest_framework/serializers.py", line 1249, in build_field
+    return self.build_unknown_field(field_name, model_class)
+           ~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/rest_framework/serializers.py", line 1367, in build_unknown_field
+    raise ImproperlyConfigured(
+    ...<2 lines>...
+    )
+django.core.exceptions.ImproperlyConfigured: Field name `quantity_received` is not valid for model `GRMReceipt` in `inventory.serializers.GRMReceiptCreateSerializer`.
+INFO 2025-10-11 00:12:11,105 autoreload 82084 8704106688 /Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/inventory/serializers.py changed, reloading.
+INFO 2025-10-11 00:12:11,907 autoreload 86980 8704106688 Watching for file changes with StatReloader
+INFO 2025-10-11 00:13:24,214 autoreload 86980 8704106688 /Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/inventory/serializers.py changed, reloading.
+INFO 2025-10-11 00:13:25,562 autoreload 88900 8704106688 Watching for file changes with StatReloader
+WARNING 2025-10-11 00:14:19,107 log 88900 6169604096 Unauthorized: /api/inventory/grm-receipts/
+WARNING 2025-10-11 00:14:20,145 log 88900 6169604096 Bad Request: /api/inventory/grm-receipts/
+INFO 2025-10-11 09:44:39,570 autoreload 20683 8293753024 Watching for file changes with StatReloader
+WARNING 2025-10-11 09:44:55,550 log 20683 6137032704 Unauthorized: /api/manufacturing/api/manufacturing-orders/products/
+WARNING 2025-10-11 09:44:55,550 log 20683 6153859072 Unauthorized: /api/manufacturing/api/purchase-orders/raw_materials/
+WARNING 2025-10-11 09:44:55,550 log 20683 6170685440 Unauthorized: /api/manufacturing/api/purchase-orders/vendors/
+WARNING 2025-10-11 09:44:55,551 log 20683 6187511808 Unauthorized: /api/manufacturing/api/manufacturing-orders/dashboard_stats/
+WARNING 2025-10-11 09:44:55,554 log 20683 6204338176 Unauthorized: /api/manufacturing/api/manufacturing-orders/products/
+WARNING 2025-10-11 09:46:24,463 log 20683 6288470016 Unauthorized: /api/auth/profile/
+INFO 2025-10-11 11:06:01,896 autoreload 20683 8293753024 /Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/manufacturing/views.py changed, reloading.
+INFO 2025-10-11 11:06:02,666 autoreload 52508 8293753024 Watching for file changes with StatReloader
+INFO 2025-10-11 11:06:34,977 autoreload 52508 8293753024 /Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/manufacturing/views.py changed, reloading.
+INFO 2025-10-11 11:06:35,698 autoreload 53461 8293753024 Watching for file changes with StatReloader
+WARNING 2025-10-11 11:07:26,254 log 53461 6204878848 Unauthorized: /api/inventory/test-grm/
+WARNING 2025-10-11 11:07:26,257 log 53461 6204878848 Unauthorized: /api/inventory/test-grm/
+INFO 2025-10-11 11:11:46,968 autoreload 53461 8293753024 /Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/manufacturing/views.py changed, reloading.
+INFO 2025-10-11 11:11:47,771 autoreload 61753 8293753024 Watching for file changes with StatReloader
+WARNING 2025-10-11 11:12:19,631 log 61753 6180483072 Bad Request: /api/manufacturing/api/purchase-orders/5/change_status/
+WARNING 2025-10-11 11:12:21,569 log 61753 6180483072 Bad Request: /api/manufacturing/api/purchase-orders/5/change_status/
+WARNING 2025-10-11 11:12:23,893 log 61753 6180483072 Bad Request: /api/manufacturing/api/purchase-orders/5/change_status/
+WARNING 2025-10-11 11:29:26,868 log 61753 6180483072 Bad Request: /api/manufacturing/api/purchase-orders/5/change_status/
+WARNING 2025-10-11 11:32:05,460 log 61753 6180483072 Bad Request: /api/manufacturing/api/purchase-orders/5/change_status/
+WARNING 2025-10-11 11:32:24,561 log 61753 6180483072 Bad Request: /api/manufacturing/api/purchase-orders/5/change_status/
+WARNING 2025-10-11 11:33:06,017 log 61753 6180483072 Bad Request: /api/manufacturing/api/purchase-orders/5/change_status/
+WARNING 2025-10-11 11:35:06,057 log 61753 6163656704 Bad Request: /api/manufacturing/api/purchase-orders/5/change_status/
+WARNING 2025-10-11 11:37:21,493 log 61753 6163656704 Bad Request: /api/manufacturing/api/purchase-orders/5/change_status/
+INFO 2025-10-11 11:37:51,658 autoreload 4750 8293753024 Watching for file changes with StatReloader
+WARNING 2025-10-11 11:38:12,800 log 4750 6202568704 Bad Request: /api/manufacturing/api/purchase-orders/5/change_status/
+WARNING 2025-10-11 11:39:57,013 log 4750 6202568704 Bad Request: /api/manufacturing/api/purchase-orders/5/change_status/
+WARNING 2025-10-11 11:41:02,432 log 4750 6202568704 Bad Request: /api/manufacturing/api/purchase-orders/5/change_status/
+WARNING 2025-10-11 11:41:31,300 log 4750 6202568704 Unauthorized: /api/inventory/grm-receipts/
+WARNING 2025-10-11 11:45:25,752 log 4750 6236221440 Not Found: /api/manufacturing/api/manufacturing-orders/14/send-remaining-to-scrap/
+WARNING 2025-10-11 11:45:53,600 log 4750 6236221440 Not Found: /api/manufacturing/api/manufacturing-orders/14/send-remaining-to-scrap/
+INFO 2025-10-11 11:53:19,376 autoreload 4750 8293753024 /Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/inventory/urls.py changed, reloading.
+INFO 2025-10-11 11:53:20,293 autoreload 29764 8293753024 Watching for file changes with StatReloader
+INFO 2025-10-11 12:18:12,962 serializers 29764 6147616768 Creating batch with validated_data: {'mo_id': 14, 'planned_quantity': 2800, 'status': 'created'}
+INFO 2025-10-11 12:18:12,968 serializers 29764 6147616768 Batch RM allocation: Base=2.8kg, Tolerance=2.00%, Final=2.856kg
+INFO 2025-10-11 12:24:18,159 autoreload 29764 8293753024 /Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/manufacturing/serializers.py changed, reloading.
+INFO 2025-10-11 12:24:20,813 autoreload 79029 8293753024 Watching for file changes with StatReloader
+INFO 2025-10-11 12:24:23,422 autoreload 79029 8293753024 /Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/manufacturing/serializers.py changed, reloading.
+INFO 2025-10-11 12:24:24,041 autoreload 79108 8293753024 Watching for file changes with StatReloader
+INFO 2025-10-11 12:28:37,296 autoreload 79108 8293753024 /Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/manufacturing/serializers.py changed, reloading.
+INFO 2025-10-11 12:28:38,291 autoreload 85867 8293753024 Watching for file changes with StatReloader
+INFO 2025-10-11 12:30:34,289 autoreload 85867 8293753024 /Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/manufacturing/serializers.py changed, reloading.
+INFO 2025-10-11 12:30:35,164 autoreload 89076 8293753024 Watching for file changes with StatReloader
+INFO 2025-10-11 12:30:46,273 autoreload 89076 8293753024 /Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/manufacturing/serializers.py changed, reloading.
+INFO 2025-10-11 12:30:46,880 autoreload 89395 8293753024 Watching for file changes with StatReloader
+INFO 2025-10-11 12:31:02,127 autoreload 89395 8293753024 /Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/manufacturing/serializers.py changed, reloading.
+INFO 2025-10-11 12:31:03,684 autoreload 89861 8293753024 Watching for file changes with StatReloader

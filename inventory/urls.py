@@ -24,10 +24,6 @@ urlpatterns = [
     # Dashboard stats
     path('dashboard/stats/', views.rm_store_dashboard_stats, name='dashboard_stats'),
     
-    # Test endpoints
-    path('test-grm/', views.test_grm_api, name='test_grm_api'),
-    path('test-grm-models/', views.test_grm_models, name='test_grm_models'),
-    
     # Include router URLs
     path('', include(router.urls)),
 ]

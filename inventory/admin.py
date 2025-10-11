@@ -191,7 +191,7 @@ class RMStockBalanceAdmin(admin.ModelAdmin):
 class HeatNumberInline(admin.TabularInline):
     model = HeatNumber
     extra = 1
-    fields = ('heat_number', 'raw_material', 'coils_received', 'total_weight_kg', 'sheets_received', 'quality_certificate_number')
+    fields = ('heat_number', 'raw_material', 'coils_received', 'total_weight_kg', 'sheets_received', 'items', 'quality_certificate_number')
     readonly_fields = ('created_at', 'updated_at')
 
 
@@ -257,6 +257,10 @@ class HeatNumberAdmin(admin.ModelAdmin):
         }),
         ('Quantities', {
             'fields': ('coils_received', 'total_weight_kg', 'sheets_received', 'consumed_quantity_kg')
+        }),
+        ('Individual Items', {
+            'fields': ('items',),
+            'description': 'JSON field containing individual coil/sheet details with numbers and weights'
         }),
         ('Quality Information', {
             'fields': ('quality_certificate_number', 'test_certificate_date'),

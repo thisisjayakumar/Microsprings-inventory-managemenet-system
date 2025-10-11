@@ -24,7 +24,7 @@ from .serializers import (
     MOProcessAlertSerializer, BatchListSerializer, BatchDetailSerializer
 )
 from products.models import Product
-from inventory.models import RawMaterial, RMStockBalance
+from inventory.models import RawMaterial, RMStockBalance, GRMReceipt
 from third_party.models import Vendor
 from processes.models import Process
 from .rm_calculator import RMCalculator
@@ -1240,16 +1240,23 @@ class PurchaseOrderViewSet(viewsets.ModelViewSet):
         if new_status not in valid_statuses:
             return Response({'error': 'Invalid status'}, status=status.HTTP_400_BAD_REQUEST)
         
+        # Check if GRM is required for completing the PO
+        if new_status == 'rm_completed':
+            grm_exists = GRMReceipt.objects.filter(purchase_order=po).exists()
+            if not grm_exists:
+                return Response(
+                    {'error': 'Cannot complete PO without creating at least one GRM Receipt for RM'}, 
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+        
         old_status = po.status
         po.status = new_status
         
         # Update workflow timestamps based on status
-        if new_status == 'submitted':
-            po.submitted_at = timezone.now()
-        elif new_status == 'approved':
+        if new_status == 'po_approved':
             po.approved_at = timezone.now()
             po.approved_by = request.user
-        elif new_status == 'cancelled':
+        elif new_status == 'po_cancelled':
             po.cancelled_at = timezone.now()
             po.cancelled_by = request.user
             po.cancellation_reason = rejection_reason
@@ -1267,78 +1274,6 @@ class PurchaseOrderViewSet(viewsets.ModelViewSet):
         
         serializer = self.get_serializer(po)
         return Response(serializer.data)
-
-    @action(detail=False, methods=['get'])
-    def dashboard_stats(self, request):
-        """Get dashboard statistics for POs"""
-        queryset = self.get_queryset()
-        
-        stats = {
-            'total': queryset.count(),
-            'on_hold': queryset.filter(status='on_hold').count(),
-            'submitted': queryset.filter(status='submitted').count(),
-            'approved': queryset.filter(status='approved').count(),
-            'completed': queryset.filter(status='completed').count(),
-            'cancelled': queryset.filter(status='cancelled').count(),
-            'overdue': queryset.filter(
-                expected_date__lt=timezone.now().date(),
-                status__in=['on_hold', 'submitted', 'approved']
-            ).count(),
-            'total_value': queryset.aggregate(
-                total=Sum('total_amount')
-            )['total'] or 0
-        }
-        
-        return Response(stats)
-
-    @action(detail=False, methods=['get'])
-    def raw_materials(self, request):
-        """Get raw materials for dropdown"""
-        raw_materials = RawMaterial.objects.all().order_by('material_name', 'grade')
-        serializer = RawMaterialDropdownSerializer(raw_materials, many=True)
-        return Response(serializer.data)
-
-    @action(detail=False, methods=['get'])
-    def vendors(self, request):
-        """Get vendors for dropdown, optionally filtered by material"""
-        vendors = Vendor.objects.filter(is_active=True)
-        
-        # Filter by vendor type if specified
-        vendor_type = request.query_params.get('vendor_type')
-        if vendor_type:
-            vendors = vendors.filter(vendor_type=vendor_type)
-        
-        vendors = vendors.order_by('name')
-        serializer = VendorDropdownSerializer(vendors, many=True)
-        return Response(serializer.data)
-
-    @action(detail=False, methods=['get'])
-    def material_details(self, request):
-        """Get material details for auto-population"""
-        material_id = request.query_params.get('material_id')
-        if not material_id:
-            return Response({'error': 'material_id is required'}, status=status.HTTP_400_BAD_REQUEST)
-        
-        try:
-            material = RawMaterial.objects.get(id=material_id)
-            serializer = RawMaterialBasicSerializer(material)
-            return Response(serializer.data)
-        except RawMaterial.DoesNotExist:
-            return Response({'error': 'Material not found'}, status=status.HTTP_404_NOT_FOUND)
-
-    @action(detail=False, methods=['get'])
-    def vendor_details(self, request):
-        """Get vendor details for auto-population"""
-        vendor_id = request.query_params.get('vendor_id')
-        if not vendor_id:
-            return Response({'error': 'vendor_id is required'}, status=status.HTTP_400_BAD_REQUEST)
-        
-        try:
-            vendor = Vendor.objects.get(id=vendor_id)
-            serializer = VendorBasicSerializer(vendor)
-            return Response(serializer.data)
-        except Vendor.DoesNotExist:
-            return Response({'error': 'Vendor not found'}, status=status.HTTP_404_NOT_FOUND)
 
 
 class MOProcessExecutionViewSet(viewsets.ModelViewSet):

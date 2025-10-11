@@ -2,6 +2,7 @@ from rest_framework import serializers
 from django.contrib.auth import get_user_model
 from django.utils import timezone
 from decimal import Decimal
+import logging
 from .models import (
     ManufacturingOrder, PurchaseOrder, MOStatusHistory, POStatusHistory,
     MOProcessExecution, MOProcessStepExecution, MOProcessAlert, Batch
@@ -11,6 +12,7 @@ from inventory.models import RawMaterial
 from third_party.models import Vendor
 
 User = get_user_model()
+logger = logging.getLogger(__name__)
 
 
 class UserBasicSerializer(serializers.ModelSerializer):
@@ -144,6 +146,72 @@ class ManufacturingOrderListSerializer(serializers.ModelSerializer):
     batches = BatchListSerializer(many=True, read_only=True)
     material_type = serializers.CharField(source='product_code.material_type', read_only=True)
     material_name = serializers.CharField(source='product_code.material.material_name', read_only=True)
+    remaining_rm = serializers.SerializerMethodField()
+    rm_unit = serializers.SerializerMethodField()
+    can_create_batch = serializers.SerializerMethodField()
+    
+    def get_remaining_rm(self, obj):
+        """Calculate remaining RM for batch creation"""
+        product = obj.product_code
+        if not product:
+            return None
+        
+        total_rm_required = Decimal('0')
+        cumulative_rm_released = Decimal('0')
+        
+        try:
+            if product.material_type == 'coil' and product.grams_per_product:
+                # For coil-based products - calculate in kg
+                total_grams = obj.quantity * product.grams_per_product
+                base_rm_kg = Decimal(str(total_grams / 1000))
+                tolerance = obj.tolerance_percentage or Decimal('2.00')
+                tolerance_factor = Decimal('1') + (tolerance / Decimal('100'))
+                total_rm_required = base_rm_kg * tolerance_factor
+                
+                # Calculate cumulative RM from all non-cancelled batches
+                for batch in obj.batches.exclude(status='cancelled'):
+                    batch_rm_base_kg = Decimal(str(batch.planned_quantity / 1000))
+                    batch_rm = batch_rm_base_kg * tolerance_factor
+                    cumulative_rm_released += batch_rm
+                    
+            elif product.material_type == 'sheet' and product.pcs_per_strip:
+                # For sheet-based products - calculate in strips
+                strips_calc = product.calculate_strips_required(obj.quantity)
+                total_rm_required = Decimal(str(strips_calc.get('strips_required', 0)))
+                
+                # Calculate cumulative RM from all non-cancelled batches
+                for batch in obj.batches.exclude(status='cancelled'):
+                    batch_strips = Decimal(str(batch.planned_quantity or 0))
+                    cumulative_rm_released += batch_strips
+            
+            # Calculate remaining
+            remaining = float(total_rm_required - cumulative_rm_released)
+            return max(0, remaining)  # Never return negative
+            
+        except Exception as e:
+            logger.error(f"Error calculating remaining RM for MO {obj.mo_id}: {str(e)}")
+            return None
+    
+    def get_rm_unit(self, obj):
+        """Get RM unit based on material type"""
+        product = obj.product_code
+        if not product:
+            return 'kg'
+        return 'kg' if product.material_type == 'coil' else 'strips'
+    
+    def get_can_create_batch(self, obj):
+        """Check if more batches can be created"""
+        remaining = self.get_remaining_rm(obj)
+        if remaining is None:
+            return True  # Default to allowing batch creation if calculation fails
+        
+        product = obj.product_code
+        if not product:
+            return True
+        
+        # Threshold: 0.05 kg for coil, 1 strip for sheet
+        threshold = 0.05 if product.material_type == 'coil' else 1
+        return remaining > threshold
     
     class Meta:
         model = ManufacturingOrder
@@ -153,7 +221,7 @@ class ManufacturingOrderListSerializer(serializers.ModelSerializer):
             'assigned_rm_store', 'assigned_supervisor', 'planned_start_date', 'planned_end_date',
             'delivery_date', 'created_by', 'created_at', 'strips_required', 
             'total_pieces_from_strips', 'excess_pieces', 'tolerance_percentage',
-            'material_type', 'material_name', 'batches'
+            'material_type', 'material_name', 'batches', 'remaining_rm', 'rm_unit', 'can_create_batch'
         ]
         read_only_fields = ['mo_id', 'date_time']
 
@@ -368,7 +436,7 @@ class PurchaseOrderListSerializer(serializers.ModelSerializer):
     class Meta:
         model = PurchaseOrder
         fields = [
-            'id', 'po_id', 'date_time', 'rm_code', 'vendor_name', 'quantity_ordered',
+            'id', 'po_id', 'date_time', 'rm_code', 'vendor_name', 'quantity_ordered', 'quantity_received',
             'unit_price', 'total_amount', 'status', 'status_display', 'material_type',
             'material_type_display', 'expected_date', 'created_by', 'created_at'
         ]
@@ -575,7 +643,7 @@ class PurchaseOrderDetailSerializer(serializers.ModelSerializer):
             'thickness_mm_auto', 'finishing_auto', 'manufacturer_brand_auto', 'kg_auto',
             'sheet_roll_auto', 'qty_sheets_auto', 'vendor_name', 'vendor_name_id',
             'vendor_address_auto', 'gst_no_auto', 'mob_no_auto', 'expected_date',
-            'quantity_ordered', 'unit_price', 'total_amount', 'status', 'status_display',
+            'quantity_ordered', 'quantity_received', 'unit_price', 'total_amount', 'status', 'status_display',
             'submitted_at', 'approved_at', 'approved_by', 'cancelled_at',
             'cancelled_by', 'cancellation_reason',
             'terms_conditions', 'notes', 'created_at', 'created_by', 'updated_at',
@@ -740,8 +808,6 @@ class BatchDetailSerializer(serializers.ModelSerializer):
     
     def create(self, validated_data):
         """Create batch with RM release calculation"""
-        import logging
-        logger = logging.getLogger(__name__)
         logger.info(f"Creating batch with validated_data: {validated_data}")
         
         mo_id = validated_data.pop('mo_id')

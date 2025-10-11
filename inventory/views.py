@@ -347,8 +347,23 @@ class GRMReceiptViewSet(viewsets.ModelViewSet):
             return Response({'error': 'GRM receipt is already completed'}, 
                           status=status.HTTP_400_BAD_REQUEST)
         
+        # Validate that GRM's total weight equals received quantity
+        total_weight_from_heat_numbers = 0
+        for heat_number in grm_receipt.heat_numbers.all():
+            weight = heat_number.total_weight_kg or 0
+            total_weight_from_heat_numbers += float(weight)
+        
+        if grm_receipt.purchase_order.quantity_received != total_weight_from_heat_numbers:
+            return Response({
+                'error': f'GRM total weight ({total_weight_from_heat_numbers:.2f} kg) does not match received quantity ({grm_receipt.purchase_order.quantity_received} kg)'
+            }, status=status.HTTP_400_BAD_REQUEST)
+        
         grm_receipt.status = 'completed'
         grm_receipt.save()
+        
+        # Update PO status to completed
+        grm_receipt.purchase_order.status = 'rm_completed'
+        grm_receipt.purchase_order.save()
         
         # Update stock balances for all heat numbers
         for heat_number in grm_receipt.heat_numbers.all():

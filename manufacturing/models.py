@@ -230,11 +230,11 @@ class PurchaseOrder(models.Model):
     Based on the Production Head Functions workflow
     """
     STATUS_CHOICES = [
-        ('on_hold', 'On Hold'),
-        ('submitted', 'Submitted'),
-        ('approved', 'Approved'),
-        ('completed', 'Completed'),
-        ('cancelled', 'Cancelled')
+        ('po_initiated', 'Purchase Order Initiated'),
+        ('po_approved', 'Approved by GM'),
+        ('po_cancelled', 'Cancelled by Manager'),
+        ('rm_pending', 'Awaiting RM Store Manager Action'),
+        ('rm_completed', 'Goods Receipt Completed')
     ]
     
     MATERIAL_TYPE_CHOICES = [
@@ -289,11 +289,15 @@ class PurchaseOrder(models.Model):
     # Order details
     expected_date = models.DateField(help_text="Expected delivery date")
     quantity_ordered = models.PositiveIntegerField(help_text="Quantity to order")
+    quantity_received = models.PositiveIntegerField(
+        null=True, blank=True,
+        help_text="Actual quantity received (set when GRM is created)"
+    )
     unit_price = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
     total_amount = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True)
     
     # Status
-    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='on_hold')
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='po_initiated')
     
     # Workflow tracking
     submitted_at = models.DateTimeField(null=True, blank=True)

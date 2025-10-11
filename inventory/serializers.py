@@ -279,7 +279,7 @@ class HeatNumberSerializer(serializers.ModelSerializer):
         fields = [
             'id', 'heat_number', 'grm_receipt', 'raw_material', 'raw_material_details',
             'coils_received', 'total_weight_kg', 'sheets_received', 'test_certificate_date',
-            'is_available', 'consumed_quantity_kg', 'available_quantity_kg', 'available_coils',
+            'items', 'is_available', 'consumed_quantity_kg', 'available_quantity_kg', 'available_coils',
             'grm_number', 'created_at', 'updated_at'
         ]
         read_only_fields = ['id', 'grm_receipt', 'is_available', 'consumed_quantity_kg', 'created_at', 'updated_at', 'available_quantity_kg', 'available_coils']
@@ -380,22 +380,48 @@ class GRMReceiptCreateSerializer(serializers.ModelSerializer):
     
     def validate(self, data):
         """Validate GRM receipt data"""
+        purchase_order = data.get('purchase_order')
         heat_numbers_data = data.get('heat_numbers_data', [])
         
-        # The HeatNumberSerializer will handle validation automatically
-        # No need for manual validation here
+        # Check if GRM already exists for this PO
+        if purchase_order and GRMReceipt.objects.filter(purchase_order=purchase_order).exists():
+            raise serializers.ValidationError({
+                'purchase_order': 'GRM receipt already exists for this Purchase Order'
+            })
+        
+        # Validate heat numbers data
+        if not heat_numbers_data:
+            raise serializers.ValidationError({
+                'heat_numbers_data': 'At least one heat number is required'
+            })
+        
+        # Calculate total weight from heat numbers
+        total_weight = 0
+        for heat_data in heat_numbers_data:
+            weight = heat_data.get('total_weight_kg', 0)
+            if weight:
+                total_weight += float(weight)
+        
+        # Set the calculated quantity_received
+        data['quantity_received'] = total_weight
         
         return data
     
     def create(self, validated_data):
         """Create GRM receipt with heat numbers"""
         heat_numbers_data = validated_data.pop('heat_numbers_data', [])
+        quantity_received = validated_data.pop('quantity_received', None)
         
         # Set received_by from context
         validated_data['received_by'] = self.context['request'].user
         
         # Create GRM receipt
         grm_receipt = GRMReceipt.objects.create(**validated_data)
+        
+        # Update PO with received quantity
+        if quantity_received and grm_receipt.purchase_order:
+            grm_receipt.purchase_order.quantity_received = quantity_received
+            grm_receipt.purchase_order.save()
         
         # Create heat numbers
         for i, heat_data in enumerate(heat_numbers_data):
@@ -406,6 +432,7 @@ class GRMReceiptCreateSerializer(serializers.ModelSerializer):
         
         # Update completion status
         grm_receipt.total_items_received = len(heat_numbers_data)
+        grm_receipt.total_items_expected = quantity_received or 0
         grm_receipt.save()
         
         return grm_receipt

@@ -92,18 +92,18 @@ class ManufacturingOrderAdmin(admin.ModelAdmin):
 
 @admin.register(PurchaseOrder)
 class PurchaseOrderAdmin(admin.ModelAdmin):
-    list_display = ('po_id', 'vendor_name', 'rm_code', 'quantity_ordered', 'status', 'expected_date', 'created_at')
+    list_display = ('po_id', 'vendor_name', 'rm_code', 'quantity_ordered', 'quantity_received', 'status', 'expected_date', 'created_at')
     list_filter = ('status', 'material_type', 'expected_date', 'created_at')
     search_fields = ('po_id', 'vendor_name__name', 'rm_code__product_code')
     readonly_fields = ('po_id', 'date_time', 'material_type', 'material_auto', 'grade_auto', 
                       'wire_diameter_mm_auto', 'thickness_mm_auto', 'finishing_auto', 
                       'manufacturer_brand_auto', 'kg_auto', 'sheet_roll_auto', 'qty_sheets_auto',
-                      'vendor_address_auto', 'gst_no_auto', 'mob_no_auto', 'total_amount')
+                      'vendor_address_auto', 'gst_no_auto', 'mob_no_auto', 'total_amount', 'quantity_received')
     ordering = ('-created_at',)
     
     fieldsets = (
         ('Basic Information', {
-            'fields': ('po_id', 'date_time', 'rm_code', 'quantity_ordered')
+            'fields': ('po_id', 'date_time', 'rm_code', 'quantity_ordered', 'quantity_received')
         }),
         ('Auto-Populated Material Details', {
             'fields': ('material_type', 'material_auto', 'grade_auto', 'wire_diameter_mm_auto', 
