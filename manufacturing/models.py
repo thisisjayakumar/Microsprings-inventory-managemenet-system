@@ -288,8 +288,12 @@ class PurchaseOrder(models.Model):
     
     # Order details
     expected_date = models.DateField(help_text="Expected delivery date")
-    quantity_ordered = models.PositiveIntegerField(help_text="Quantity to order")
-    quantity_received = models.PositiveIntegerField(
+    quantity_ordered = models.DecimalField(
+        max_digits=10, decimal_places=2,
+        help_text="Quantity to order (in kg for coil, sheets for sheet material)"
+    )
+    quantity_received = models.DecimalField(
+        max_digits=10, decimal_places=2,
         null=True, blank=True,
         help_text="Actual quantity received (set when GRM is created)"
     )

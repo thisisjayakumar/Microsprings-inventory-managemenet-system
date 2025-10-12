@@ -1,5 +1,6 @@
 from rest_framework import serializers
 from django.db import transaction
+from decimal import Decimal
 from products.models import Product
 from .models import (
     RMStockBalance, RawMaterial, InventoryTransaction, Location,
@@ -368,6 +369,35 @@ class GRMReceiptSerializer(serializers.ModelSerializer):
         return (obj.total_items_received / obj.total_items_expected) * 100
 
 
+class GRMReceiptListSerializer(serializers.ModelSerializer):
+    """Simplified serializer for GRM Receipt list view"""
+    po_id = serializers.CharField(source='purchase_order.po_id', read_only=True)
+    vendor_name = serializers.CharField(source='purchase_order.vendor_name.name', read_only=True)
+    received_by_name = serializers.CharField(source='received_by.get_full_name', read_only=True)
+    status_display = serializers.CharField(source='get_status_display', read_only=True)
+    quantity_ordered = serializers.DecimalField(
+        source='purchase_order.quantity_ordered',
+        max_digits=10,
+        decimal_places=2,
+        read_only=True
+    )
+    quantity_received = serializers.DecimalField(
+        source='purchase_order.quantity_received',
+        max_digits=10,
+        decimal_places=2,
+        read_only=True
+    )
+    
+    class Meta:
+        model = GRMReceipt
+        fields = [
+            'id', 'grm_number', 'po_id', 'vendor_name', 'truck_number',
+            'driver_name', 'receipt_date', 'received_by_name', 'status',
+            'status_display', 'quantity_ordered', 'quantity_received',
+            'quality_check_passed', 'created_at'
+        ]
+
+
 class GRMReceiptCreateSerializer(serializers.ModelSerializer):
     """Serializer for creating GRM Receipt"""
     heat_numbers_data = HeatNumberSerializer(many=True, write_only=True)
@@ -396,11 +426,11 @@ class GRMReceiptCreateSerializer(serializers.ModelSerializer):
             })
         
         # Calculate total weight from heat numbers
-        total_weight = 0
+        total_weight = Decimal('0')
         for heat_data in heat_numbers_data:
             weight = heat_data.get('total_weight_kg', 0)
             if weight:
-                total_weight += float(weight)
+                total_weight += Decimal(str(weight))
         
         # Set the calculated quantity_received
         data['quantity_received'] = total_weight

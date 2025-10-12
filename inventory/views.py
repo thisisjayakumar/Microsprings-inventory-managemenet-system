@@ -21,6 +21,7 @@ from .serializers import (
     GRMReceiptListSerializer, HeatNumberSerializer, RMStockBalanceHeatSerializer,
     InventoryTransactionHeatSerializer
 )
+from .transaction_manager import InventoryTransactionManager
 from authentication.models import UserRole, Role
 
 User = get_user_model()
@@ -179,8 +180,9 @@ class RMStockBalanceViewSet(viewsets.ModelViewSet):
 class RawMaterialViewSet(viewsets.ReadOnlyModelViewSet):
     """
     ReadOnly ViewSet for RawMaterial - for dropdown/selection purposes
+    Accessible by RM Store, Manager, and Production Head users
     """
-    permission_classes = [IsAuthenticated, IsRMStoreUser]
+    permission_classes = [IsAuthenticated]  # Allow all authenticated users to read raw materials
     queryset = RawMaterial.objects.all()
     serializer_class = RawMaterialBasicSerializer
     pagination_class = None
@@ -347,15 +349,20 @@ class GRMReceiptViewSet(viewsets.ModelViewSet):
             return Response({'error': 'GRM receipt is already completed'}, 
                           status=status.HTTP_400_BAD_REQUEST)
         
-        # Validate that GRM's total weight equals received quantity
-        total_weight_from_heat_numbers = 0
+        # Validate that GRM's total weight equals received quantity (with tolerance for rounding)
+        from decimal import Decimal
+        total_weight_from_heat_numbers = Decimal('0')
         for heat_number in grm_receipt.heat_numbers.all():
-            weight = heat_number.total_weight_kg or 0
-            total_weight_from_heat_numbers += float(weight)
+            weight = heat_number.total_weight_kg or Decimal('0')
+            total_weight_from_heat_numbers += Decimal(str(weight))
         
-        if grm_receipt.purchase_order.quantity_received != total_weight_from_heat_numbers:
+        received_qty = Decimal(str(grm_receipt.purchase_order.quantity_received or 0))
+        
+        # Allow 0.01 kg tolerance for rounding differences
+        difference = abs(received_qty - total_weight_from_heat_numbers)
+        if difference > Decimal('0.01'):
             return Response({
-                'error': f'GRM total weight ({total_weight_from_heat_numbers:.2f} kg) does not match received quantity ({grm_receipt.purchase_order.quantity_received} kg)'
+                'error': f'GRM total weight ({float(total_weight_from_heat_numbers):.2f} kg) does not match received quantity ({float(received_qty):.2f} kg)'
             }, status=status.HTTP_400_BAD_REQUEST)
         
         grm_receipt.status = 'completed'
@@ -368,6 +375,15 @@ class GRMReceiptViewSet(viewsets.ModelViewSet):
         # Update stock balances for all heat numbers
         for heat_number in grm_receipt.heat_numbers.all():
             heat_number.update_stock_balance()
+        
+        # Create inventory transactions for GRM completion
+        try:
+            InventoryTransactionManager.create_grm_completion_transaction(
+                grm_receipt, request.user
+            )
+        except Exception as e:
+            print(f"Error creating GRM completion transaction: {e}")
+            # Don't fail the completion if transaction creation fails
         
         serializer = self.get_serializer(grm_receipt)
         return Response(serializer.data)

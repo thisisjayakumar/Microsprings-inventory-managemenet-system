@@ -46,10 +46,11 @@ Purchase Orders:
 - DELETE /api/purchase-orders/{id}/                    - Delete PO
 - POST   /api/purchase-orders/{id}/change_status/      - Change PO status
 - GET    /api/purchase-orders/dashboard_stats/         - Get dashboard statistics
-- GET    /api/purchase-orders/raw_materials/           - Get raw materials dropdown
-- GET    /api/purchase-orders/vendors/                 - Get vendors dropdown
-- GET    /api/purchase-orders/material_details/        - Get material details for auto-population
-- GET    /api/purchase-orders/vendor_details/          - Get vendor details for auto-population
+
+Note: For raw materials and vendors dropdowns, use the existing APIs:
+- Raw Materials: GET /api/inventory/raw-materials/ (from inventory app)
+- Vendors: GET /api/third-party/vendors/?vendor_type=rm_vendor (from third_party app)
+Both APIs return complete data, so no separate detail endpoints are needed.
 
 Query Parameters for Filtering:
 Manufacturing Orders:

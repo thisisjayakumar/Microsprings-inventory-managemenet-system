@@ -25,6 +25,7 @@ from .serializers import (
 )
 from products.models import Product
 from inventory.models import RawMaterial, RMStockBalance, GRMReceipt
+from inventory.transaction_manager import InventoryTransactionManager
 from third_party.models import Vendor
 from processes.models import Process
 from .rm_calculator import RMCalculator
@@ -1173,6 +1174,156 @@ class ManufacturingOrderViewSet(viewsets.ModelViewSet):
             'message': 'MO started successfully',
             'mo': serializer.data
         })
+    
+    @action(detail=True, methods=['post'])
+    def dispatch_to_customer(self, request, pk=None):
+        """
+        Dispatch completed MO to customer
+        Expected payload: {
+            "dispatch_quantity": 1000,
+            "dispatch_notes": "Shipped via DHL",
+            "vehicle_number": "TN-01-AB-1234",
+            "driver_name": "John Doe"
+        }
+        """
+        mo = self.get_object()
+        
+        # Check if user is manager or fg_store
+        user_roles = request.user.user_roles.values_list('role__name', flat=True)
+        if not any(role in ['manager', 'fg_store', 'production_head'] for role in user_roles):
+            return Response(
+                {'error': 'Only managers or FG store users can dispatch orders'}, 
+                status=status.HTTP_403_FORBIDDEN
+            )
+        
+        # Check if MO is completed or has completed batches ready for dispatch
+        if mo.status not in ['completed', 'in_progress']:
+            return Response(
+                {'error': 'MO must be completed or have completed batches ready for dispatch'}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        dispatch_quantity = request.data.get('dispatch_quantity')
+        dispatch_notes = request.data.get('dispatch_notes', '')
+        vehicle_number = request.data.get('vehicle_number', '')
+        driver_name = request.data.get('driver_name', '')
+        
+        if not dispatch_quantity or dispatch_quantity <= 0:
+            return Response(
+                {'error': 'Valid dispatch_quantity is required'}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        # Validate customer exists
+        if not mo.customer_c_id:
+            return Response(
+                {'error': 'MO must have a customer assigned for dispatch'}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        # Check if there's enough completed quantity in FG Store
+        completed_batches = mo.batches.filter(status='completed')
+        total_completed = sum(b.actual_quantity_completed or b.planned_quantity for b in completed_batches)
+        
+        if dispatch_quantity > total_completed:
+            return Response(
+                {'error': f'Dispatch quantity ({dispatch_quantity}) exceeds completed quantity ({total_completed})'}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        # Create dispatch transaction
+        try:
+            dispatch_notes_full = dispatch_notes
+            if vehicle_number:
+                dispatch_notes_full += f" | Vehicle: {vehicle_number}"
+            if driver_name:
+                dispatch_notes_full += f" | Driver: {driver_name}"
+            
+            inv_transaction = InventoryTransactionManager.create_dispatch_transaction(
+                mo, mo.customer_c_id, dispatch_quantity, request.user, dispatch_notes_full
+            )
+            
+            # Update MO status if fully dispatched
+            if dispatch_quantity >= mo.quantity:
+                old_status = mo.status
+                mo.status = 'completed'
+                mo.actual_end_date = timezone.now()
+                mo.save()
+                
+                # Create status history
+                MOStatusHistory.objects.create(
+                    mo=mo,
+                    from_status=old_status,
+                    to_status='completed',
+                    changed_by=request.user,
+                    notes=f'MO completed and dispatched to customer {mo.customer_c_id.name}'
+                )
+            
+            # Get location summary
+            location_summary = InventoryTransactionManager.get_mo_location_summary(mo)
+            
+            serializer = ManufacturingOrderDetailSerializer(mo)
+            return Response({
+                'message': f'Successfully dispatched {dispatch_quantity} units to {mo.customer_c_id.name}',
+                'mo': serializer.data,
+                'transaction_id': inv_transaction.transaction_id,
+                'location_summary': location_summary,
+                'dispatch_details': {
+                    'quantity': dispatch_quantity,
+                    'customer': mo.customer_c_id.name,
+                    'vehicle_number': vehicle_number,
+                    'driver_name': driver_name,
+                    'dispatched_at': timezone.now().isoformat()
+                }
+            })
+        except Exception as e:
+            return Response(
+                {'error': f'Failed to dispatch: {str(e)}'}, 
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+    
+    @action(detail=True, methods=['get'])
+    def location_tracking(self, request, pk=None):
+        """
+        Get comprehensive location tracking for all batches in an MO
+        """
+        mo = self.get_object()
+        
+        try:
+            location_summary = InventoryTransactionManager.get_mo_location_summary(mo)
+            
+            # Get all transactions for this MO
+            from inventory.models import InventoryTransaction
+            transactions = InventoryTransaction.objects.filter(
+                manufacturing_order=mo
+            ).select_related(
+                'location_from', 'location_to', 'created_by'
+            ).order_by('-transaction_datetime')[:50]  # Last 50 transactions
+            
+            transaction_list = [
+                {
+                    'transaction_id': t.transaction_id,
+                    'transaction_type': t.get_transaction_type_display(),
+                    'location_from': t.location_from.get_location_name_display() if t.location_from else None,
+                    'location_to': t.location_to.get_location_name_display() if t.location_to else None,
+                    'quantity': float(t.quantity),
+                    'transaction_datetime': t.transaction_datetime,
+                    'created_by': f"{t.created_by.first_name} {t.created_by.last_name}",
+                    'notes': t.notes
+                }
+                for t in transactions
+            ]
+            
+            return Response({
+                'mo_id': mo.mo_id,
+                'location_summary': location_summary,
+                'recent_transactions': transaction_list
+            })
+        except Exception as e:
+            return Response(
+                {'error': f'Failed to get location tracking: {str(e)}'}, 
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
 
 
 class PurchaseOrderViewSet(viewsets.ModelViewSet):
@@ -1256,6 +1407,14 @@ class PurchaseOrderViewSet(viewsets.ModelViewSet):
         if new_status == 'po_approved':
             po.approved_at = timezone.now()
             po.approved_by = request.user
+            
+            # Create inventory transaction for PO approval
+            try:
+                InventoryTransactionManager.create_po_approved_transaction(po, request.user)
+            except Exception as e:
+                print(f"Error creating PO approved transaction: {e}")
+                # Don't fail the status change if transaction creation fails
+                
         elif new_status == 'po_cancelled':
             po.cancelled_at = timezone.now()
             po.cancelled_by = request.user
@@ -1367,8 +1526,16 @@ class MOProcessExecutionViewSet(viewsets.ModelViewSet):
         execution.assigned_operator = request.user
         execution.save()
         
-        # Create inventory transaction for process consumption
-        self._create_process_consumption_transaction(execution, request.user)
+        # Create inventory transaction for process start (track location movement)
+        # Get all batches for this MO and track their movement to this process
+        mo = execution.mo
+        for batch in mo.batches.exclude(status='cancelled'):
+            try:
+                InventoryTransactionManager.create_process_start_transaction(
+                    execution, batch, request.user
+                )
+            except Exception as e:
+                print(f"Error creating process start transaction for batch {batch.batch_id}: {e}")
         
         # Create step executions if they don't exist
         process_steps = execution.process.process_steps.all().order_by('sequence_order')
@@ -1582,8 +1749,16 @@ class MOProcessExecutionViewSet(viewsets.ModelViewSet):
         # Update process progress based on batch completion
         self._update_process_progress_based_on_batches(execution)
         
-        # Create inventory transaction for process completion
-        self._create_process_completion_transaction(execution, request.user)
+        # Create inventory transactions for process completion
+        # Track completion and movement to next location for each batch
+        for batch in mo_batches:
+            try:
+                actual_quantity = batch.actual_quantity_completed or batch.planned_quantity
+                InventoryTransactionManager.create_process_complete_transaction(
+                    execution, batch, actual_quantity, request.user
+                )
+            except Exception as e:
+                print(f"Error creating process completion transaction for batch {batch.batch_id}: {e}")
         
         serializer = self.get_serializer(execution)
         return Response(serializer.data)
@@ -1791,27 +1966,28 @@ class BatchViewSet(viewsets.ModelViewSet):
         """Create batch with location tracking"""
         batch = serializer.save()
         
-        # Create batch at RM store location initially
+        # Calculate RM quantity for the batch
+        product = batch.mo.product_code
+        rm_quantity_kg = 0
+        
+        if product.material_type == 'coil' and product.grams_per_product:
+            # batch.planned_quantity is in grams
+            batch_quantity_grams = batch.planned_quantity
+            batch_rm_base_kg = Decimal(str(batch_quantity_grams / 1000))
+            
+            # Apply tolerance
+            tolerance = batch.mo.tolerance_percentage or Decimal('2.00')
+            tolerance_factor = Decimal('1') + (tolerance / Decimal('100'))
+            rm_quantity_kg = float(batch_rm_base_kg * tolerance_factor)
+        
+        # Create inventory transaction for RM allocation
         try:
-            from inventory.location_tracker import LocationTracker
-            
-            location_result = LocationTracker.create_item_at_location(
-                item_type='batch',
-                item_id=batch.id,
-                location_code='RM_STORE',
-                quantity=batch.quantity,
-                user=self.request.user,
-                reference_type='mo',
-                reference_id=batch.mo.id,
-                notes=f'Batch {batch.batch_id} created for MO {batch.mo.mo_id}'
+            InventoryTransactionManager.create_batch_allocation_transaction(
+                batch, rm_quantity_kg, self.request.user
             )
-            
-            if not location_result['success']:
-                print(f"Warning: Failed to create batch location: {location_result.get('error')}")
-                
         except Exception as e:
-            print(f"Error creating batch location: {e}")
-            # Don't fail batch creation if location tracking fails
+            print(f"Error creating batch allocation transaction: {e}")
+            # Don't fail batch creation if transaction fails
 
     @action(detail=False, methods=['get'], url_path='mo-batch-summary/(?P<mo_id>[^/.]+)')
     def mo_batch_summary(self, request, mo_id=None):
@@ -2091,3 +2267,101 @@ class BatchViewSet(viewsets.ModelViewSet):
         }
         
         return Response(stats)
+    
+    @action(detail=True, methods=['post'])
+    def move_to_packing(self, request, pk=None):
+        """
+        Move batch to packing zone after all processes are completed
+        """
+        batch = self.get_object()
+        
+        if batch.status != 'completed':
+            return Response(
+                {'error': 'Batch must be completed before moving to packing'}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        # Create inventory transaction for movement to packing
+        try:
+            inv_transaction = InventoryTransactionManager.create_packing_transaction(
+                batch, request.user
+            )
+            
+            # Update batch notes
+            batch.notes = (batch.notes or "") + f"\nMoved to Packing Zone at {timezone.now()}"
+            batch.save()
+            
+            serializer = self.get_serializer(batch)
+            return Response({
+                'message': f'Batch {batch.batch_id} moved to Packing Zone',
+                'batch': serializer.data,
+                'transaction_id': inv_transaction.transaction_id
+            })
+        except Exception as e:
+            return Response(
+                {'error': f'Failed to move to packing: {str(e)}'}, 
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+    
+    @action(detail=True, methods=['post'])
+    def move_to_fg_store(self, request, pk=None):
+        """
+        Move batch to FG Store (Finished Goods) after packing
+        """
+        batch = self.get_object()
+        
+        if batch.status != 'completed':
+            return Response(
+                {'error': 'Batch must be completed before moving to FG Store'}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        # Create inventory transaction for movement to FG Store
+        try:
+            inv_transaction = InventoryTransactionManager.create_fg_store_transaction(
+                batch, request.user
+            )
+            
+            # Update batch notes
+            batch.notes = (batch.notes or "") + f"\nMoved to FG Store at {timezone.now()} - Ready for dispatch"
+            batch.save()
+            
+            serializer = self.get_serializer(batch)
+            return Response({
+                'message': f'Batch {batch.batch_id} moved to FG Store - Ready for dispatch',
+                'batch': serializer.data,
+                'transaction_id': inv_transaction.transaction_id
+            })
+        except Exception as e:
+            return Response(
+                {'error': f'Failed to move to FG Store: {str(e)}'}, 
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+    
+    @action(detail=False, methods=['get'])
+    def current_location(self, request):
+        """
+        Get current location for a batch
+        Query params: batch_id
+        """
+        batch_id = request.query_params.get('batch_id')
+        if not batch_id:
+            return Response(
+                {'error': 'batch_id is required'}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        try:
+            batch = Batch.objects.get(id=batch_id)
+            location_info = InventoryTransactionManager.get_batch_current_location(batch)
+            
+            return Response({
+                'batch_id': batch.batch_id,
+                'mo_id': batch.mo.mo_id,
+                'location': location_info
+            })
+        except Batch.DoesNotExist:
+            return Response(
+                {'error': 'Batch not found'}, 
+                status=status.HTTP_404_NOT_FOUND
+            )

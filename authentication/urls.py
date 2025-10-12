@@ -1,7 +1,7 @@
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 from rest_framework_simplejwt.views import TokenRefreshView
-from . import views
+from . import views, admin_views
 
 app_name = 'authentication'
 
@@ -12,6 +12,11 @@ router.register(r'roles', views.RoleViewSet, basename='role')
 router.register(r'process-supervisors', views.ProcessSupervisorViewSet, basename='process-supervisor')
 router.register(r'operator-engagements', views.OperatorEngagementViewSet, basename='operator-engagement')
 router.register(r'login-sessions', views.LoginSessionViewSet, basename='login-session')
+
+# Admin dashboard router
+admin_router = DefaultRouter()
+admin_router.register(r'users', admin_views.AdminUserManagementViewSet, basename='admin-users')
+admin_router.register(r'roles', admin_views.AdminRoleManagementViewSet, basename='admin-roles')
 
 urlpatterns = [
     # Authentication endpoints
@@ -36,6 +41,15 @@ urlpatterns = [
     
     # Health check
     path('health/', views.health_check, name='health_check'),
+    
+    # Admin Dashboard endpoints
+    path('admin/', include(admin_router.urls)),
+    path('admin/dashboard/stats/', admin_views.admin_dashboard_stats, name='admin_dashboard_stats'),
+    path('admin/users/multiple-roles/', admin_views.users_with_multiple_roles, name='users_multiple_roles'),
+    path('admin/users/without-roles/', admin_views.users_without_roles, name='users_without_roles'),
+    path('admin/sync-profiles/', admin_views.sync_user_profile_status, name='sync_user_profiles'),
+    path('admin/department-summary/', admin_views.department_summary, name='department_summary'),
+    path('admin/role-permissions-matrix/', admin_views.role_permissions_matrix, name='role_permissions_matrix'),
     
     # Include router URLs
     path('', include(router.urls)),

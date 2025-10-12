@@ -345,8 +345,14 @@ class GRMReceipt(models.Model):
     
     # Status and Tracking
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
-    total_items_received = models.PositiveIntegerField(default=0)
-    total_items_expected = models.PositiveIntegerField(default=0)
+    total_items_received = models.DecimalField(
+        max_digits=10, decimal_places=2, default=0,
+        help_text="Total items/weight received (in kg for weight-based, count for count-based)"
+    )
+    total_items_expected = models.DecimalField(
+        max_digits=10, decimal_places=2, default=0,
+        help_text="Total items/weight expected (in kg for weight-based, count for count-based)"
+    )
     
     # Additional Information
     quality_check_passed = models.BooleanField(default=False)
