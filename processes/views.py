@@ -1,238 +1,297 @@
-from rest_framework import viewsets, status, filters
+from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
-from django_filters.rest_framework import DjangoFilterBackend
-from django.db.models import Q, Prefetch
+from django.utils import timezone
+from django.db.models import Q, Count, Sum
+from datetime import datetime, timedelta
+import logging
 
-from .models import Process, SubProcess, ProcessStep, BOM
-from .serializers import (
-    ProcessListSerializer, ProcessDetailSerializer,
-    SubProcessListSerializer, SubProcessDetailSerializer,
-    ProcessStepListSerializer, ProcessStepDetailSerializer,
-    BOMListSerializer, BOMDetailSerializer,
-    ProcessDropdownSerializer, SubProcessDropdownSerializer,
-    ProcessStepDropdownSerializer, RawMaterialDropdownSerializer
+from .models import (
+    Process, WorkCenterMaster, DailySupervisorStatus, SupervisorActivityLog
 )
-from inventory.models import RawMaterial
+from .serializers import (
+    ProcessBasicSerializer,
+    WorkCenterMasterListSerializer, WorkCenterMasterDetailSerializer,
+    DailySupervisorStatusSerializer, DailySupervisorStatusUpdateSerializer,
+    SupervisorActivityLogSerializer
+)
+from authentication.permissions import IsAdminOrManager, IsManagerOrAbove
+
+logger = logging.getLogger(__name__)
 
 
-class ProcessViewSet(viewsets.ModelViewSet):
+class WorkCenterMasterViewSet(viewsets.ModelViewSet):
     """
-    ViewSet for Process with optimized queries and filtering
+    ViewSet for Work Center Master management
+    Admin, Managers, and Production Heads can CRUD work center masters
     """
-    permission_classes = [IsAuthenticated]
-    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
-    filterset_fields = ['is_active', 'code']
-    search_fields = ['name', 'code', 'description']
-    ordering_fields = ['name', 'code', 'created_at']
-    ordering = ['name']
-
-    def get_queryset(self):
-        """Optimized queryset with prefetch_related"""
-        return Process.objects.prefetch_related(
-            'subprocesses', 'process_steps'
-        )
-
+    permission_classes = [IsAuthenticated, IsManagerOrAbove]
+    queryset = WorkCenterMaster.objects.all().select_related(
+        'work_center', 'default_supervisor', 'backup_supervisor',
+        'created_by', 'updated_by'
+    )
+    
     def get_serializer_class(self):
-        """Use different serializers for list and detail views"""
-        if self.action == 'list':
-            return ProcessListSerializer
-        return ProcessDetailSerializer
-
+        if self.action in ['list']:
+            return WorkCenterMasterListSerializer
+        return WorkCenterMasterDetailSerializer
+    
     @action(detail=False, methods=['get'])
-    def dropdown(self, request):
-        """Get processes for dropdown"""
-        processes = Process.objects.filter(is_active=True).order_by('name')
-        serializer = ProcessDropdownSerializer(processes, many=True)
-        return Response(serializer.data)
-
-    @action(detail=True, methods=['get'])
-    def subprocesses(self, request, pk=None):
-        """Get subprocesses for a specific process"""
-        process = self.get_object()
-        subprocesses = process.subprocesses.all()
-        serializer = SubProcessListSerializer(subprocesses, many=True)
-        return Response(serializer.data)
-
-    @action(detail=True, methods=['get'])
-    def process_steps(self, request, pk=None):
-        """Get process steps for a specific process"""
-        process = self.get_object()
-        process_steps = process.process_steps.all().order_by('sequence_order')
-        serializer = ProcessStepListSerializer(process_steps, many=True)
-        return Response(serializer.data)
-
-
-class SubProcessViewSet(viewsets.ModelViewSet):
-    """
-    ViewSet for SubProcess with optimized queries and filtering
-    """
-    permission_classes = [IsAuthenticated]
-    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
-    filterset_fields = ['process']
-    search_fields = ['name', 'description', 'process__name']
-    ordering_fields = ['name', 'created_at', 'process__name']
-    ordering = ['process__name', 'name']
-
-    def get_queryset(self):
-        """Optimized queryset with select_related and prefetch_related"""
-        return SubProcess.objects.select_related('process').prefetch_related('process_steps')
-
-    def get_serializer_class(self):
-        """Use different serializers for list and detail views"""
-        if self.action == 'list':
-            return SubProcessListSerializer
-        return SubProcessDetailSerializer
-
-    @action(detail=False, methods=['get'])
-    def dropdown(self, request):
-        """Get subprocesses for dropdown, optionally filtered by process"""
-        subprocesses = SubProcess.objects.select_related('process')
-        
-        # Filter by process if specified
-        process_id = request.query_params.get('process_id')
-        if process_id:
-            subprocesses = subprocesses.filter(process_id=process_id)
-        
-        subprocesses = subprocesses.order_by('process__name', 'name')
-        serializer = SubProcessDropdownSerializer(subprocesses, many=True)
-        return Response(serializer.data)
-
-    @action(detail=True, methods=['get'])
-    def process_steps(self, request, pk=None):
-        """Get process steps for a specific subprocess"""
-        subprocess = self.get_object()
-        process_steps = subprocess.process_steps.all().order_by('sequence_order')
-        serializer = ProcessStepListSerializer(process_steps, many=True)
-        return Response(serializer.data)
-
-
-class ProcessStepViewSet(viewsets.ModelViewSet):
-    """
-    ViewSet for ProcessStep with optimized queries and filtering
-    """
-    permission_classes = [IsAuthenticated]
-    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
-    filterset_fields = ['process', 'subprocess']
-    search_fields = ['step_name', 'step_code', 'description', 'process__name', 'subprocess__name']
-    ordering_fields = ['step_name', 'sequence_order', 'created_at']
-    ordering = ['sequence_order']
-
-    def get_queryset(self):
-        """Optimized queryset with select_related and prefetch_related"""
-        return ProcessStep.objects.select_related(
-            'process', 'subprocess'
-        ).prefetch_related('bom_set__material')
-
-    def get_serializer_class(self):
-        """Use different serializers for list and detail views"""
-        if self.action == 'list':
-            return ProcessStepListSerializer
-        return ProcessStepDetailSerializer
-
-    @action(detail=False, methods=['get'])
-    def dropdown(self, request):
-        """Get process steps for dropdown, optionally filtered by process or subprocess"""
-        process_steps = ProcessStep.objects.select_related('process', 'subprocess')
-        
-        # Filter by process if specified
-        process_id = request.query_params.get('process_id')
-        if process_id:
-            process_steps = process_steps.filter(process_id=process_id)
-        
-        # Filter by subprocess if specified
-        subprocess_id = request.query_params.get('subprocess_id')
-        if subprocess_id:
-            process_steps = process_steps.filter(subprocess_id=subprocess_id)
-        
-        process_steps = process_steps.order_by('sequence_order')
-        serializer = ProcessStepDropdownSerializer(process_steps, many=True)
-        return Response(serializer.data)
-
-    @action(detail=True, methods=['get'])
-    def bom_items(self, request, pk=None):
-        """Get BOM items for a specific process step"""
-        process_step = self.get_object()
-        bom_items = process_step.bom_set.select_related('material').filter(is_active=True)
-        serializer = BOMListSerializer(bom_items, many=True)
-        return Response(serializer.data)
-
-
-class BOMViewSet(viewsets.ModelViewSet):
-    """
-    ViewSet for BOM with optimized queries and filtering
-    """
-    permission_classes = [IsAuthenticated]
-    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
-    filterset_fields = ['type', 'process_step', 'material', 'is_active']
-    search_fields = [
-        'product_code', 'process_step__step_name', 'process_step__process__name',
-        'material__product_code', 'material__material_name'
-    ]
-    ordering_fields = ['product_code', 'type', 'created_at']
-    ordering = ['product_code', 'type']
-
-    def get_queryset(self):
-        """Optimized queryset with select_related and prefetch_related"""
-        return BOM.objects.select_related(
-            'process_step__process', 'process_step__subprocess', 'material'
-        )
-
-    def get_serializer_class(self):
-        """Use different serializers for list and detail views"""
-        if self.action == 'list':
-            return BOMListSerializer
-        return BOMDetailSerializer
-
-    @action(detail=False, methods=['get'])
-    def by_product(self, request):
-        """Get BOM items filtered by product code and type"""
-        product_code = request.query_params.get('product_code')
-        product_type = request.query_params.get('type')
-        
-        if not product_code:
-            return Response(
-                {'error': 'product_code is required'}, 
-                status=status.HTTP_400_BAD_REQUEST
-            )
-        
-        queryset = self.get_queryset().filter(
-            product_code=product_code,
+    def available_work_centers(self, request):
+        """Get list of processes that don't have work center master yet"""
+        existing_wc_ids = WorkCenterMaster.objects.values_list('work_center_id', flat=True)
+        available_processes = Process.objects.filter(
             is_active=True
+        ).exclude(
+            id__in=existing_wc_ids
+        )
+        serializer = ProcessBasicSerializer(available_processes, many=True)
+        return Response(serializer.data)
+    
+    @action(detail=False, methods=['get'])
+    def supervisors(self, request):
+        """Get list of users with supervisor role"""
+        from authentication.models import CustomUser, UserRole
+        supervisors = CustomUser.objects.filter(
+            user_roles__role__name='supervisor',
+            user_roles__is_active=True,
+            is_active=True
+        ).distinct()
+        
+        from manufacturing.serializers import UserBasicSerializer
+        serializer = UserBasicSerializer(supervisors, many=True)
+        return Response(serializer.data)
+
+
+class DailySupervisorStatusViewSet(viewsets.ReadOnlyModelViewSet):
+    """
+    ViewSet for Daily Supervisor Status
+    Read-only with manual update capability for admins
+    """
+    permission_classes = [IsAuthenticated]
+    serializer_class = DailySupervisorStatusSerializer
+    
+    def get_queryset(self):
+        queryset = DailySupervisorStatus.objects.all().select_related(
+            'work_center', 'default_supervisor', 'active_supervisor',
+            'manually_updated_by'
         )
         
-        if product_type:
-            queryset = queryset.filter(type=product_type)
+        # Filter by date if provided
+        date_param = self.request.query_params.get('date')
+        if date_param:
+            try:
+                filter_date = datetime.strptime(date_param, '%Y-%m-%d').date()
+                queryset = queryset.filter(date=filter_date)
+            except ValueError:
+                pass
+        else:
+            # Default to today
+            queryset = queryset.filter(date=timezone.now().date())
         
-        # Order by process step sequence
-        queryset = queryset.order_by('process_step__sequence_order')
+        # Filter by work center if provided
+        work_center_id = self.request.query_params.get('work_center_id')
+        if work_center_id:
+            queryset = queryset.filter(work_center_id=work_center_id)
         
-        serializer = self.get_serializer(queryset, many=True)
-        return Response(serializer.data)
-
+        return queryset.order_by('work_center__name')
+    
+    @action(detail=True, methods=['post'], permission_classes=[IsAuthenticated, IsManagerOrAbove])
+    def manual_update(self, request, pk=None):
+        """
+        Manually update active supervisor for a work center
+        Only admins, managers, and production heads can do this
+        """
+        status = self.get_object()
+        serializer = DailySupervisorStatusUpdateSerializer(
+            status,
+            data=request.data,
+            context={'request': request}
+        )
+        
+        if serializer.is_valid():
+            serializer.save()
+            return Response({
+                'message': 'Supervisor updated successfully',
+                'status': DailySupervisorStatusSerializer(status).data
+            })
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
     @action(detail=False, methods=['get'])
-    def raw_materials(self, request):
-        """Get raw materials for dropdown"""
-        raw_materials = RawMaterial.objects.all().order_by('material_name', 'grade')
-        serializer = RawMaterialDropdownSerializer(raw_materials, many=True)
-        return Response(serializer.data)
-
-    @action(detail=False, methods=['get'])
-    def dashboard_stats(self, request):
-        """Get dashboard statistics for BOM"""
-        queryset = self.get_queryset()
+    def today_dashboard(self, request):
+        """
+        Get today's supervisor status dashboard
+        Returns summary with color-coded status
+        """
+        today = timezone.now().date()
+        statuses = DailySupervisorStatus.objects.filter(
+            date=today
+        ).select_related(
+            'work_center', 'default_supervisor', 'active_supervisor'
+        ).order_by('work_center__name')
         
-        stats = {
-            'total': queryset.count(),
-            'active': queryset.filter(is_active=True).count(),
-            'inactive': queryset.filter(is_active=False).count(),
-            'by_type': {
-                'spring': queryset.filter(type='spring').count(),
-                'stamp': queryset.filter(type='stamp').count(),
+        # Count present vs backup
+        present_count = statuses.filter(is_present=True).count()
+        backup_count = statuses.filter(is_present=False).count()
+        
+        serializer = self.get_serializer(statuses, many=True)
+        
+        return Response({
+            'date': today,
+            'total_work_centers': statuses.count(),
+            'default_supervisors_present': present_count,
+            'backup_supervisors_active': backup_count,
+            'statuses': serializer.data
+        })
+    
+    @action(detail=False, methods=['post'], permission_classes=[IsAuthenticated, IsManagerOrAbove])
+    def run_attendance_check(self, request):
+        """
+        Manually trigger the attendance check command
+        Useful for testing or manual runs
+        """
+        from django.core.management import call_command
+        from io import StringIO
+        
+        date_param = request.data.get('date')  # Optional: YYYY-MM-DD
+        force = request.data.get('force', False)
+        
+        # Capture command output
+        out = StringIO()
+        
+        try:
+            if date_param:
+                call_command('check_supervisor_attendance', f'--date={date_param}', stdout=out)
+            else:
+                call_command('check_supervisor_attendance', stdout=out)
+            
+            output = out.getvalue()
+            
+            return Response({
+                'message': 'Attendance check completed successfully',
+                'output': output
+            })
+        except Exception as e:
+            logger.error(f'Error running attendance check: {str(e)}', exc_info=True)
+            return Response({
+                'error': str(e)
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+class SupervisorActivityLogViewSet(viewsets.ReadOnlyModelViewSet):
+    """
+    ViewSet for Supervisor Activity Logs
+    Read-only view of supervisor activities
+    """
+    permission_classes = [IsAuthenticated]
+    serializer_class = SupervisorActivityLogSerializer
+    
+    def get_queryset(self):
+        queryset = SupervisorActivityLog.objects.all().select_related(
+            'work_center', 'active_supervisor'
+        )
+        
+        # Filter by date range
+        start_date = self.request.query_params.get('start_date')
+        end_date = self.request.query_params.get('end_date')
+        
+        if start_date:
+            try:
+                start = datetime.strptime(start_date, '%Y-%m-%d').date()
+                queryset = queryset.filter(date__gte=start)
+            except ValueError:
+                pass
+        
+        if end_date:
+            try:
+                end = datetime.strptime(end_date, '%Y-%m-%d').date()
+                queryset = queryset.filter(date__lte=end)
+            except ValueError:
+                pass
+        
+        # Filter by work center if provided
+        work_center_id = self.request.query_params.get('work_center_id')
+        if work_center_id:
+            queryset = queryset.filter(work_center_id=work_center_id)
+        
+        # Filter by supervisor if provided
+        supervisor_id = self.request.query_params.get('supervisor_id')
+        if supervisor_id:
+            queryset = queryset.filter(active_supervisor_id=supervisor_id)
+        
+        return queryset.order_by('-date', 'work_center__name')
+    
+    @action(detail=False, methods=['get'])
+    def summary(self, request):
+        """
+        Get summary statistics for supervisor activities
+        """
+        # Get date range
+        end_date = timezone.now().date()
+        start_date = end_date - timedelta(days=30)  # Last 30 days
+        
+        # Allow custom date range
+        start_param = request.query_params.get('start_date')
+        end_param = request.query_params.get('end_date')
+        
+        if start_param:
+            try:
+                start_date = datetime.strptime(start_param, '%Y-%m-%d').date()
+            except ValueError:
+                pass
+        
+        if end_param:
+            try:
+                end_date = datetime.strptime(end_param, '%Y-%m-%d').date()
+            except ValueError:
+                pass
+        
+        logs = SupervisorActivityLog.objects.filter(
+            date__gte=start_date,
+            date__lte=end_date
+        )
+        
+        # Aggregate by supervisor
+        supervisor_summary = logs.values(
+            'active_supervisor__id',
+            'active_supervisor__first_name',
+            'active_supervisor__last_name'
+        ).annotate(
+            total_days=Count('id'),
+            total_mos=Sum('mos_handled'),
+            total_operations=Sum('total_operations'),
+            total_completed=Sum('operations_completed'),
+            total_time=Sum('total_processing_time_minutes')
+        )
+        
+        # Aggregate by work center
+        work_center_summary = logs.values(
+            'work_center__id',
+            'work_center__name'
+        ).annotate(
+            total_mos=Sum('mos_handled'),
+            total_operations=Sum('total_operations'),
+            total_completed=Sum('operations_completed')
+        )
+        
+        return Response({
+            'date_range': {
+                'start': start_date,
+                'end': end_date
             },
-            'unique_products': queryset.values('product_code').distinct().count(),
-            'unique_materials': queryset.values('material').distinct().count(),
-        }
+            'supervisor_summary': list(supervisor_summary),
+            'work_center_summary': list(work_center_summary)
+        })
+    
+    @action(detail=False, methods=['get'])
+    def today(self, request):
+        """Get today's activity logs"""
+        today = timezone.now().date()
+        logs = self.get_queryset().filter(date=today)
+        serializer = self.get_serializer(logs, many=True)
         
-        return Response(stats)
+        return Response({
+            'date': today,
+            'logs': serializer.data
+        })

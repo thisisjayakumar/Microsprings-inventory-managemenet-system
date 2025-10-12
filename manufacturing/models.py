@@ -118,11 +118,9 @@ class ManufacturingOrder(models.Model):
         related_name='rm_store_mo_orders',
         help_text="RM Store user to verify and allocate raw materials"
     )
-    assigned_supervisor = models.ForeignKey(
-        User, on_delete=models.PROTECT, null=True, blank=True,
-        related_name='supervised_mo_orders',
-        help_text="Supervisor allocates operator (assigned later)"
-    )
+    # NOTE: Supervisor is no longer assigned at MO level
+    # Supervisors are tracked per work center (Process) in DailySupervisorStatus
+    # and linked to operations via MOProcessExecution.assigned_supervisor
     shift = models.CharField(max_length=10, choices=SHIFT_CHOICES, null=True, blank=True)
     
     # Planning dates
@@ -513,6 +511,103 @@ class MOProcessExecution(models.Model):
         
         return False
     
+    def auto_assign_supervisor(self):
+        """
+        Auto-assign the active supervisor for today's work center to this process execution
+        Called when process execution starts
+        """
+        from processes.models import DailySupervisorStatus
+        import logging
+        
+        logger = logging.getLogger(__name__)
+        
+        try:
+            # Get today's supervisor status for this process (work center)
+            today = timezone.now().date()
+            supervisor_status = DailySupervisorStatus.objects.filter(
+                date=today,
+                work_center=self.process
+            ).select_related('active_supervisor').first()
+            
+            if supervisor_status:
+                self.assigned_supervisor = supervisor_status.active_supervisor
+                self.save(update_fields=['assigned_supervisor', 'updated_at'])
+                
+                logger.info(
+                    f'Auto-assigned supervisor {supervisor_status.active_supervisor.get_full_name()} '
+                    f'to process execution {self.id} ({self.process.name})'
+                )
+                
+                # Update activity log
+                self._update_activity_log()
+                
+                return True
+            else:
+                logger.warning(
+                    f'No supervisor status found for work center {self.process.name} '
+                    f'on {today}. Run check_supervisor_attendance command.'
+                )
+                return False
+        except Exception as e:
+            logger.error(f'Error auto-assigning supervisor: {str(e)}', exc_info=True)
+            return False
+    
+    def _update_activity_log(self):
+        """Update supervisor activity log when operations are handled"""
+        from processes.models import SupervisorActivityLog
+        from django.db.models import F
+        import logging
+        
+        logger = logging.getLogger(__name__)
+        
+        if not self.assigned_supervisor:
+            return
+        
+        try:
+            today = timezone.now().date()
+            
+            # Get or create activity log for today
+            log, created = SupervisorActivityLog.objects.get_or_create(
+                date=today,
+                work_center=self.process,
+                active_supervisor=self.assigned_supervisor,
+                defaults={
+                    'mos_handled': 0,
+                    'total_operations': 0,
+                    'operations_completed': 0,
+                    'operations_in_progress': 0,
+                }
+            )
+            
+            # Update counts based on status
+            if self.status == 'in_progress':
+                log.operations_in_progress = F('operations_in_progress') + 1
+                log.total_operations = F('total_operations') + 1
+            elif self.status == 'completed':
+                log.operations_completed = F('operations_completed') + 1
+                if log.operations_in_progress > 0:
+                    log.operations_in_progress = F('operations_in_progress') - 1
+            
+            # Update processing time if completed
+            if self.status == 'completed' and self.duration_minutes:
+                log.total_processing_time_minutes = F('total_processing_time_minutes') + self.duration_minutes
+            
+            log.save()
+            log.refresh_from_db()
+            
+            # Update MOs handled count (unique MOs)
+            unique_mos = MOProcessExecution.objects.filter(
+                process=self.process,
+                assigned_supervisor=self.assigned_supervisor,
+                actual_start_time__date=today
+            ).values('mo').distinct().count()
+            
+            log.mos_handled = unique_mos
+            log.save(update_fields=['mos_handled'])
+            
+        except Exception as e:
+            logger.error(f'Error updating activity log: {str(e)}', exc_info=True)
+    
     def get_next_process_execution(self):
         """Get the next process execution in sequence"""
         return MOProcessExecution.objects.filter(
@@ -544,9 +639,8 @@ class MOProcessExecution(models.Model):
                     next_process.status = 'pending'
                     next_process.save()
                     
-                    # Update MO assigned_supervisor to next supervisor
-                    self.mo.assigned_supervisor = next_supervisor
-                    self.mo.save()
+                    # NOTE: MO no longer has assigned_supervisor field
+                    # Supervisor tracking is now at process execution level
                     
                     return {
                         'moved_to_next_process': True,
@@ -562,7 +656,8 @@ class MOProcessExecution(models.Model):
         ).first()
         
         if fg_store_users:
-            self.mo.assigned_supervisor = fg_store_users
+            # NOTE: MO no longer has assigned_supervisor field
+            # Just update MO status to completed
             self.mo.status = 'completed'
             self.mo.actual_end_date = timezone.now()
             self.mo.save()

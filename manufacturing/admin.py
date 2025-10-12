@@ -30,7 +30,8 @@ class BatchInline(admin.TabularInline):
 
 @admin.register(ManufacturingOrder)
 class ManufacturingOrderAdmin(admin.ModelAdmin):
-    list_display = ('mo_id', 'product_code', 'customer_display', 'quantity', 'status', 'priority', 'assigned_supervisor', 'created_at')
+    # NOTE: assigned_supervisor removed - supervisor tracking moved to work center level
+    list_display = ('mo_id', 'product_code', 'customer_display', 'quantity', 'status', 'priority', 'created_at')
     list_filter = ('status', 'priority', 'shift', 'material_type', 'product_code__customer_c_id__industry_type', 'created_at')
     search_fields = ('mo_id', 'product_code__product_code', 'product_code__customer_c_id__name', 'product_code__customer_c_id__c_id', 'customer_name')
     readonly_fields = ('mo_id', 'date_time', 'product_type', 'material_name', 'material_type', 'grade', 
@@ -52,8 +53,9 @@ class ManufacturingOrderAdmin(admin.ModelAdmin):
     
     def get_queryset(self, request):
         """Optimize queryset with select_related for better performance"""
+        # NOTE: assigned_supervisor removed - supervisor tracking moved to work center level
         return super().get_queryset(request).select_related(
-            'product_code', 'assigned_supervisor', 'product_code__customer_c_id', 'customer_c_id', 'created_by'
+            'product_code', 'product_code__customer_c_id', 'customer_c_id', 'created_by'
         )
     
     fieldsets = (
@@ -74,7 +76,8 @@ class ManufacturingOrderAdmin(admin.ModelAdmin):
             'description': 'Strips required for this MO. Auto-calculated based on pcs_per_strip.'
         }),
         ('Assignment & Planning', {
-            'fields': ('assigned_supervisor', 'shift', 'planned_start_date', 'planned_end_date', 
+            # NOTE: assigned_supervisor removed - supervisor tracking moved to work center level
+            'fields': ('shift', 'planned_start_date', 'planned_end_date', 
                       'actual_start_date', 'actual_end_date')
         }),
         ('Status & Priority', {

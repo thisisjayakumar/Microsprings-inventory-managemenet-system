@@ -41,7 +41,7 @@ class ManufacturingOrderViewSet(viewsets.ModelViewSet):
     """
     permission_classes = [IsManagerOrSupervisor]
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
-    filterset_fields = ['status', 'priority', 'shift', 'material_type', 'assigned_supervisor']
+    filterset_fields = ['status', 'priority', 'shift', 'material_type']
     search_fields = ['mo_id', 'product_code__product_code', 'product_code__part_number', 'customer_order_reference']
     ordering_fields = ['created_at', 'planned_start_date', 'delivery_date', 'mo_id']
     ordering = ['-created_at']
@@ -49,7 +49,7 @@ class ManufacturingOrderViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         """Optimized queryset with select_related and prefetch_related"""
         queryset = ManufacturingOrder.objects.select_related(
-            'product_code', 'product_code__customer_c_id', 'customer_c_id', 'assigned_supervisor', 'created_by', 
+            'product_code', 'product_code__customer_c_id', 'customer_c_id', 'created_by', 
             'gm_approved_by', 'rm_allocated_by'
         ).prefetch_related(
             Prefetch('status_history', queryset=MOStatusHistory.objects.select_related('changed_by'))
@@ -71,7 +71,7 @@ class ManufacturingOrderViewSet(viewsets.ModelViewSet):
         if any(role in ['admin', 'manager', 'production_head'] for role in user_roles):
             return queryset
         
-        # Supervisors can only see MOs assigned to them or processes in their department
+        # Supervisors can only see MOs with processes in their department
         if 'supervisor' in user_roles:
             try:
                 user_profile = user.userprofile
@@ -87,20 +87,20 @@ class ManufacturingOrderViewSet(viewsets.ModelViewSet):
                 if process_supervisor:
                     # Filter to only show MOs with processes this supervisor handles
                     queryset = queryset.filter(
-                        Q(assigned_supervisor=user) | 
+                        Q(process_executions__assigned_supervisor=user) | 
                         Q(process_executions__process__name__in=process_supervisor.process_names)
                     ).distinct()
                 else:
-                    # If no process supervisor record, only show assigned MOs
-                    queryset = queryset.filter(assigned_supervisor=user)
+                    # If no process supervisor record, only show MOs with assigned process executions
+                    queryset = queryset.filter(process_executions__assigned_supervisor=user).distinct()
                     
             except Exception as e:
-                # If there's an error, only show assigned MOs
-                queryset = queryset.filter(assigned_supervisor=user)
+                # If there's an error, only show MOs with assigned process executions
+                queryset = queryset.filter(process_executions__assigned_supervisor=user).distinct()
         
         # RM Store and FG Store users can only see MOs assigned to them
         elif any(role in ['rm_store', 'fg_store'] for role in user_roles):
-            queryset = queryset.filter(assigned_supervisor=user)
+            queryset = queryset.filter(assigned_rm_store=user)
         
         # Other users see no MOs
         else:
@@ -415,7 +415,6 @@ class ManufacturingOrderViewSet(viewsets.ModelViewSet):
             
             # Get BOM data for this product
             from processes.models import BOM
-            from processes.serializers import BOMDetailSerializer
             
             bom_items = BOM.objects.filter(
                 product_code=product_code, 
@@ -728,7 +727,8 @@ class ManufacturingOrderViewSet(viewsets.ModelViewSet):
             )
         
         # Update allowed fields
-        allowed_fields = ['assigned_rm_store', 'assigned_supervisor', 'shift']
+        # NOTE: assigned_supervisor removed from MO - supervisors are now assigned at process execution level
+        allowed_fields = ['assigned_rm_store', 'shift']
         updated_fields = []
         
         for field in allowed_fields:
@@ -756,29 +756,6 @@ class ManufacturingOrderViewSet(viewsets.ModelViewSet):
                                 {'error': 'RM store user not found'}, 
                                 status=status.HTTP_400_BAD_REQUEST
                             )
-                elif field == 'assigned_supervisor':
-                    # Validate supervisor exists and has supervisor role
-                    supervisor_id = request.data[field]
-                    
-                    # Handle empty string or None (clearing the supervisor)
-                    if not supervisor_id or supervisor_id == '':
-                        mo.assigned_supervisor = None
-                        updated_fields.append(field)
-                    else:
-                        try:
-                            supervisor = User.objects.get(id=supervisor_id)
-                            if not supervisor.user_roles.filter(role__name='supervisor').exists():
-                                return Response(
-                                    {'error': 'Selected user is not a supervisor'}, 
-                                    status=status.HTTP_400_BAD_REQUEST
-                                )
-                            mo.assigned_supervisor = supervisor
-                            updated_fields.append(field)
-                        except User.DoesNotExist:
-                            return Response(
-                                {'error': 'Supervisor not found'}, 
-                                status=status.HTTP_400_BAD_REQUEST
-                            )
                 elif field == 'shift':
                     shift_value = request.data[field]
                     # Handle empty string or None (clearing the shift)
@@ -796,29 +773,6 @@ class ManufacturingOrderViewSet(viewsets.ModelViewSet):
         
         if updated_fields:
             mo.save()
-            
-            # Create notification if supervisor was assigned
-            if 'assigned_supervisor' in updated_fields and mo.assigned_supervisor:
-                from notifications.models import Alert, AlertRule
-                
-                # Create or get alert rule for MO assignments
-                alert_rule, _ = AlertRule.objects.get_or_create(
-                    name='MO Assignment',
-                    alert_type='custom',
-                    defaults={'trigger_condition': {}, 'notification_methods': ['in_app']}
-                )
-                
-                # Create alert for supervisor
-                Alert.objects.create(
-                    alert_rule=alert_rule,
-                    title=f'{mo.mo_id} is assigned to you',
-                    message=f'Manufacturing Order {mo.mo_id} has been assigned to you. Product: {mo.product_code.product_code}, Quantity: {mo.quantity}',
-                    severity='medium',
-                    related_object_type='mo',
-                    related_object_id=str(mo.id),
-                    status='active'
-                )
-                alert_rule.recipient_users.add(mo.assigned_supervisor)
             
         serializer = ManufacturingOrderWithProcessesSerializer(mo)
         return Response({
@@ -914,32 +868,19 @@ class ManufacturingOrderViewSet(viewsets.ModelViewSet):
             notes=request.data.get('notes', 'MO approved by manager - Production started')
         )
         
-        # Create notification for supervisor
-        from notifications.models import Alert, AlertRule
+        # NOTE: Supervisor notifications now handled at process execution level
+        # since supervisors are no longer assigned at MO level
+        # from notifications.models import Alert, AlertRule
         
-        # Create or get alert rule for production start notifications
-        alert_rule, created = AlertRule.objects.get_or_create(
-            name='Production Start Notification',
-            alert_type='custom',
-            defaults={
-                'trigger_condition': {'event': 'production_started'},
-                'notification_methods': ['in_app']
-            }
-        )
-        
-        # Create alert for supervisor
-        Alert.objects.create(
-            alert_rule=alert_rule,
-            title=f'Production Started: {mo.mo_id}',
-            message=f'Manufacturing Order {mo.mo_id} has been approved and production has started. You are assigned as supervisor. Product: {mo.product_code.product_code}, Quantity: {mo.quantity}',
-            severity='medium',
-            related_object_type='mo',
-            related_object_id=str(mo.id)
-        )
-        
-        # Add supervisor to alert rule recipients if not already added
-        if not alert_rule.recipient_users.filter(id=mo.assigned_supervisor.id).exists():
-            alert_rule.recipient_users.add(mo.assigned_supervisor)
+        # # Create or get alert rule for production start notifications
+        # alert_rule, created = AlertRule.objects.get_or_create(
+        #     name='Production Start Notification',
+        #     alert_type='custom',
+        #     defaults={
+        #         'trigger_condition': {'event': 'production_started'},
+        #         'notification_methods': ['in_app']
+        #     }
+        # )
         
         serializer = ManufacturingOrderWithProcessesSerializer(mo)
         return Response({
@@ -1068,23 +1009,23 @@ class ManufacturingOrderViewSet(viewsets.ModelViewSet):
             if process_supervisor:
                 # Filter MOs with processes this supervisor handles
                 assigned_mos = self.get_queryset().filter(
-                    Q(assigned_supervisor=request.user) | 
+                    Q(process_executions__assigned_supervisor=request.user) | 
                     Q(process_executions__process__name__in=process_supervisor.process_names),
                     status__in=['gm_approved', 'mo_approved', 'rm_allocated', 'in_progress', 'on_hold']
                 ).distinct().order_by('-created_at')
             else:
-                # If no process supervisor record, only show assigned MOs
+                # If no process supervisor record, only show MOs with assigned process executions
                 assigned_mos = self.get_queryset().filter(
-                    assigned_supervisor=request.user,
+                    process_executions__assigned_supervisor=request.user,
                     status__in=['gm_approved', 'mo_approved', 'rm_allocated', 'in_progress', 'on_hold']
-                ).order_by('-created_at')
+                ).distinct().order_by('-created_at')
                 
         except Exception as e:
-            # If there's an error, only show assigned MOs
+            # If there's an error, only show MOs with assigned process executions
             assigned_mos = self.get_queryset().filter(
-                assigned_supervisor=request.user,
+                process_executions__assigned_supervisor=request.user,
                 status__in=['gm_approved', 'mo_approved', 'rm_allocated', 'in_progress', 'on_hold']
-            ).order_by('-created_at')
+            ).distinct().order_by('-created_at')
         
         # Separate by status
         approved_mos = assigned_mos.exclude(status='in_progress')
@@ -1116,10 +1057,12 @@ class ManufacturingOrderViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_403_FORBIDDEN
             )
         
-        # Check if MO is assigned to this supervisor
-        if mo.assigned_supervisor != request.user:
+        # NOTE: Supervisor assignment check removed - supervisors are now assigned at process execution level
+        # Check if MO has any process executions assigned to this supervisor
+        has_assigned_process = mo.process_executions.filter(assigned_supervisor=request.user).exists()
+        if not has_assigned_process:
             return Response(
-                {'error': 'You can only start MOs assigned to you'}, 
+                {'error': 'You can only start MOs that have processes assigned to you'}, 
                 status=status.HTTP_403_FORBIDDEN
             )
         

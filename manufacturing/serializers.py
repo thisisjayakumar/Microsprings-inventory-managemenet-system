@@ -138,7 +138,7 @@ class ManufacturingOrderListSerializer(serializers.ModelSerializer):
     """Optimized serializer for MO list view"""
     product_code = ProductBasicSerializer(read_only=True)
     assigned_rm_store = UserBasicSerializer(read_only=True)
-    assigned_supervisor = UserBasicSerializer(read_only=True)
+    # NOTE: assigned_supervisor removed - supervisor tracking moved to work center level
     created_by = UserBasicSerializer(read_only=True)
     status_display = serializers.CharField(source='get_status_display', read_only=True)
     priority_display = serializers.CharField(source='get_priority_display', read_only=True)
@@ -218,7 +218,7 @@ class ManufacturingOrderListSerializer(serializers.ModelSerializer):
         fields = [
             'id', 'mo_id', 'date_time', 'product_code', 'quantity', 'status', 
             'status_display', 'priority', 'priority_display', 'shift', 'shift_display',
-            'assigned_rm_store', 'assigned_supervisor', 'planned_start_date', 'planned_end_date',
+            'assigned_rm_store', 'planned_start_date', 'planned_end_date',
             'delivery_date', 'created_by', 'created_at', 'strips_required', 
             'total_pieces_from_strips', 'excess_pieces', 'tolerance_percentage',
             'material_type', 'material_name', 'batches', 'remaining_rm', 'rm_unit', 'can_create_batch'
@@ -230,7 +230,7 @@ class ManufacturingOrderDetailSerializer(serializers.ModelSerializer):
     """Detailed serializer for MO create/update/detail view"""
     product_code = ProductBasicSerializer(read_only=True)
     assigned_rm_store = UserBasicSerializer(read_only=True)
-    assigned_supervisor = UserBasicSerializer(read_only=True)
+    # NOTE: assigned_supervisor removed - supervisor tracking moved to work center level
     created_by = UserBasicSerializer(read_only=True)
     gm_approved_by = UserBasicSerializer(read_only=True)
     rm_allocated_by = UserBasicSerializer(read_only=True)
@@ -248,7 +248,7 @@ class ManufacturingOrderDetailSerializer(serializers.ModelSerializer):
     # Write-only fields for creation
     product_code_id = serializers.IntegerField(write_only=True)
     assigned_rm_store_id = serializers.IntegerField(write_only=True, required=False)
-    assigned_supervisor_id = serializers.IntegerField(write_only=True, required=False)
+    # NOTE: assigned_supervisor_id removed - supervisor tracking moved to work center level
     customer_id = serializers.IntegerField(write_only=True, required=False)
     
     class Meta:
@@ -259,7 +259,7 @@ class ManufacturingOrderDetailSerializer(serializers.ModelSerializer):
             'thickness_mm', 'finishing', 'manufacturer_brand', 'weight_kg',
             'loose_fg_stock', 'rm_required_kg', 'tolerance_percentage', 'scrap_percentage', 
             'rm_released_kg', 'strips_required', 'total_pieces_from_strips', 'excess_pieces',
-            'assigned_rm_store', 'assigned_rm_store_id', 'assigned_supervisor', 'assigned_supervisor_id',
+            'assigned_rm_store', 'assigned_rm_store_id',
             'shift', 'shift_display', 'planned_start_date', 'planned_end_date',
             'actual_start_date', 'actual_end_date', 'status', 'status_display',
             'priority', 'priority_display', 'customer', 'customer_id', 'customer_name', 
@@ -278,7 +278,7 @@ class ManufacturingOrderDetailSerializer(serializers.ModelSerializer):
         """Create MO with auto-population of product details"""
         product_code_id = validated_data.pop('product_code_id')
         assigned_rm_store_id = validated_data.pop('assigned_rm_store_id', None)
-        assigned_supervisor_id = validated_data.pop('assigned_supervisor_id', None)
+        # NOTE: assigned_supervisor_id removed - supervisor tracking moved to work center level
         customer_id = validated_data.pop('customer_id', None)
         
         try:
@@ -316,13 +316,7 @@ class ManufacturingOrderDetailSerializer(serializers.ModelSerializer):
             except User.DoesNotExist:
                 raise serializers.ValidationError("Invalid rm_store user reference")
         
-        # Handle optional supervisor
-        supervisor = None
-        if assigned_supervisor_id:
-            try:
-                supervisor = User.objects.get(id=assigned_supervisor_id)
-            except User.DoesNotExist:
-                raise serializers.ValidationError("Invalid supervisor reference")
+        # NOTE: Supervisor handling removed - supervisor tracking moved to work center level
         
         # Handle optional customer
         customer = None
@@ -337,7 +331,7 @@ class ManufacturingOrderDetailSerializer(serializers.ModelSerializer):
         validated_data.update({
             'product_code': product,
             'assigned_rm_store': rm_store_user,
-            'assigned_supervisor': supervisor,
+            # NOTE: assigned_supervisor removed - supervisor tracking moved to work center level
             'customer_c_id': customer,
             'customer_name': customer.name if customer else validated_data.get('customer_name', ''),
             'product_type': product.get_product_type_display() if product.product_type else '',
@@ -396,14 +390,7 @@ class ManufacturingOrderDetailSerializer(serializers.ModelSerializer):
             except User.DoesNotExist:
                 raise serializers.ValidationError("Invalid rm_store user reference")
         
-        # Handle supervisor change
-        if 'assigned_supervisor_id' in validated_data:
-            supervisor_id = validated_data.pop('assigned_supervisor_id')
-            try:
-                supervisor = User.objects.get(id=supervisor_id)
-                validated_data['assigned_supervisor'] = supervisor
-            except User.DoesNotExist:
-                raise serializers.ValidationError("Invalid supervisor reference")
+        # NOTE: Supervisor handling removed - supervisor tracking moved to work center level
         
         instance = super().update(instance, validated_data)
         
@@ -557,7 +544,7 @@ class ManufacturingOrderWithProcessesSerializer(serializers.ModelSerializer):
     priority_display = serializers.CharField(source='get_priority_display', read_only=True)
     shift_display = serializers.CharField(source='get_shift_display', read_only=True)
     assigned_rm_store_name = serializers.CharField(source='assigned_rm_store.get_full_name', read_only=True)
-    assigned_supervisor_name = serializers.CharField(source='assigned_supervisor.get_full_name', read_only=True)
+    # NOTE: assigned_supervisor_name removed - supervisor tracking moved to work center level
     created_by_name = serializers.CharField(source='created_by.get_full_name', read_only=True)
     process_executions = MOProcessExecutionListSerializer(many=True, read_only=True)
     overall_progress = serializers.SerializerMethodField()
@@ -571,7 +558,7 @@ class ManufacturingOrderWithProcessesSerializer(serializers.ModelSerializer):
             'wire_diameter_mm', 'thickness_mm', 'finishing', 'manufacturer_brand',
             'weight_kg', 'loose_fg_stock', 'rm_required_kg', 'strips_required', 
             'total_pieces_from_strips', 'excess_pieces', 'assigned_rm_store',
-            'assigned_rm_store_name', 'assigned_supervisor', 'assigned_supervisor_name', 'shift', 'shift_display', 'planned_start_date',
+            'assigned_rm_store_name', 'shift', 'shift_display', 'planned_start_date',
             'planned_end_date', 'actual_start_date', 'actual_end_date', 'status',
             'status_display', 'priority', 'priority_display', 'customer_name',
             'delivery_date', 'special_instructions', 'created_at', 'created_by',
@@ -888,9 +875,9 @@ class BatchDetailSerializer(serializers.ModelSerializer):
             )
             
             # TODO: Create notification for supervisor if assigned
+            # NOTE: Supervisor notifications now handled at process execution level
+            # since supervisors are no longer assigned at MO level
             # Note: Notification system can be implemented later using Alert model
-            if mo.assigned_supervisor:
-                logger.info(f"Batch {batch.batch_id} created for MO {mo.mo_id} - Supervisor: {mo.assigned_supervisor.email}")
         
         return batch
     

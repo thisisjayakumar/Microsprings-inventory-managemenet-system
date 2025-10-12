@@ -1,282 +1,205 @@
 from rest_framework import serializers
-from .models import Process, SubProcess, ProcessStep, BOM
-from inventory.models import RawMaterial
+from django.contrib.auth import get_user_model
+from .models import (
+    Process, SubProcess, ProcessStep, BOM,
+    WorkCenterMaster, DailySupervisorStatus, SupervisorActivityLog
+)
+
+User = get_user_model()
 
 
-class RawMaterialBasicSerializer(serializers.ModelSerializer):
-    """Basic raw material serializer for nested relationships"""
-    material_name_display = serializers.CharField(source='material_name', read_only=True)
-    material_type_display = serializers.CharField(source='get_material_type_display', read_only=True)
-    available_quantity = serializers.SerializerMethodField()
+class UserBasicSerializer(serializers.ModelSerializer):
+    """Basic user serializer for nested relationships"""
+    full_name = serializers.CharField(source='get_full_name', read_only=True)
     
     class Meta:
-        model = RawMaterial
-        fields = [
-            'id', 'material_code', 'material_name', 'material_name_display',
-            'material_type', 'material_type_display', 'grade', 'wire_diameter_mm',
-            'weight_kg', 'thickness_mm', 'available_quantity'
-        ]
+        model = User
+        fields = ['id', 'email', 'first_name', 'last_name', 'full_name']
         read_only_fields = fields
-    
-    def get_available_quantity(self, obj):
-        """Get available quantity from RMStockBalance"""
-        try:
-            from inventory.models import RMStockBalance
-            stock_balance = RMStockBalance.objects.get(raw_material=obj)
-            return float(stock_balance.available_quantity)
-        except RMStockBalance.DoesNotExist:
-            return 0.0
 
 
-class ProcessListSerializer(serializers.ModelSerializer):
-    """Optimized serializer for Process list view"""
-    subprocess_count = serializers.SerializerMethodField()
-    process_step_count = serializers.SerializerMethodField()
-    
+class ProcessBasicSerializer(serializers.ModelSerializer):
+    """Basic process serializer"""
     class Meta:
         model = Process
+        fields = ['id', 'name', 'code', 'is_active']
+        read_only_fields = fields
+
+
+class WorkCenterMasterListSerializer(serializers.ModelSerializer):
+    """Serializer for Work Center Master list view"""
+    work_center = ProcessBasicSerializer(read_only=True)
+    default_supervisor = UserBasicSerializer(read_only=True)
+    backup_supervisor = UserBasicSerializer(read_only=True)
+    created_by = UserBasicSerializer(read_only=True)
+    updated_by = UserBasicSerializer(read_only=True)
+    
+    class Meta:
+        model = WorkCenterMaster
         fields = [
-            'id', 'name', 'code', 'description', 'is_active', 
-            'created_at', 'updated_at', 'subprocess_count', 'process_step_count'
+            'id', 'work_center', 'default_supervisor', 'backup_supervisor',
+            'check_in_deadline', 'is_active', 'created_at', 'created_by',
+            'updated_at', 'updated_by'
         ]
         read_only_fields = ['created_at', 'updated_at']
-    
-    def get_subprocess_count(self, obj):
-        return obj.subprocesses.count()
-    
-    def get_process_step_count(self, obj):
-        return obj.process_steps.count()
 
 
-class ProcessDetailSerializer(serializers.ModelSerializer):
-    """Detailed serializer for Process create/update/detail view"""
-    subprocesses = serializers.SerializerMethodField()
-    process_steps = serializers.SerializerMethodField()
-    subprocess_count = serializers.SerializerMethodField()
-    process_step_count = serializers.SerializerMethodField()
+class WorkCenterMasterDetailSerializer(serializers.ModelSerializer):
+    """Detailed serializer for Work Center Master create/update"""
+    work_center_details = ProcessBasicSerializer(source='work_center', read_only=True)
+    default_supervisor_details = UserBasicSerializer(source='default_supervisor', read_only=True)
+    backup_supervisor_details = UserBasicSerializer(source='backup_supervisor', read_only=True)
+    
+    # Write-only fields for creation/update
+    work_center_id = serializers.IntegerField(write_only=True)
+    default_supervisor_id = serializers.IntegerField(write_only=True)
+    backup_supervisor_id = serializers.IntegerField(write_only=True)
     
     class Meta:
-        model = Process
+        model = WorkCenterMaster
         fields = [
-            'id', 'name', 'code', 'description', 'is_active', 
-            'created_at', 'updated_at', 'subprocesses', 'process_steps',
-            'subprocess_count', 'process_step_count'
+            'id', 'work_center', 'work_center_id', 'work_center_details',
+            'default_supervisor', 'default_supervisor_id', 'default_supervisor_details',
+            'backup_supervisor', 'backup_supervisor_id', 'backup_supervisor_details',
+            'check_in_deadline', 'is_active', 'created_at', 'created_by',
+            'updated_at', 'updated_by'
         ]
-        read_only_fields = ['created_at', 'updated_at']
-    
-    def get_subprocesses(self, obj):
-        from .serializers import SubProcessListSerializer
-        return SubProcessListSerializer(obj.subprocesses.all(), many=True).data
-    
-    def get_process_steps(self, obj):
-        from .serializers import ProcessStepListSerializer
-        return ProcessStepListSerializer(obj.process_steps.all(), many=True).data
-    
-    def get_subprocess_count(self, obj):
-        return obj.subprocesses.count()
-    
-    def get_process_step_count(self, obj):
-        return obj.process_steps.count()
-
-
-class SubProcessListSerializer(serializers.ModelSerializer):
-    """Optimized serializer for SubProcess list view"""
-    process_name = serializers.CharField(source='process.name', read_only=True)
-    process_code = serializers.IntegerField(source='process.code', read_only=True)
-    process_step_count = serializers.SerializerMethodField()
-    
-    class Meta:
-        model = SubProcess
-        fields = [
-            'id', 'name', 'description', 'process', 'process_name', 
-            'process_code', 'created_at', 'process_step_count'
-        ]
-        read_only_fields = ['created_at']
-    
-    def get_process_step_count(self, obj):
-        return obj.process_steps.count()
-
-
-class SubProcessDetailSerializer(serializers.ModelSerializer):
-    """Detailed serializer for SubProcess create/update/detail view"""
-    process_name = serializers.CharField(source='process.name', read_only=True)
-    process_code = serializers.IntegerField(source='process.code', read_only=True)
-    process_steps = serializers.SerializerMethodField()
-    process_step_count = serializers.SerializerMethodField()
-    
-    class Meta:
-        model = SubProcess
-        fields = [
-            'id', 'name', 'description', 'process', 'process_name', 
-            'process_code', 'created_at', 'process_steps', 'process_step_count'
-        ]
-        read_only_fields = ['created_at']
-    
-    def get_process_steps(self, obj):
-        from .serializers import ProcessStepListSerializer
-        return ProcessStepListSerializer(obj.process_steps.all(), many=True).data
-    
-    def get_process_step_count(self, obj):
-        return obj.process_steps.count()
-
-
-class ProcessStepListSerializer(serializers.ModelSerializer):
-    """Optimized serializer for ProcessStep list view"""
-    process_name = serializers.CharField(source='process.name', read_only=True)
-    subprocess_name = serializers.CharField(source='subprocess.name', read_only=True)
-    full_path = serializers.CharField(read_only=True)
-    
-    class Meta:
-        model = ProcessStep
-        fields = [
-            'id', 'step_name', 'step_code', 'process', 'process_name',
-            'subprocess', 'subprocess_name', 'sequence_order', 'description',
-            'created_at', 'full_path'
-        ]
-        read_only_fields = ['created_at', 'full_path']
-
-
-class ProcessStepDetailSerializer(serializers.ModelSerializer):
-    """Detailed serializer for ProcessStep create/update/detail view"""
-    process_name = serializers.CharField(source='process.name', read_only=True)
-    subprocess_name = serializers.CharField(source='subprocess.name', read_only=True)
-    full_path = serializers.CharField(read_only=True)
-    bom_items = serializers.SerializerMethodField()
-    
-    class Meta:
-        model = ProcessStep
-        fields = [
-            'id', 'step_name', 'step_code', 'process', 'process_name',
-            'subprocess', 'subprocess_name', 'sequence_order', 'description',
-            'created_at', 'full_path', 'bom_items'
-        ]
-        read_only_fields = ['created_at', 'full_path']
-    
-    def get_bom_items(self, obj):
-        from .serializers import BOMListSerializer
-        return BOMListSerializer(obj.bom_set.all(), many=True).data
+        read_only_fields = ['created_at', 'updated_at', 'created_by', 'updated_by']
     
     def validate(self, data):
-        """Validate that subprocess belongs to the selected process"""
-        subprocess = data.get('subprocess')
-        process = data.get('process')
+        """Validate that default and backup supervisors are different"""
+        default_id = data.get('default_supervisor_id')
+        backup_id = data.get('backup_supervisor_id')
         
-        if subprocess and process and subprocess.process != process:
+        if default_id and backup_id and default_id == backup_id:
             raise serializers.ValidationError(
-                "Subprocess must belong to the selected process"
+                "Default and backup supervisors must be different users"
             )
         
         return data
-
-
-class BOMListSerializer(serializers.ModelSerializer):
-    """Optimized serializer for BOM list view"""
-    process_step_name = serializers.CharField(source='process_step.step_name', read_only=True)
-    process_step_full_path = serializers.CharField(source='process_step.full_path', read_only=True)
-    material = RawMaterialBasicSerializer(read_only=True)
-    main_process_name = serializers.CharField(source='main_process.name', read_only=True)
-    subprocess_name = serializers.CharField(source='subprocess.name', read_only=True)
-    type_display = serializers.CharField(source='get_type_display', read_only=True)
-    
-    class Meta:
-        model = BOM
-        fields = [
-            'id', 'product_code', 'type', 'type_display', 'process_step',
-            'process_step_name', 'process_step_full_path', 'material',
-            'main_process_name', 'subprocess_name', 'is_active',
-            'created_at', 'updated_at'
-        ]
-        read_only_fields = ['created_at', 'updated_at']
-
-
-class BOMDetailSerializer(serializers.ModelSerializer):
-    """Detailed serializer for BOM create/update/detail view"""
-    process_step_name = serializers.CharField(source='process_step.step_name', read_only=True)
-    process_step_full_path = serializers.CharField(source='process_step.full_path', read_only=True)
-    material = RawMaterialBasicSerializer(read_only=True)
-    main_process_name = serializers.CharField(source='main_process.name', read_only=True)
-    subprocess_name = serializers.CharField(source='subprocess.name', read_only=True)
-    type_display = serializers.CharField(source='get_type_display', read_only=True)
-    
-    # Write-only field for creation/update
-    material_code = serializers.CharField(write_only=True)
-    
-    class Meta:
-        model = BOM
-        fields = [
-            'id', 'product_code', 'type', 'type_display', 'process_step',
-            'process_step_name', 'process_step_full_path', 'material', 'material_code',
-            'main_process_name', 'subprocess_name', 'is_active',
-            'created_at', 'updated_at'
-        ]
-        read_only_fields = ['created_at', 'updated_at']
     
     def create(self, validated_data):
-        """Create BOM with material reference"""
-        material_code = validated_data.pop('material_code')
+        """Create Work Center Master"""
+        work_center_id = validated_data.pop('work_center_id')
+        default_supervisor_id = validated_data.pop('default_supervisor_id')
+        backup_supervisor_id = validated_data.pop('backup_supervisor_id')
         
         try:
-            material = RawMaterial.objects.get(material_code=material_code)
-        except RawMaterial.DoesNotExist:
-            raise serializers.ValidationError("Invalid material code reference")
+            work_center = Process.objects.get(id=work_center_id)
+            default_supervisor = User.objects.get(id=default_supervisor_id)
+            backup_supervisor = User.objects.get(id=backup_supervisor_id)
+        except (Process.DoesNotExist, User.DoesNotExist) as e:
+            raise serializers.ValidationError(f"Invalid reference: {str(e)}")
         
-        validated_data['material'] = material
+        # Check if work center master already exists
+        if WorkCenterMaster.objects.filter(work_center=work_center).exists():
+            raise serializers.ValidationError(
+                f"Work Center Master already exists for {work_center.name}"
+            )
+        
+        validated_data.update({
+            'work_center': work_center,
+            'default_supervisor': default_supervisor,
+            'backup_supervisor': backup_supervisor,
+            'created_by': self.context['request'].user
+        })
+        
         return super().create(validated_data)
     
     def update(self, instance, validated_data):
-        """Update BOM with material reference"""
-        if 'material_code' in validated_data:
-            material_code = validated_data.pop('material_code')
+        """Update Work Center Master"""
+        if 'work_center_id' in validated_data:
+            work_center_id = validated_data.pop('work_center_id')
             try:
-                material = RawMaterial.objects.get(material_code=material_code)
-                validated_data['material'] = material
-            except RawMaterial.DoesNotExist:
-                raise serializers.ValidationError("Invalid material code reference")
+                instance.work_center = Process.objects.get(id=work_center_id)
+            except Process.DoesNotExist:
+                raise serializers.ValidationError("Invalid work center reference")
+        
+        if 'default_supervisor_id' in validated_data:
+            supervisor_id = validated_data.pop('default_supervisor_id')
+            try:
+                instance.default_supervisor = User.objects.get(id=supervisor_id)
+            except User.DoesNotExist:
+                raise serializers.ValidationError("Invalid default supervisor reference")
+        
+        if 'backup_supervisor_id' in validated_data:
+            supervisor_id = validated_data.pop('backup_supervisor_id')
+            try:
+                instance.backup_supervisor = User.objects.get(id=supervisor_id)
+            except User.DoesNotExist:
+                raise serializers.ValidationError("Invalid backup supervisor reference")
+        
+        instance.updated_by = self.context['request'].user
         
         return super().update(instance, validated_data)
 
 
-# Utility serializers for dropdown/select options
-class ProcessDropdownSerializer(serializers.ModelSerializer):
-    """Serializer for process dropdown options"""
-    display_name = serializers.SerializerMethodField()
+class DailySupervisorStatusSerializer(serializers.ModelSerializer):
+    """Serializer for Daily Supervisor Status"""
+    work_center = ProcessBasicSerializer(read_only=True)
+    work_center_name = serializers.CharField(source='work_center.name', read_only=True)
+    default_supervisor = UserBasicSerializer(read_only=True)
+    default_supervisor_name = serializers.CharField(source='default_supervisor.get_full_name', read_only=True)
+    active_supervisor = UserBasicSerializer(read_only=True)
+    active_supervisor_name = serializers.CharField(source='active_supervisor.get_full_name', read_only=True)
+    manually_updated_by = UserBasicSerializer(read_only=True)
+    status_color = serializers.ReadOnlyField()
     
     class Meta:
-        model = Process
-        fields = ['id', 'name', 'code', 'display_name', 'is_active']
-    
-    def get_display_name(self, obj):
-        return f"{obj.name} ({obj.code})"
+        model = DailySupervisorStatus
+        fields = [
+            'id', 'date', 'work_center', 'work_center_name', 'default_supervisor',
+            'default_supervisor_name', 'is_present', 'active_supervisor',
+            'active_supervisor_name', 'login_time', 'check_in_deadline',
+            'manually_updated', 'manually_updated_by', 'manually_updated_at',
+            'manual_update_reason', 'status_color', 'created_at', 'updated_at'
+        ]
+        read_only_fields = [
+            'created_at', 'updated_at', 'login_time', 'manually_updated',
+            'manually_updated_by', 'manually_updated_at'
+        ]
 
 
-class SubProcessDropdownSerializer(serializers.ModelSerializer):
-    """Serializer for subprocess dropdown options"""
-    display_name = serializers.SerializerMethodField()
-    
-    class Meta:
-        model = SubProcess
-        fields = ['id', 'name', 'process', 'display_name']
-    
-    def get_display_name(self, obj):
-        return f"{obj.process.name} -> {obj.name}"
-
-
-class ProcessStepDropdownSerializer(serializers.ModelSerializer):
-    """Serializer for process step dropdown options"""
-    display_name = serializers.CharField(source='full_path', read_only=True)
+class DailySupervisorStatusUpdateSerializer(serializers.ModelSerializer):
+    """Serializer for manual supervisor status update"""
+    active_supervisor_id = serializers.IntegerField(write_only=True)
     
     class Meta:
-        model = ProcessStep
-        fields = ['id', 'step_name', 'step_code', 'process', 'subprocess', 'display_name']
+        model = DailySupervisorStatus
+        fields = ['active_supervisor_id', 'manual_update_reason']
+    
+    def update(self, instance, validated_data):
+        """Manually update active supervisor"""
+        supervisor_id = validated_data.pop('active_supervisor_id')
+        
+        try:
+            supervisor = User.objects.get(id=supervisor_id)
+        except User.DoesNotExist:
+            raise serializers.ValidationError("Invalid supervisor reference")
+        
+        instance.active_supervisor = supervisor
+        instance.manually_updated = True
+        instance.manually_updated_by = self.context['request'].user
+        instance.manually_updated_at = timezone.now()
+        instance.manual_update_reason = validated_data.get('manual_update_reason', '')
+        instance.save()
+        
+        return instance
 
 
-class RawMaterialDropdownSerializer(serializers.ModelSerializer):
-    """Serializer for raw material dropdown options"""
-    display_name = serializers.SerializerMethodField()
+class SupervisorActivityLogSerializer(serializers.ModelSerializer):
+    """Serializer for Supervisor Activity Log"""
+    work_center = ProcessBasicSerializer(read_only=True)
+    work_center_name = serializers.CharField(source='work_center.name', read_only=True)
+    active_supervisor = UserBasicSerializer(read_only=True)
+    active_supervisor_name = serializers.CharField(source='active_supervisor.get_full_name', read_only=True)
     
     class Meta:
-        model = RawMaterial
-        fields = ['id', 'material_code', 'material_name', 'material_type', 'grade', 'display_name']
-    
-    def get_display_name(self, obj):
-        return str(obj)  # Uses the __str__ method from the model
+        model = SupervisorActivityLog
+        fields = [
+            'id', 'date', 'work_center', 'work_center_name', 'active_supervisor',
+            'active_supervisor_name', 'mos_handled', 'total_operations',
+            'operations_completed', 'operations_in_progress',
+            'total_processing_time_minutes', 'created_at', 'updated_at'
+        ]
+        read_only_fields = fields
