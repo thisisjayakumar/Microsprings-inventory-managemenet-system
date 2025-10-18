@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import ManufacturingOrder, PurchaseOrder, MOStatusHistory, POStatusHistory, Batch
+from .models import ManufacturingOrder, PurchaseOrder, MOStatusHistory, POStatusHistory, Batch, OutsourcingRequest, OutsourcedItem
 
 
 # Inline for displaying batches within Manufacturing Order admin
@@ -157,7 +157,7 @@ class BatchAdmin(admin.ModelAdmin):
                    'status', 'progress_percentage', 'assigned_operator', 'created_at')
     list_filter = ('status', 'mo__status', 'product_code__product_type', 'created_at')
     search_fields = ('batch_id', 'mo__mo_id', 'product_code__product_code', 'product_code__part_name')
-    readonly_fields = ('batch_id', 'completion_percentage', 'is_overdue', 'remaining_quantity', 
+    readonly_fields = ('batch_id', 'completion_percentage', 'is_overdue_display', 'remaining_quantity_display', 
                       'created_at', 'updated_at')
     ordering = ('-created_at',)
     
@@ -167,13 +167,13 @@ class BatchAdmin(admin.ModelAdmin):
         }),
         ('Quantities', {
             'fields': ('planned_quantity', 'actual_quantity_started', 'actual_quantity_completed', 
-                      'scrap_quantity', 'completion_percentage', 'remaining_quantity')
+                      'scrap_quantity', 'completion_percentage', 'remaining_quantity_display')
         }),
         ('Planning & Timing', {
             'fields': ('planned_start_date', 'planned_end_date', 'actual_start_date', 'actual_end_date')
         }),
         ('Status & Progress', {
-            'fields': ('status', 'progress_percentage', 'current_process_step', 'is_overdue')
+            'fields': ('status', 'progress_percentage', 'current_process_step', 'is_overdue_display')
         }),
         ('Assignment', {
             'fields': ('assigned_operator', 'assigned_supervisor')
@@ -190,3 +190,117 @@ class BatchAdmin(admin.ModelAdmin):
     # Inline display of batches in MO admin
     def get_queryset(self, request):
         return super().get_queryset(request).select_related('mo', 'product_code', 'assigned_operator', 'assigned_supervisor')
+    
+    def is_overdue_display(self, obj):
+        """Safe display of overdue status"""
+        if obj.pk:  # Only for existing objects
+            return "Yes" if obj.is_overdue else "No"
+        return "-"
+    is_overdue_display.short_description = 'Is Overdue'
+    
+    def remaining_quantity_display(self, obj):
+        """Safe display of remaining quantity"""
+        if obj.pk:  # Only for existing objects
+            return obj.remaining_quantity
+        return "-"
+    remaining_quantity_display.short_description = 'Remaining Qty'# Inline for displaying outsourced items within Outsourcing Request admin
+class OutsourcedItemInline(admin.TabularInline):
+    model = OutsourcedItem
+    extra = 0
+    readonly_fields = ('returned_qty', 'returned_kg')
+    fields = ('mo_number', 'product_code', 'qty', 'kg', 'returned_qty', 'returned_kg', 'notes')
+
+
+@admin.register(OutsourcingRequest)
+class OutsourcingRequestAdmin(admin.ModelAdmin):
+    list_display = ('request_id', 'vendor', 'status', 'date_sent', 'expected_return_date', 'is_overdue_display', 'created_by', 'created_at')
+    list_filter = ('status', 'vendor', 'created_by', 'date_sent', 'expected_return_date', 'created_at')
+    search_fields = ('request_id', 'vendor__name', 'vendor_contact_person', 'notes')
+    readonly_fields = ('request_id', 'is_overdue_display', 'total_items_display', 'total_qty_display', 'total_kg_display', 'created_at', 'updated_at')
+    ordering = ('-created_at',)
+    inlines = [OutsourcedItemInline]
+    
+    fieldsets = (
+        ('Basic Information', {
+            'fields': ('request_id', 'vendor', 'status', 'created_by')
+        }),
+        ('Dates', {
+            'fields': ('date_sent', 'expected_return_date', 'collection_date')
+        }),
+        ('Collection Details', {
+            'fields': ('collected_by', 'vendor_contact_person')
+        }),
+        ('Summary', {
+            'fields': ('is_overdue_display', 'total_items_display', 'total_qty_display', 'total_kg_display'),
+            'classes': ('collapse',)
+        }),
+        ('Additional Information', {
+            'fields': ('notes',)
+        }),
+        ('Audit Information', {
+            'fields': ('created_at', 'updated_at'),
+            'classes': ('collapse',)
+        })
+    )
+    
+    def get_queryset(self, request):
+        return super().get_queryset(request).select_related('vendor', 'created_by', 'collected_by')
+    
+    def is_overdue_display(self, obj):
+        """Safe display of overdue status"""
+        if obj.pk:  # Only for existing objects
+            return "Yes" if obj.is_overdue else "No"
+        return "-"
+    is_overdue_display.short_description = 'Is Overdue'
+    
+    def total_items_display(self, obj):
+        """Safe display of total items"""
+        if obj.pk:  # Only for existing objects
+            return obj.total_items
+        return "-"
+    total_items_display.short_description = 'Total Items'
+    
+    def total_qty_display(self, obj):
+        """Safe display of total quantity"""
+        if obj.pk:  # Only for existing objects
+            return obj.total_qty
+        return "-"
+    total_qty_display.short_description = 'Total Qty'
+    
+    def total_kg_display(self, obj):
+        """Safe display of total weight"""
+        if obj.pk:  # Only for existing objects
+            return obj.total_kg
+        return "-"
+    total_kg_display.short_description = 'Total Kg'
+
+
+@admin.register(OutsourcedItem)
+class OutsourcedItemAdmin(admin.ModelAdmin):
+    list_display = ('request', 'mo_number', 'product_code', 'qty', 'kg', 'returned_qty', 'returned_kg', 'notes')
+    list_filter = ('request__status', 'request__vendor', 'request__created_at')
+    search_fields = ('mo_number', 'product_code', 'request__request_id', 'notes')
+    readonly_fields = ('created_at', 'updated_at')
+    ordering = ('-request__created_at', 'mo_number')
+    
+    fieldsets = (
+        ('Request Information', {
+            'fields': ('request',)
+        }),
+        ('Product Details', {
+            'fields': ('mo_number', 'product_code')
+        }),
+        ('Quantities', {
+            'fields': ('qty', 'kg', 'returned_qty', 'returned_kg')
+        }),
+        ('Additional Information', {
+            'fields': ('notes',)
+        }),
+        ('Audit Information', {
+            'fields': ('created_at', 'updated_at'),
+            'classes': ('collapse',)
+        })
+    )
+    
+    def get_queryset(self, request):
+        return super().get_queryset(request).select_related('request', 'request__vendor')

@@ -3,7 +3,7 @@ from rest_framework.routers import DefaultRouter
 from .views import (
     ManufacturingOrderViewSet, PurchaseOrderViewSet,
     MOProcessExecutionViewSet, MOProcessStepExecutionViewSet, MOProcessAlertViewSet,
-    BatchViewSet
+    BatchViewSet, OutsourcingRequestViewSet
 )
 from .batch_process_views import BatchProcessExecutionViewSet
 
@@ -16,6 +16,7 @@ router.register(r'step-executions', MOProcessStepExecutionViewSet, basename='ste
 router.register(r'process-alerts', MOProcessAlertViewSet, basename='processalert')
 router.register(r'batches', BatchViewSet, basename='batch')
 router.register(r'batch-process-executions', BatchProcessExecutionViewSet, basename='batchprocessexecution')
+router.register(r'outsourcing', OutsourcingRequestViewSet, basename='outsourcingrequest')
 
 app_name = 'manufacturing'
 
@@ -47,9 +48,21 @@ Purchase Orders:
 - POST   /api/purchase-orders/{id}/change_status/      - Change PO status
 - GET    /api/purchase-orders/dashboard_stats/         - Get dashboard statistics
 
+Outsourcing Requests:
+- GET    /api/outsourcing/                             - List all outsourcing requests (with filtering, search, pagination)
+- POST   /api/outsourcing/                             - Create new outsourcing request
+- GET    /api/outsourcing/{id}/                        - Get specific outsourcing request details
+- PUT    /api/outsourcing/{id}/                        - Update outsourcing request
+- PATCH  /api/outsourcing/{id}/                        - Partial update outsourcing request
+- DELETE /api/outsourcing/{id}/                        - Delete outsourcing request
+- POST   /api/outsourcing/{id}/send/                   - Send outsourcing request (creates OUT inventory transactions)
+- POST   /api/outsourcing/{id}/return_items/          - Mark request as returned (creates IN inventory transactions)
+- POST   /api/outsourcing/{id}/close/                  - Close outsourcing request
+- GET    /api/outsourcing/summary/                     - Get outsourcing summary statistics
+
 Note: For raw materials and vendors dropdowns, use the existing APIs:
 - Raw Materials: GET /api/inventory/raw-materials/ (from inventory app)
-- Vendors: GET /api/third-party/vendors/?vendor_type=rm_vendor (from third_party app)
+- Vendors: GET /api/third-party/vendors/?vendor_type=outsource_vendor (from third_party app)
 Both APIs return complete data, so no separate detail endpoints are needed.
 
 Query Parameters for Filtering:
@@ -73,6 +86,13 @@ Purchase Orders:
 - end_date: YYYY-MM-DD
 - search: searches in po_id, rm_code, vendor_name
 - ordering: created_at, expected_date, po_id, total_amount (add - for descending)
+
+Outsourcing Requests:
+- status: draft, sent, returned, closed
+- vendor: vendor_id
+- created_by: user_id
+- search: searches in request_id, vendor__name, vendor_contact_person
+- ordering: created_at, expected_return_date, date_sent (add - for descending)
 
 Example API Calls:
 1. Create MO:
@@ -111,4 +131,46 @@ Example API Calls:
 5. Get dashboard stats:
    GET /api/manufacturing-orders/dashboard_stats/
    GET /api/purchase-orders/dashboard_stats/
+
+6. Create Outsourcing Request:
+   POST /api/outsourcing/
+   {
+     "vendor_id": 1,
+     "expected_return_date": "2024-02-15",
+     "vendor_contact_person": "John Smith",
+     "notes": "Coating process",
+     "items_data": [
+       {
+         "mo_number": "MO-20240115-0001",
+         "product_code": "SPRING-001",
+         "qty": 1000,
+         "kg": 5.5,
+         "notes": "Coating required"
+       }
+     ]
+   }
+
+7. Send Outsourcing Request:
+   POST /api/outsourcing/1/send/
+   {
+     "date_sent": "2024-01-20",
+     "vendor_contact_person": "John Smith"
+   }
+
+8. Mark Request as Returned:
+   POST /api/outsourcing/1/return_items/
+   {
+     "collection_date": "2024-02-10",
+     "collected_by_id": 2,
+     "returned_items": [
+       {
+         "id": 1,
+         "returned_qty": 1000,
+         "returned_kg": 5.5
+       }
+     ]
+   }
+
+9. Get Outsourcing Summary:
+   GET /api/outsourcing/summary/
 """

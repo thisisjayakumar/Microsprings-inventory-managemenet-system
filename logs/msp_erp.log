@@ -8862,3 +8862,88 @@ WARNING 2025-10-12 20:42:16,403 log 34615 6157365248 Not Found: /api/manufacturi
 WARNING 2025-10-12 20:44:35,994 log 34615 6157365248 Bad Request: /api/processes/api/work-centers/
 WARNING 2025-10-12 20:46:07,759 log 34615 6241497088 Not Found: /api/manufacturing/api/purchase-orders/dashboard_stats/
 WARNING 2025-10-12 20:46:35,687 log 34615 6207844352 Not Found: /api/manufacturing/api/purchase-orders/dashboard_stats/
+INFO 2025-10-13 17:50:28,157 autoreload 27833 8329109696 Watching for file changes with StatReloader
+WARNING 2025-10-13 17:54:36,684 log 27833 6167343104 Unauthorized: /api/auth/profile/
+INFO 2025-10-15 23:11:21,211 autoreload 9993 8485609664 Watching for file changes with StatReloader
+WARNING 2025-10-15 23:11:27,842 log 9993 6122958848 Unauthorized: /api/auth/profile/
+ERROR 2025-10-15 23:12:18,239 log 9993 6139785216 Internal Server Error: /api/manufacturing/api/manufacturing-orders/rm_store_dashboard/
+Traceback (most recent call last):
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/django/core/handlers/exception.py", line 55, in inner
+    response = get_response(request)
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/django/core/handlers/base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/django/views/decorators/csrf.py", line 65, in _view_wrapper
+    return view_func(request, *args, **kwargs)
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/rest_framework/viewsets.py", line 124, in view
+    return self.dispatch(request, *args, **kwargs)
+           ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/rest_framework/views.py", line 509, in dispatch
+    response = self.handle_exception(exc)
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/rest_framework/views.py", line 469, in handle_exception
+    self.raise_uncaught_exception(exc)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/rest_framework/views.py", line 480, in raise_uncaught_exception
+    raise exc
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/rest_framework/views.py", line 506, in dispatch
+    response = handler(request, *args, **kwargs)
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/manufacturing/views.py", line 982, in rm_store_dashboard
+    'on_hold': on_hold_serializer.data,
+               ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/rest_framework/serializers.py", line 795, in data
+    ret = super().data
+          ^^^^^^^^^^^^
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/rest_framework/serializers.py", line 249, in data
+    self._data = self.to_representation(self.instance)
+                 ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/rest_framework/serializers.py", line 714, in to_representation
+    self.child.to_representation(item) for item in iterable
+                                                   ^^^^^^^^
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/django/db/models/query.py", line 384, in __iter__
+    self._fetch_all()
+    ~~~~~~~~~~~~~~~^^
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/django/db/models/query.py", line 1949, in _fetch_all
+    self._result_cache = list(self._iterable_class(self))
+                         ~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/django/db/models/query.py", line 91, in __iter__
+    results = compiler.execute_sql(
+        chunked_fetch=self.chunked_fetch, chunk_size=self.chunk_size
+    )
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/django/db/models/sql/compiler.py", line 1610, in execute_sql
+    sql, params = self.as_sql()
+                  ~~~~~~~~~~~^^
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/django/db/models/sql/compiler.py", line 766, in as_sql
+    extra_select, order_by, group_by = self.pre_sql_setup(
+                                       ~~~~~~~~~~~~~~~~~~^
+        with_col_aliases=with_col_aliases or bool(combinator),
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/django/db/models/sql/compiler.py", line 85, in pre_sql_setup
+    self.setup_query(with_col_aliases=with_col_aliases)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/django/db/models/sql/compiler.py", line 74, in setup_query
+    self.select, self.klass_info, self.annotation_col_map = self.get_select(
+                                                            ~~~~~~~~~~~~~~~^
+        with_col_aliases=with_col_aliases,
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/django/db/models/sql/compiler.py", line 299, in get_select
+    related_klass_infos = self.get_related_selections(select, select_mask)
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/django/db/models/sql/compiler.py", line 1396, in get_related_selections
+    raise FieldError(
+    ...<6 lines>...
+    )
+django.core.exceptions.FieldError: Invalid field name(s) given in select_related: 'assigned_supervisor'. Choices are: product_code, assigned_rm_store, customer_c_id, gm_approved_by, rm_allocated_by, created_by
+WARNING 2025-10-15 23:12:30,046 log 9993 6156611584 Unauthorized: /api/manufacturing/api/manufacturing-orders/dashboard_stats/
+WARNING 2025-10-15 23:12:32,009 log 9993 6156611584 Not Found: /api/manufacturing/api/purchase-orders/dashboard_stats/
+WARNING 2025-10-15 23:12:49,112 log 9993 6173437952 Not Found: /api/manufacturing/api/purchase-orders/dashboard_stats/
+WARNING 2025-10-15 23:13:02,259 log 9993 6223917056 Not Found: /api/manufacturing/api/purchase-orders/dashboard_stats/
+WARNING 2025-10-15 23:13:29,837 log 9993 6223917056 Unauthorized: /api/manufacturing/api/manufacturing-orders/16/process_tracking/
+WARNING 2025-10-15 23:14:41,636 log 9993 6139785216 Not Found: /api/manufacturing/api/purchase-orders/dashboard_stats/
+WARNING 2025-10-15 23:15:04,575 log 9993 6274396160 Not Found: /api/manufacturing/api/purchase-orders/dashboard_stats/
+WARNING 2025-10-15 23:15:37,558 log 9993 6257569792 Not Found: /api/manufacturing/api/purchase-orders/dashboard_stats/
+WARNING 2025-10-15 23:16:31,209 log 9993 6257569792 Unauthorized: /api/manufacturing/api/manufacturing-orders/15/process_tracking/
+WARNING 2025-10-15 23:16:54,680 log 9993 6223917056 Not Found: /api/manufacturing/api/purchase-orders/dashboard_stats/
+WARNING 2025-10-15 23:17:26,176 log 9993 6223917056 Not Found: /api/manufacturing/api/purchase-orders/dashboard_stats/
+WARNING 2025-10-15 23:18:03,505 log 9993 6291222528 Bad Request: /api/processes/api/work-centers/

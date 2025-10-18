@@ -5,7 +5,8 @@ from decimal import Decimal
 import logging
 from .models import (
     ManufacturingOrder, PurchaseOrder, MOStatusHistory, POStatusHistory,
-    MOProcessExecution, MOProcessStepExecution, MOProcessAlert, Batch
+    MOProcessExecution, MOProcessStepExecution, MOProcessAlert, Batch,
+    OutsourcingRequest, OutsourcedItem
 )
 from products.models import Product
 from inventory.models import RawMaterial
@@ -907,3 +908,191 @@ class BatchDetailSerializer(serializers.ModelSerializer):
         
         instance.save()
         return instance
+
+
+# Outsourcing Serializers
+class OutsourcedItemSerializer(serializers.ModelSerializer):
+    """Serializer for outsourced items"""
+    
+    class Meta:
+        model = OutsourcedItem
+        fields = [
+            'id', 'mo_number', 'product_code', 'qty', 'kg', 
+            'returned_qty', 'returned_kg', 'notes'
+        ]
+    
+    def validate(self, data):
+        """Validate that at least qty or kg is provided"""
+        if not data.get('qty') and not data.get('kg'):
+            raise serializers.ValidationError("Either quantity or weight must be provided")
+        return data
+
+
+class OutsourcedItemCreateSerializer(serializers.ModelSerializer):
+    """Serializer for creating outsourced items"""
+    
+    class Meta:
+        model = OutsourcedItem
+        fields = ['mo_number', 'product_code', 'qty', 'kg', 'notes']
+
+
+class OutsourcingRequestListSerializer(serializers.ModelSerializer):
+    """Optimized serializer for outsourcing request list view"""
+    vendor_name = serializers.CharField(source='vendor.name', read_only=True)
+    created_by_name = serializers.CharField(source='created_by.get_full_name', read_only=True)
+    collected_by_name = serializers.CharField(source='collected_by.get_full_name', read_only=True)
+    status_display = serializers.CharField(source='get_status_display', read_only=True)
+    is_overdue = serializers.ReadOnlyField()
+    total_items = serializers.ReadOnlyField()
+    total_qty = serializers.ReadOnlyField()
+    total_kg = serializers.ReadOnlyField()
+    
+    class Meta:
+        model = OutsourcingRequest
+        fields = [
+            'id', 'request_id', 'vendor', 'vendor_name', 'date_sent', 
+            'expected_return_date', 'status', 'status_display', 'created_by',
+            'created_by_name', 'collected_by', 'collected_by_name', 
+            'collection_date', 'vendor_contact_person', 'is_overdue',
+            'total_items', 'total_qty', 'total_kg', 'created_at', 'updated_at'
+        ]
+        read_only_fields = ['request_id', 'created_at', 'updated_at']
+
+
+class OutsourcingRequestDetailSerializer(serializers.ModelSerializer):
+    """Detailed serializer for outsourcing request create/update/detail view"""
+    vendor_name = serializers.CharField(source='vendor.name', read_only=True)
+    created_by_name = serializers.CharField(source='created_by.get_full_name', read_only=True)
+    collected_by_name = serializers.CharField(source='collected_by.get_full_name', read_only=True)
+    status_display = serializers.CharField(source='get_status_display', read_only=True)
+    is_overdue = serializers.ReadOnlyField()
+    total_items = serializers.ReadOnlyField()
+    total_qty = serializers.ReadOnlyField()
+    total_kg = serializers.ReadOnlyField()
+    items = OutsourcedItemSerializer(many=True, read_only=True)
+    
+    # Write-only fields for creation
+    vendor_id = serializers.IntegerField(write_only=True)
+    collected_by_id = serializers.IntegerField(write_only=True, required=False)
+    items_data = OutsourcedItemCreateSerializer(many=True, write_only=True, required=False)
+    
+    class Meta:
+        model = OutsourcingRequest
+        fields = [
+            'id', 'request_id', 'vendor', 'vendor_id', 'vendor_name', 
+            'date_sent', 'expected_return_date', 'status', 'status_display',
+            'created_by', 'created_by_name', 'collected_by', 'collected_by_id',
+            'collected_by_name', 'collection_date', 'vendor_contact_person',
+            'notes', 'is_overdue', 'total_items', 'total_qty', 'total_kg',
+            'items', 'items_data', 'created_at', 'updated_at'
+        ]
+        read_only_fields = ['request_id', 'created_at', 'updated_at']
+    
+    def create(self, validated_data):
+        """Create outsourcing request with items"""
+        vendor_id = validated_data.pop('vendor_id')
+        collected_by_id = validated_data.pop('collected_by_id', None)
+        items_data = validated_data.pop('items_data', [])
+        
+        try:
+            vendor = Vendor.objects.get(id=vendor_id)
+        except Vendor.DoesNotExist:
+            raise serializers.ValidationError("Invalid vendor reference")
+        
+        # Handle collected_by user
+        collected_by = None
+        if collected_by_id:
+            try:
+                collected_by = User.objects.get(id=collected_by_id)
+            except User.DoesNotExist:
+                raise serializers.ValidationError("Invalid collected_by user reference")
+        
+        # Create the request
+        request = OutsourcingRequest.objects.create(
+            vendor=vendor,
+            collected_by=collected_by,
+            created_by=self.context['request'].user,
+            **validated_data
+        )
+        
+        # Create items
+        for item_data in items_data:
+            OutsourcedItem.objects.create(request=request, **item_data)
+        
+        return request
+    
+    def update(self, instance, validated_data):
+        """Update outsourcing request"""
+        # Handle vendor change
+        if 'vendor_id' in validated_data:
+            vendor_id = validated_data.pop('vendor_id')
+            try:
+                vendor = Vendor.objects.get(id=vendor_id)
+                instance.vendor = vendor
+            except Vendor.DoesNotExist:
+                raise serializers.ValidationError("Invalid vendor reference")
+        
+        # Handle collected_by change
+        if 'collected_by_id' in validated_data:
+            collected_by_id = validated_data.pop('collected_by_id')
+            try:
+                collected_by = User.objects.get(id=collected_by_id) if collected_by_id else None
+                instance.collected_by = collected_by
+            except User.DoesNotExist:
+                raise serializers.ValidationError("Invalid collected_by user reference")
+        
+        # Update other fields
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
+        
+        instance.save()
+        return instance
+
+
+class OutsourcingRequestSendSerializer(serializers.Serializer):
+    """Serializer for sending outsourcing request"""
+    date_sent = serializers.DateField()
+    vendor_contact_person = serializers.CharField(max_length=100, required=False, allow_blank=True)
+    
+    def validate_date_sent(self, value):
+        """Validate date_sent is not in the future"""
+        if value > timezone.now().date():
+            raise serializers.ValidationError("Date sent cannot be in the future")
+        return value
+
+
+class OutsourcingRequestReturnSerializer(serializers.Serializer):
+    """Serializer for marking outsourcing request as returned"""
+    collection_date = serializers.DateField()
+    collected_by_id = serializers.IntegerField()
+    returned_items = serializers.ListField(
+        child=serializers.DictField(),
+        help_text="List of returned items with returned_qty and returned_kg"
+    )
+    
+    def validate_collection_date(self, value):
+        """Validate collection_date is not in the future"""
+        if value > timezone.now().date():
+            raise serializers.ValidationError("Collection date cannot be in the future")
+        return value
+    
+    def validate_collected_by_id(self, value):
+        """Validate collected_by user exists"""
+        try:
+            User.objects.get(id=value)
+        except User.DoesNotExist:
+            raise serializers.ValidationError("Invalid collected_by user reference")
+        return value
+    
+    def validate_returned_items(self, value):
+        """Validate returned items data"""
+        if not value:
+            raise serializers.ValidationError("At least one returned item must be provided")
+        
+        for item in value:
+            if 'id' not in item:
+                raise serializers.ValidationError("Each returned item must have an id")
+            if 'returned_qty' not in item and 'returned_kg' not in item:
+                raise serializers.ValidationError("Each returned item must have returned_qty or returned_kg")
+        
+        return value

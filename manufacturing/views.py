@@ -11,7 +11,8 @@ from .permissions import IsManager, IsManagerOrSupervisor, IsManagerOrRMStore
 
 from .models import (
     ManufacturingOrder, PurchaseOrder, MOStatusHistory, POStatusHistory,
-    MOProcessExecution, MOProcessStepExecution, MOProcessAlert, Batch
+    MOProcessExecution, MOProcessStepExecution, MOProcessAlert, Batch,
+    OutsourcingRequest, OutsourcedItem
 )
 from .serializers import (
     ManufacturingOrderListSerializer, ManufacturingOrderDetailSerializer,
@@ -21,7 +22,9 @@ from .serializers import (
     ProductBasicSerializer, RawMaterialBasicSerializer, VendorBasicSerializer,
     ManufacturingOrderWithProcessesSerializer, MOProcessExecutionListSerializer,
     MOProcessExecutionDetailSerializer, MOProcessStepExecutionSerializer,
-    MOProcessAlertSerializer, BatchListSerializer, BatchDetailSerializer
+    MOProcessAlertSerializer, BatchListSerializer, BatchDetailSerializer,
+    OutsourcingRequestListSerializer, OutsourcingRequestDetailSerializer,
+    OutsourcingRequestSendSerializer, OutsourcingRequestReturnSerializer
 )
 from products.models import Product
 from inventory.models import RawMaterial, RMStockBalance, GRMReceipt
@@ -2308,3 +2311,298 @@ class BatchViewSet(viewsets.ModelViewSet):
                 {'error': 'Batch not found'}, 
                 status=status.HTTP_404_NOT_FOUND
             )
+
+
+class OutsourcingRequestViewSet(viewsets.ModelViewSet):
+    """
+    ViewSet for Outsourcing Requests
+    Supervisors can create/edit their own requests, managers/PH can view all
+    """
+    permission_classes = [IsManagerOrSupervisor]
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
+    filterset_fields = ['status', 'vendor', 'created_by']
+    search_fields = ['request_id', 'vendor__name', 'vendor_contact_person']
+    ordering_fields = ['created_at', 'expected_return_date', 'date_sent']
+    ordering = ['-created_at']
+    
+    def get_queryset(self):
+        """Filter queryset based on user role"""
+        queryset = OutsourcingRequest.objects.select_related(
+            'vendor', 'created_by', 'collected_by'
+        ).prefetch_related('items')
+        
+        # Check user role
+        user_role = self._get_user_role(self.request.user)
+        
+        # Supervisors can only see their own requests
+        if user_role == 'supervisor':
+            queryset = queryset.filter(created_by=self.request.user)
+        
+        # Managers and Production Heads can see all requests
+        return queryset
+    
+    def get_serializer_class(self):
+        """Return appropriate serializer based on action"""
+        if self.action == 'list':
+            return OutsourcingRequestListSerializer
+        return OutsourcingRequestDetailSerializer
+    
+    def _get_user_role(self, user):
+        """Get user role with caching"""
+        from django.core.cache import cache
+        cache_key = f'user_role_{user.id}'
+        user_role = cache.get(cache_key)
+        
+        if not user_role:
+            active_role = user.user_roles.filter(is_active=True).select_related('role').first()
+            user_role = active_role.role.name if active_role else None
+            cache.set(cache_key, user_role, 300)
+        
+        return user_role
+    
+    def perform_create(self, serializer):
+        """Set created_by to current user"""
+        serializer.save(created_by=self.request.user)
+    
+    @action(detail=True, methods=['post'])
+    def send(self, request, pk=None):
+        """Send outsourcing request - creates OUT inventory transactions"""
+        try:
+            outsourcing_request = self.get_object()
+        except OutsourcingRequest.DoesNotExist:
+            return Response(
+                {'error': 'Outsourcing request not found'}, 
+                status=status.HTTP_404_NOT_FOUND
+            )
+        
+        # Validate request can be sent
+        if outsourcing_request.status != 'draft':
+            return Response(
+                {'error': 'Only draft requests can be sent'}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        if not outsourcing_request.items.exists():
+            return Response(
+                {'error': 'Request must have at least one item to send'}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        serializer = OutsourcingRequestSendSerializer(data=request.data)
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        
+        validated_data = serializer.validated_data
+        
+        # Update request status and details
+        outsourcing_request.status = 'sent'
+        outsourcing_request.date_sent = validated_data['date_sent']
+        outsourcing_request.vendor_contact_person = validated_data.get('vendor_contact_person', '')
+        outsourcing_request.save()
+        
+        # Create OUT inventory transactions for each item
+        try:
+            from inventory.models import InventoryTransaction, Location
+            from django.db import transaction
+            
+            with transaction.atomic():
+                # Get default outgoing location (or create one if needed)
+                outgoing_location = Location.objects.filter(
+                    location_type='dispatch'
+                ).first()
+                
+                if not outgoing_location:
+                    # Create a default dispatch location if none exists
+                    outgoing_location = Location.objects.create(
+                        location_name='Dispatch Area',
+                        location_type='dispatch',
+                        is_active=True
+                    )
+                
+                for item in outsourcing_request.items.all():
+                    # Validate item has qty or kg
+                    if not item.qty and not item.kg:
+                        raise ValueError(f"Item {item.id} must have qty or kg")
+                    
+                    # Create OUT transaction
+                    transaction_id = f"OUT-{outsourcing_request.request_id}-{item.id}"
+                    
+                    InventoryTransaction.objects.create(
+                        transaction_id=transaction_id,
+                        transaction_type='outward',
+                        product_id=None,  # We don't have product FK, using product_code string
+                        quantity=item.qty or item.kg or 0,
+                        transaction_datetime=timezone.now(),
+                        created_by=request.user,
+                        reference_type='outsourcing',
+                        reference_id=str(outsourcing_request.id),
+                        notes=f"Outsourcing request {outsourcing_request.request_id} - {item.mo_number} - {item.product_code}",
+                        location_from=outgoing_location
+                    )
+            
+            return Response({
+                'message': 'Request sent successfully',
+                'status': 'sent',
+                'date_sent': outsourcing_request.date_sent
+            })
+            
+        except Exception as e:
+            # Rollback request status if transaction creation fails
+            outsourcing_request.status = 'draft'
+            outsourcing_request.date_sent = None
+            outsourcing_request.save()
+            
+            return Response(
+                {'error': f'Failed to create inventory transactions: {str(e)}'}, 
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+    
+    @action(detail=True, methods=['post'])
+    def return_items(self, request, pk=None):
+        """Mark outsourcing request as returned - creates IN inventory transactions"""
+        try:
+            outsourcing_request = self.get_object()
+        except OutsourcingRequest.DoesNotExist:
+            return Response(
+                {'error': 'Outsourcing request not found'}, 
+                status=status.HTTP_404_NOT_FOUND
+            )
+        
+        # Validate request can be returned
+        if outsourcing_request.status != 'sent':
+            return Response(
+                {'error': 'Only sent requests can be marked as returned'}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        serializer = OutsourcingRequestReturnSerializer(data=request.data)
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        
+        validated_data = serializer.validated_data
+        
+        try:
+            from inventory.models import InventoryTransaction, Location
+            from django.db import transaction
+            
+            with transaction.atomic():
+                # Get default incoming location (or create one if needed)
+                incoming_location = Location.objects.filter(
+                    location_type='fg_store'
+                ).first()
+                
+                if not incoming_location:
+                    # Create a default FG store location if none exists
+                    incoming_location = Location.objects.create(
+                        location_name='Finished Goods Store',
+                        location_type='fg_store',
+                        is_active=True
+                    )
+                
+                # Update returned quantities for items
+                for returned_item_data in validated_data['returned_items']:
+                    item_id = returned_item_data['id']
+                    returned_qty = returned_item_data.get('returned_qty', 0)
+                    returned_kg = returned_item_data.get('returned_kg', 0)
+                    
+                    try:
+                        item = OutsourcedItem.objects.get(id=item_id, request=outsourcing_request)
+                        
+                        # Validate returned quantities don't exceed sent quantities
+                        if item.qty and returned_qty > item.qty:
+                            raise ValueError(f"Returned qty ({returned_qty}) cannot exceed sent qty ({item.qty}) for item {item.id}")
+                        if item.kg and returned_kg > item.kg:
+                            raise ValueError(f"Returned kg ({returned_kg}) cannot exceed sent kg ({item.kg}) for item {item.id}")
+                        
+                        # Update item returned quantities
+                        item.returned_qty = returned_qty
+                        item.returned_kg = returned_kg
+                        item.save()
+                        
+                        # Create IN transaction
+                        transaction_id = f"IN-{outsourcing_request.request_id}-{item.id}"
+                        
+                        InventoryTransaction.objects.create(
+                            transaction_id=transaction_id,
+                            transaction_type='inward',
+                            product_id=None,  # We don't have product FK, using product_code string
+                            quantity=returned_qty or returned_kg or 0,
+                            transaction_datetime=timezone.now(),
+                            created_by=request.user,
+                            reference_type='outsourcing',
+                            reference_id=str(outsourcing_request.id),
+                            notes=f"Outsourcing return {outsourcing_request.request_id} - {item.mo_number} - {item.product_code}",
+                            location_to=incoming_location
+                        )
+                        
+                    except OutsourcedItem.DoesNotExist:
+                        raise ValueError(f"Item {item_id} not found in this request")
+                
+                # Update request status
+                outsourcing_request.status = 'returned'
+                outsourcing_request.collection_date = validated_data['collection_date']
+                outsourcing_request.collected_by_id = validated_data['collected_by_id']
+                outsourcing_request.save()
+            
+            return Response({
+                'message': 'Items returned successfully',
+                'status': 'returned',
+                'collection_date': outsourcing_request.collection_date
+            })
+            
+        except Exception as e:
+            return Response(
+                {'error': f'Failed to process return: {str(e)}'}, 
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+    
+    @action(detail=True, methods=['post'])
+    def close(self, request, pk=None):
+        """Close outsourcing request"""
+        try:
+            outsourcing_request = self.get_object()
+        except OutsourcingRequest.DoesNotExist:
+            return Response(
+                {'error': 'Outsourcing request not found'}, 
+                status=status.HTTP_404_NOT_FOUND
+            )
+        
+        # Validate request can be closed
+        if outsourcing_request.status != 'returned':
+            return Response(
+                {'error': 'Only returned requests can be closed'}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        outsourcing_request.status = 'closed'
+        outsourcing_request.save()
+        
+        return Response({
+            'message': 'Request closed successfully',
+            'status': 'closed'
+        })
+    
+    @action(detail=False, methods=['get'])
+    def summary(self, request):
+        """Get outsourcing summary statistics"""
+        queryset = self.get_queryset()
+        
+        # Calculate summary stats
+        total_requests = queryset.count()
+        pending_returns = queryset.filter(status='sent').count()
+        overdue_returns = queryset.filter(
+            status='sent',
+            expected_return_date__lt=timezone.now().date()
+        ).count()
+        
+        # Recent requests (last 30 days)
+        recent_requests = queryset.filter(
+            created_at__gte=timezone.now() - timezone.timedelta(days=30)
+        ).count()
+        
+        return Response({
+            'total_requests': total_requests,
+            'pending_returns': pending_returns,
+            'overdue_returns': overdue_returns,
+            'recent_requests': recent_requests
+        })
