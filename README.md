@@ -720,6 +720,13 @@ class ScheduledReport(models.Model):
     next_run = models.DateTimeField(null=True, blank=True)
 ```
 
+Sync System:
+1. Validate [ python3 manage.py validate_sync --action validate ]
+2. Sync [ python3 manage.py validate_sync --action sync ]
+3. Repair Sync - [ python3 manage.py fix_schema --action repair --backup ]
+4. Dry run [ python3 manage.py validate_sync --action sync --dry-run ]
+5.Report [ manage.py validate_sync --action report --output-file sync_report.json ]
+
 ---
 
 ## Key Architectural Benefits

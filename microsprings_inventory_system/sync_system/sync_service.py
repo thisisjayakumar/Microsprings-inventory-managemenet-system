@@ -96,20 +96,40 @@ class DBSyncService:
         table_name = self._get_table_name(item['model'])
         fields = item['data']['fields']
         pk = item['data']['pk']
-        
+
+        # Get actual database column names for this table
+        cursor.execute(f"DESCRIBE {table_name}")
+        db_column_info = {row[0]: row[1] for row in cursor.fetchall()}
+
+        # Map Django field names to database column names
+        db_columns = ['id']
+        db_values = [pk]
+
+        for field_name, field_value in fields.items():
+            # Check if this field exists in the database
+            if field_name in db_column_info:
+                db_columns.append(field_name)
+                db_values.append(field_value)
+            elif f"{field_name}_id" in db_column_info:
+                # Try with _id suffix for foreign keys
+                db_columns.append(f"{field_name}_id")
+                db_values.append(field_value)
+            else:
+                # Skip fields that don't exist in the database
+                logger.warning(f"Skipping field {field_name} for table {table_name} - not found in database")
+                continue
+
         # Build INSERT ... ON DUPLICATE KEY UPDATE query
-        columns = ['id'] + list(fields.keys())
-        placeholders = ['%s'] * len(columns)
-        updates = [f"{col}=VALUES({col})" for col in columns if col != 'id']
-        
+        placeholders = ['%s'] * len(db_columns)
+        updates = [f"{col}=VALUES({col})" for col in db_columns if col != 'id']
+
         query = f"""
-            INSERT INTO {table_name} ({', '.join(columns)})
+            INSERT INTO {table_name} ({', '.join(db_columns)})
             VALUES ({', '.join(placeholders)})
             ON DUPLICATE KEY UPDATE {', '.join(updates)}
         """
-        
-        values = [pk] + list(fields.values())
-        cursor.execute(query, values)
+
+        cursor.execute(query, db_values)
     
     def _get_table_name(self, model_path):
         """Convert model path to database table name"""

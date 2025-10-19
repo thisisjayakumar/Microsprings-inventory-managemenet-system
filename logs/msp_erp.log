@@ -8947,3 +8947,4 @@ WARNING 2025-10-15 23:16:31,209 log 9993 6257569792 Unauthorized: /api/manufactu
 WARNING 2025-10-15 23:16:54,680 log 9993 6223917056 Not Found: /api/manufacturing/api/purchase-orders/dashboard_stats/
 WARNING 2025-10-15 23:17:26,176 log 9993 6223917056 Not Found: /api/manufacturing/api/purchase-orders/dashboard_stats/
 WARNING 2025-10-15 23:18:03,505 log 9993 6291222528 Bad Request: /api/processes/api/work-centers/
+INFO 2025-10-18 23:17:12,359 sync_service 33970 8697225408 Database sync service started
