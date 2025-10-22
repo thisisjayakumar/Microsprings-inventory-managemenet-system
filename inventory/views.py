@@ -11,7 +11,8 @@ from django.utils import timezone
 from products.models import Product
 from .models import (
     RMStockBalance, RawMaterial, InventoryTransaction,
-    GRMReceipt, HeatNumber, RMStockBalanceHeat, InventoryTransactionHeat
+    GRMReceipt, HeatNumber, RMStockBalanceHeat, InventoryTransactionHeat,
+    HandoverIssue
 )
 from .serializers import (
     ProductListSerializer, ProductCreateUpdateSerializer,
@@ -19,7 +20,8 @@ from .serializers import (
     ProductStockDashboardSerializer, RawMaterialBasicSerializer,
     InventoryTransactionSerializer, GRMReceiptSerializer, GRMReceiptCreateSerializer,
     GRMReceiptListSerializer, HeatNumberSerializer, RMStockBalanceHeatSerializer,
-    InventoryTransactionHeatSerializer
+    InventoryTransactionHeatSerializer, HeatNumberHandoverSerializer,
+    HandoverIssueSerializer, HandoverIssueCreateSerializer, HandoverVerifySerializer
 )
 from .transaction_manager import InventoryTransactionManager
 from authentication.models import UserRole, Role
@@ -177,20 +179,31 @@ class RMStockBalanceViewSet(viewsets.ModelViewSet):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-class RawMaterialViewSet(viewsets.ReadOnlyModelViewSet):
+class RawMaterialViewSet(viewsets.ModelViewSet):
     """
-    ReadOnly ViewSet for RawMaterial - for dropdown/selection purposes
-    Accessible by RM Store, Manager, and Production Head users
+    ViewSet for RawMaterial - READ for all authenticated users, CREATE/UPDATE/DELETE for RM Store users
     """
-    permission_classes = [IsAuthenticated]  # Allow all authenticated users to read raw materials
     queryset = RawMaterial.objects.all()
-    serializer_class = RawMaterialBasicSerializer
     pagination_class = None
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     filterset_fields = ['material_type', 'material_name']
     search_fields = ['material_code', 'material_name', 'grade']
     ordering_fields = ['material_code', 'material_name']
     ordering = ['material_code']
+    
+    def get_permissions(self):
+        """Allow read for all authenticated users, but create/update/delete only for RM Store users"""
+        if self.action in ['list', 'retrieve', 'dropdown']:
+            return [IsAuthenticated()]
+        return [IsAuthenticated(), IsRMStoreUser()]
+    
+    def get_serializer_class(self):
+        """Use different serializers for different actions"""
+        if self.action in ['create', 'update', 'partial_update']:
+            from .serializers import RawMaterialCreateSerializer
+            return RawMaterialCreateSerializer
+        from .serializers import RawMaterialBasicSerializer
+        return RawMaterialBasicSerializer
     
     @action(detail=False, methods=['get'])
     def dropdown(self, request):
@@ -541,3 +554,153 @@ class InventoryTransactionHeatViewSet(viewsets.ReadOnlyModelViewSet):
             'inventory_transaction', 'heat_number', 'heat_number__raw_material',
             'heat_number__grm_receipt'
         )
+
+
+class IsCoilingSupervisor(permissions.BasePermission):
+    """
+    Custom permission to only allow Coiling Supervisors to access handover verification
+    """
+    
+    def has_permission(self, request, view):
+        if not request.user or not request.user.is_authenticated:
+            return False
+        
+        # Check if user has supervisor role and is assigned to coiling department
+        try:
+            user_roles = UserRole.objects.filter(
+                user=request.user, 
+                is_active=True,
+                role__name='supervisor'
+            ).exists()
+            
+            if user_roles:
+                # Check if user is specifically assigned to coiling department
+                from authentication.models import ProcessSupervisor
+                coiling_supervisor = ProcessSupervisor.objects.filter(
+                    supervisor=request.user,
+                    department='coiling',
+                    is_active=True
+                ).exists()
+                return coiling_supervisor
+            
+            return False
+        except:
+            return False
+
+
+@api_view(['GET'])
+@permission_classes([IsCoilingSupervisor])
+def pending_handover_list(request):
+    """
+    Get list of heat numbers pending handover verification for Coiling department
+    """
+    try:
+        # Get heat numbers with pending handover status
+        heat_numbers = HeatNumber.objects.filter(
+            handover_status='pending_handover',
+            is_available=True
+        ).select_related(
+            'raw_material', 'grm_receipt', 'grm_receipt__purchase_order'
+        ).order_by('-created_at')
+        
+        serializer = HeatNumberHandoverSerializer(heat_numbers, many=True)
+        
+        return Response({
+            'success': True,
+            'data': serializer.data,
+            'count': heat_numbers.count()
+        }, status=status.HTTP_200_OK)
+        
+    except Exception as e:
+        return Response({
+            'success': False,
+            'error': str(e)
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+@api_view(['POST'])
+@permission_classes([IsCoilingSupervisor])
+def verify_handover(request):
+    """
+    Verify handover of raw material coil to Coiling department
+    """
+    try:
+        serializer = HandoverVerifySerializer(data=request.data, context={'request': request})
+        
+        if serializer.is_valid():
+            heat_number = serializer.save()
+            
+            return Response({
+                'success': True,
+                'message': f'Handover verified successfully for heat number {heat_number.heat_number}',
+                'data': HeatNumberHandoverSerializer(heat_number).data
+            }, status=status.HTTP_200_OK)
+        else:
+            return Response({
+                'success': False,
+                'errors': serializer.errors
+            }, status=status.HTTP_400_BAD_REQUEST)
+            
+    except Exception as e:
+        return Response({
+            'success': False,
+            'error': str(e)
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+@api_view(['POST'])
+@permission_classes([IsCoilingSupervisor])
+def report_handover_issue(request):
+    """
+    Report an issue with raw material handover
+    """
+    try:
+        serializer = HandoverIssueCreateSerializer(data=request.data, context={'request': request})
+        
+        if serializer.is_valid():
+            issue = serializer.save()
+            
+            return Response({
+                'success': True,
+                'message': f'Issue reported successfully for heat number {issue.heat_number.heat_number}',
+                'data': HandoverIssueSerializer(issue).data
+            }, status=status.HTTP_201_CREATED)
+        else:
+            return Response({
+                'success': False,
+                'errors': serializer.errors
+            }, status=status.HTTP_400_BAD_REQUEST)
+            
+    except Exception as e:
+        return Response({
+            'success': False,
+            'error': str(e)
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+@api_view(['GET'])
+@permission_classes([IsCoilingSupervisor])
+def handover_issues_list(request):
+    """
+    Get list of reported handover issues
+    """
+    try:
+        issues = HandoverIssue.objects.filter(
+            is_resolved=False
+        ).select_related(
+            'heat_number', 'heat_number__raw_material', 'reported_by'
+        ).order_by('-reported_at')
+        
+        serializer = HandoverIssueSerializer(issues, many=True)
+        
+        return Response({
+            'success': True,
+            'data': serializer.data,
+            'count': issues.count()
+        }, status=status.HTTP_200_OK)
+        
+    except Exception as e:
+        return Response({
+            'success': False,
+            'error': str(e)
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

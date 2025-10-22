@@ -4,7 +4,8 @@ from django.db import models
 from django.forms import TextInput, Textarea
 from .models import (
     RawMaterial, Location, InventoryTransaction, RMStockBalance,
-    GRMReceipt, HeatNumber, RMStockBalanceHeat, InventoryTransactionHeat
+    GRMReceipt, HeatNumber, RMStockBalanceHeat, InventoryTransactionHeat,
+    HandoverIssue
 )
 
 
@@ -243,7 +244,8 @@ class GRMReceiptAdmin(admin.ModelAdmin):
 class HeatNumberAdmin(admin.ModelAdmin):
     list_display = (
         'heat_number', 'grm_receipt', 'raw_material', 'total_weight_kg', 
-        'coils_received', 'sheets_received', 'is_available', 'get_available_quantity'
+        'coils_received', 'sheets_received', 'is_available', 'handover_status',
+        'get_available_quantity'
     )
     list_filter = ('is_available', 'raw_material__material_type', 'grm_receipt__status', 'created_at')
     search_fields = ('heat_number', 'raw_material__material_code', 'grm_receipt__grm_number')
@@ -272,6 +274,10 @@ class HeatNumberAdmin(admin.ModelAdmin):
         }),
         ('Status', {
             'fields': ('is_available',)
+        }),
+        ('Handover Verification', {
+            'fields': ('handover_status', 'verified_at', 'verified_by'),
+            'classes': ('collapse',)
         }),
         ('Timestamps', {
             'fields': ('created_at', 'updated_at'),
@@ -357,6 +363,37 @@ class InventoryTransactionHeatAdmin(admin.ModelAdmin):
     def get_queryset(self, request):
         return super().get_queryset(request).select_related(
             'inventory_transaction', 'heat_number', 'heat_number__raw_material'
+        )
+
+
+@admin.register(HandoverIssue)
+class HandoverIssueAdmin(admin.ModelAdmin):
+    list_display = (
+        'id', 'heat_number', 'issue_type', 'actual_weight', 'reported_by', 
+        'reported_at', 'is_resolved', 'resolved_at'
+    )
+    list_filter = ('issue_type', 'is_resolved', 'reported_at', 'reported_by')
+    search_fields = ('heat_number__heat_number', 'heat_number__raw_material__material_code', 'remarks')
+    ordering = ('-reported_at',)
+    readonly_fields = ('reported_at',)
+    raw_id_fields = ('heat_number', 'reported_by', 'resolved_by')
+    
+    fieldsets = (
+        ('Issue Details', {
+            'fields': ('heat_number', 'issue_type', 'actual_weight', 'remarks')
+        }),
+        ('Reporting', {
+            'fields': ('reported_by', 'reported_at')
+        }),
+        ('Resolution', {
+            'fields': ('is_resolved', 'resolved_at', 'resolved_by', 'resolution_notes'),
+            'classes': ('collapse',)
+        }),
+    )
+    
+    def get_queryset(self, request):
+        return super().get_queryset(request).select_related(
+            'heat_number', 'heat_number__raw_material', 'reported_by', 'resolved_by'
         )
 
 

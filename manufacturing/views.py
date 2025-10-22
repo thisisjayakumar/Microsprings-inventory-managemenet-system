@@ -12,7 +12,8 @@ from .permissions import IsManager, IsManagerOrSupervisor, IsManagerOrRMStore
 from .models import (
     ManufacturingOrder, PurchaseOrder, MOStatusHistory, POStatusHistory,
     MOProcessExecution, MOProcessStepExecution, MOProcessAlert, Batch,
-    OutsourcingRequest, OutsourcedItem
+    OutsourcingRequest, OutsourcedItem, MOApprovalWorkflow, ProcessAssignment,
+    BatchAllocation, ProcessExecutionLog, FinishedGoodsVerification
 )
 from .serializers import (
     ManufacturingOrderListSerializer, ManufacturingOrderDetailSerializer,
@@ -27,7 +28,7 @@ from .serializers import (
     OutsourcingRequestSendSerializer, OutsourcingRequestReturnSerializer
 )
 from products.models import Product
-from inventory.models import RawMaterial, RMStockBalance, GRMReceipt
+from inventory.models import RawMaterial, RMStockBalance, GRMReceipt, HeatNumber
 from inventory.transaction_manager import InventoryTransactionManager
 from third_party.models import Vendor
 from processes.models import Process
@@ -711,83 +712,22 @@ class ManufacturingOrderViewSet(viewsets.ModelViewSet):
 
     @action(detail=True, methods=['patch'])
     def update_mo_details(self, request, pk=None):
-        """Update MO supervisor and shift (Manager only)"""
+        """Unified endpoint for all MO operations - updates, approvals, status changes"""
         mo = self.get_object()
         
-        # Check if user is manager or production_head
-        user_roles = request.user.user_roles.values_list('role__name', flat=True)
-        if not any(role in ['manager', 'production_head'] for role in user_roles):
-            return Response(
-                {'error': 'Only managers or production heads can update MO details'}, 
-                status=status.HTTP_403_FORBIDDEN
-            )
+        # Get action type from request data
+        action = request.data.get('action', 'update')
         
-        # Only allow updates for certain statuses
-        if mo.status not in ['on_hold', 'rm_allocated']:
-            return Response(
-                {'error': f'Cannot update MO in {mo.status} status. MO must be in On Hold or RM Allocated status to update.'}, 
-                status=status.HTTP_400_BAD_REQUEST
-            )
-        
-        # Update allowed fields
-        # NOTE: assigned_supervisor removed from MO - supervisors are now assigned at process execution level
-        allowed_fields = ['assigned_rm_store', 'shift']
-        updated_fields = []
-        
-        for field in allowed_fields:
-            if field in request.data:
-                if field == 'assigned_rm_store':
-                    # Validate rm_store user exists and has rm_store role
-                    rm_store_id = request.data[field]
-                    
-                    # Handle empty string or None (clearing the rm_store user)
-                    if not rm_store_id or rm_store_id == '':
-                        mo.assigned_rm_store = None
-                        updated_fields.append(field)
-                    else:
-                        try:
-                            rm_store_user = User.objects.get(id=rm_store_id)
-                            if not rm_store_user.user_roles.filter(role__name='rm_store').exists():
-                                return Response(
-                                    {'error': 'Selected user is not an RM store user'}, 
-                                    status=status.HTTP_400_BAD_REQUEST
-                                )
-                            mo.assigned_rm_store = rm_store_user
-                            updated_fields.append(field)
-                        except User.DoesNotExist:
-                            return Response(
-                                {'error': 'RM store user not found'}, 
-                                status=status.HTTP_400_BAD_REQUEST
-                            )
-                elif field == 'shift':
-                    shift_value = request.data[field]
-                    # Handle empty string or None (clearing the shift)
-                    if not shift_value or shift_value == '':
-                        mo.shift = None
-                        updated_fields.append(field)
-                    elif shift_value in ['I', 'II', 'III']:
-                        mo.shift = shift_value
-                        updated_fields.append(field)
-                    else:
-                        return Response(
-                            {'error': 'Invalid shift value'}, 
-                            status=status.HTTP_400_BAD_REQUEST
-                        )
-        
-        if updated_fields:
-            mo.save()
-            
-        serializer = ManufacturingOrderWithProcessesSerializer(mo)
-        return Response({
-            'message': f'Updated fields: {", ".join(updated_fields)}',
-            'mo': serializer.data
-        })
-
-    @action(detail=True, methods=['post'])
-    def approve_mo(self, request, pk=None):
-        """Approve MO and notify supervisor (Manager only)"""
-        mo = self.get_object()
-        
+        # Handle different actions
+        if action == 'approve':
+            return self._handle_approve_mo(mo, request)
+        elif action == 'start_production':
+            return self._handle_start_production(mo, request)
+        else:
+            return self._handle_update_details(mo, request)
+    
+    def _handle_approve_mo(self, mo, request):
+        """Handle MO approval by manager (on_hold → mo_approved)"""
         # Check if user is manager or production_head
         user_roles = request.user.user_roles.values_list('role__name', flat=True)
         if not any(role in ['manager', 'production_head'] for role in user_roles):
@@ -796,21 +736,53 @@ class ManufacturingOrderViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_403_FORBIDDEN
             )
         
-        # Check current status - can only approve when RM is allocated
-        if mo.status != 'rm_allocated':
+        # Check current status
+        if mo.status != 'on_hold':
             return Response(
-                {'error': f'Cannot approve MO in {mo.status} status. MO must be in RM Allocated status to approve.'}, 
+                {'error': f'Cannot approve MO in {mo.status} status. MO must be in On Hold status.'}, 
                 status=status.HTTP_400_BAD_REQUEST
             )
         
-        # Check if supervisor is assigned
-        if not mo.assigned_supervisor:
+        # Update status
+        old_status = mo.status
+        mo.status = 'mo_approved'
+        mo.gm_approved_at = timezone.now()
+        mo.gm_approved_by = request.user
+        mo.save()
+        
+        # Create status history
+        MOStatusHistory.objects.create(
+            mo=mo,
+            from_status=old_status,
+            to_status='mo_approved',
+            changed_by=request.user,
+            notes=request.data.get('notes', 'MO approved by manager')
+        )
+        
+        serializer = ManufacturingOrderWithProcessesSerializer(mo)
+        return Response({
+            'message': 'MO approved successfully!',
+            'mo': serializer.data
+        })
+    
+    def _handle_start_production(self, mo, request):
+        """Handle production start (mo_approved → in_progress) - Production Head only"""
+        # Check if user is production_head only
+        user_roles = request.user.user_roles.values_list('role__name', flat=True)
+        if 'production_head' not in user_roles:
             return Response(
-                {'error': 'Cannot approve MO without assigned supervisor'}, 
+                {'error': 'Only production heads can start production'}, 
+                status=status.HTTP_403_FORBIDDEN
+            )
+        
+        # Check current status
+        if mo.status != 'mo_approved':
+            return Response(
+                {'error': f'Cannot start production for MO in {mo.status} status. MO must be approved first.'}, 
                 status=status.HTTP_400_BAD_REQUEST
             )
         
-        # Update MO status to in_progress and set actual start date
+        # Update status
         old_status = mo.status
         mo.status = 'in_progress'
         mo.actual_start_date = timezone.now()
@@ -868,81 +840,88 @@ class ManufacturingOrderViewSet(viewsets.ModelViewSet):
             from_status=old_status,
             to_status='in_progress',
             changed_by=request.user,
-            notes=request.data.get('notes', 'MO approved by manager - Production started')
+            notes=request.data.get('notes', 'Production started by production head')
         )
         
-        # NOTE: Supervisor notifications now handled at process execution level
-        # since supervisors are no longer assigned at MO level
-        # from notifications.models import Alert, AlertRule
-        
-        # # Create or get alert rule for production start notifications
-        # alert_rule, created = AlertRule.objects.get_or_create(
-        #     name='Production Start Notification',
-        #     alert_type='custom',
-        #     defaults={
-        #         'trigger_condition': {'event': 'production_started'},
-        #         'notification_methods': ['in_app']
-        #     }
-        # )
+        # Create notification for RM Store users
+        try:
+            from notifications.models import Alert, AlertRule
+            from django.contrib.auth.models import Group
+            
+            # Get all RM Store users
+            rm_store_users = User.objects.filter(user_roles__role__name='rm_store', user_roles__is_active=True)
+            
+            # Create alerts for each RM Store user
+            for rm_user in rm_store_users:
+                Alert.objects.create(
+                    user=rm_user,
+                    alert_type='info',
+                    title='New MO Started Production',
+                    message=f'MO {mo.mo_id} has started production and requires RM allocation.',
+                    reference_type='mo',
+                    reference_id=str(mo.id),
+                    created_by=request.user
+                )
+        except Exception as e:
+            # Don't fail the main operation if notification fails
+            print(f"Failed to create RM Store notifications: {e}")
         
         serializer = ManufacturingOrderWithProcessesSerializer(mo)
         return Response({
-            'message': 'MO approved successfully and supervisor notified',
+            'message': 'Production started successfully! RM Store has been notified.',
             'mo': serializer.data
         })
-
-    @action(detail=True, methods=['post'], permission_classes=[IsAuthenticated])
-    def rm_approve(self, request, pk=None):
-        """Approve MO for RM allocation (RM Store user only)"""
-        mo = self.get_object()
-        
-        # Check if user is rm_store
+    
+    def _handle_update_details(self, mo, request):
+        """Handle regular field updates (shift, etc.) - Manager only"""
+        # Check if user is manager
         user_roles = request.user.user_roles.values_list('role__name', flat=True)
-        if 'rm_store' not in user_roles:
+        if 'manager' not in user_roles:
             return Response(
-                {'error': 'Only RM store users can approve RM allocation'}, 
+                {'error': 'Only managers can update MO details'}, 
                 status=status.HTTP_403_FORBIDDEN
             )
         
-        # Check current status - can only approve when on_hold
-        if mo.status != 'on_hold':
+        # Only allow updates for certain statuses
+        if mo.status not in ['on_hold', 'mo_approved']:
             return Response(
-                {'error': f'Cannot approve RM allocation for MO in {mo.status} status. MO must be in On Hold status.'}, 
+                {'error': f'Cannot update MO in {mo.status} status.'}, 
                 status=status.HTTP_400_BAD_REQUEST
             )
         
-        # Check if assigned to this rm_store user
-        if mo.assigned_rm_store != request.user:
-            return Response(
-                {'error': 'You can only approve MOs assigned to you'}, 
-                status=status.HTTP_403_FORBIDDEN
-            )
+        # Update allowed fields
+        allowed_fields = ['shift']
+        updated_fields = []
         
-        # Update MO status to rm_allocated
-        old_status = mo.status
-        mo.status = 'rm_allocated'
-        mo.rm_allocated_at = timezone.now()
-        mo.rm_allocated_by = request.user
-        mo.save()
+        for field in allowed_fields:
+            if field in request.data:
+                if field == 'shift':
+                    shift_value = request.data[field]
+                    if not shift_value or shift_value == '':
+                        mo.shift = None
+                        updated_fields.append(field)
+                    elif shift_value in ['I', 'II', 'III']:
+                        mo.shift = shift_value
+                        updated_fields.append(field)
+                    else:
+                        return Response(
+                            {'error': 'Invalid shift value'}, 
+                            status=status.HTTP_400_BAD_REQUEST
+                        )
         
-        # Create status history
-        MOStatusHistory.objects.create(
-            mo=mo,
-            from_status=old_status,
-            to_status='rm_allocated',
-            changed_by=request.user,
-            notes=request.data.get('notes', 'Raw materials verified and allocated by RM store')
-        )
-        
+        if updated_fields:
+            mo.save()
+            
         serializer = ManufacturingOrderWithProcessesSerializer(mo)
         return Response({
-            'message': 'RM allocation approved successfully!',
+            'message': f'Updated fields: {", ".join(updated_fields)}' if updated_fields else 'No changes made',
             'mo': serializer.data
         })
 
+
     @action(detail=False, methods=['get'], permission_classes=[IsAuthenticated])
     def rm_store_dashboard(self, request):
-        """Get MOs assigned to current RM Store user grouped by status"""
+        """Get all MOs grouped by status for RM Store users"""
         # Check if user is rm_store
         user_roles = request.user.user_roles.values_list('role__name', flat=True)
         if 'rm_store' not in user_roles:
@@ -951,38 +930,36 @@ class ManufacturingOrderViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_403_FORBIDDEN
             )
         
-        # Get MOs assigned to this RM store user
-        base_queryset = ManufacturingOrder.objects.filter(
-            assigned_rm_store=request.user
-        ).select_related(
+        # Get all MOs (no assignment filtering - all RM store users see all MOs)
+        base_queryset = ManufacturingOrder.objects.select_related(
             'product_code', 'product_code__customer_c_id', 'customer_c_id',
-            'assigned_supervisor', 'created_by'
+            'created_by'
         ).prefetch_related('batches')
         
-        # Separate by status
-        on_hold_mos = base_queryset.filter(status='on_hold').order_by('-created_at')
+        # Separate by status - simplified workflow
+        # MOs approved by manager and ready for RM work
+        approved_mos = base_queryset.filter(status='mo_approved').order_by('-created_at')
         # In progress MOs that don't have RM allocation completed yet
         in_progress_mos = base_queryset.filter(status='in_progress', rm_allocated_at__isnull=True).order_by('-created_at')
-        # For RM Store, "completed" means rm_allocated OR in_progress with rm_allocated_at set OR fully completed
+        # For RM Store, "completed" means in_progress with rm_allocated_at set OR fully completed
         completed_mos = base_queryset.filter(
-            Q(status='rm_allocated') | 
             Q(status='completed') | 
             Q(status='in_progress', rm_allocated_at__isnull=False)
         ).order_by('-created_at')
         
         # Serialize data
-        on_hold_serializer = ManufacturingOrderListSerializer(on_hold_mos, many=True)
+        approved_serializer = ManufacturingOrderListSerializer(approved_mos, many=True)
         in_progress_serializer = ManufacturingOrderListSerializer(in_progress_mos, many=True)
         completed_serializer = ManufacturingOrderListSerializer(completed_mos, many=True)
         
         return Response({
             'summary': {
-                'pending_approvals': on_hold_mos.count(),
+                'pending_approvals': approved_mos.count(),
                 'in_progress': in_progress_mos.count(),
                 'completed': completed_mos.count(),
                 'total': base_queryset.count()
             },
-            'on_hold': on_hold_serializer.data,
+            'on_hold': approved_serializer.data,  # Keep key name for backward compatibility
             'in_progress': in_progress_serializer.data,
             'completed': completed_serializer.data
         })
@@ -1448,6 +1425,74 @@ class MOProcessExecutionViewSet(viewsets.ModelViewSet):
         if self.action == 'list':
             return MOProcessExecutionListSerializer
         return MOProcessExecutionDetailSerializer
+
+    @action(detail=True, methods=['put'])
+    def assign_supervisor(self, request, pk=None):
+        """
+        Assign or update supervisor for a specific process execution
+        Only production head/manager can assign supervisors
+        """
+        try:
+            # Check permissions
+            user_roles = request.user.user_roles.filter(is_active=True).values_list('role__name', flat=True)
+            if not any(role in ['production_head', 'manager', 'admin'] for role in user_roles):
+                return Response({
+                    'success': False,
+                    'error': 'Only production head/manager can assign supervisors'
+                }, status=status.HTTP_403_FORBIDDEN)
+            
+            # Get process execution
+            process_execution = self.get_object()
+            
+            # Get supervisor user
+            supervisor_id = request.data.get('assigned_supervisor')
+            notes = request.data.get('notes', '')
+            
+            if not supervisor_id:
+                return Response({
+                    'success': False,
+                    'error': 'Supervisor ID is required'
+                }, status=status.HTTP_400_BAD_REQUEST)
+            
+            try:
+                supervisor = User.objects.get(id=supervisor_id)
+            except User.DoesNotExist:
+                return Response({
+                    'success': False,
+                    'error': 'Supervisor user not found'
+                }, status=status.HTTP_404_NOT_FOUND)
+            
+            # Store old supervisor for logging
+            old_supervisor = process_execution.assigned_supervisor
+            
+            # Update supervisor assignment
+            process_execution.assigned_supervisor = supervisor
+            process_execution.save(update_fields=['assigned_supervisor', 'updated_at'])
+            
+            # Create activity log entry
+            if notes:
+                process_execution.notes = f"{process_execution.notes}\n[Supervisor reassigned by {request.user.get_full_name()}]: {notes}"
+                process_execution.save(update_fields=['notes'])
+            
+            # Serialize and return updated process execution
+            serializer = MOProcessExecutionDetailSerializer(process_execution)
+            
+            return Response({
+                'success': True,
+                'message': f'Supervisor assigned successfully',
+                'old_supervisor': old_supervisor.get_full_name() if old_supervisor else 'None',
+                'new_supervisor': supervisor.get_full_name(),
+                'process_execution': serializer.data
+            }, status=status.HTTP_200_OK)
+            
+        except Exception as e:
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.error(f'Error assigning supervisor: {str(e)}', exc_info=True)
+            return Response({
+                'success': False,
+                'error': str(e)
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
     @action(detail=True, methods=['post'])
     def start_process(self, request, pk=None):
@@ -2233,7 +2278,8 @@ class BatchViewSet(viewsets.ModelViewSet):
                 batch, request.user
             )
             
-            # Update batch notes
+            # Update batch status and notes
+            batch.status = 'completed'  # Keep as completed until packing is done
             batch.notes = (batch.notes or "") + f"\nMoved to Packing Zone at {timezone.now()}"
             batch.save()
             
@@ -2252,13 +2298,34 @@ class BatchViewSet(viewsets.ModelViewSet):
     @action(detail=True, methods=['post'])
     def move_to_fg_store(self, request, pk=None):
         """
-        Move batch to FG Store (Finished Goods) after packing
+        Move batch to FG Store (Finished Goods) after packing is completed
+        This is now the final step after mandatory packing
         """
         batch = self.get_object()
         
-        if batch.status != 'completed':
+        # Check if batch is in packing zone (mandatory step completed)
+        from inventory.models import ProductLocation, Location
+        try:
+            packing_location = Location.objects.get(code='PACKING_ZONE')
+            batch_location = ProductLocation.objects.filter(
+                batch=batch,
+                current_location=packing_location
+            ).first()
+            
+            if not batch_location:
+                return Response(
+                    {'error': 'Batch must be in packing zone before moving to FG Store. Please complete packing first.'}, 
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+        except Location.DoesNotExist:
             return Response(
-                {'error': 'Batch must be completed before moving to FG Store'}, 
+                {'error': 'Packing zone location not found in system'}, 
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+        
+        if batch.status not in ['completed', 'packed']:
+            return Response(
+                {'error': 'Batch must be completed and packed before moving to FG Store'}, 
                 status=status.HTTP_400_BAD_REQUEST
             )
         
@@ -2268,7 +2335,8 @@ class BatchViewSet(viewsets.ModelViewSet):
                 batch, request.user
             )
             
-            # Update batch notes
+            # Update batch status to packed and notes
+            batch.status = 'packed'
             batch.notes = (batch.notes or "") + f"\nMoved to FG Store at {timezone.now()} - Ready for dispatch"
             batch.save()
             
@@ -2606,3 +2674,455 @@ class OutsourcingRequestViewSet(viewsets.ModelViewSet):
             'overdue_returns': overdue_returns,
             'recent_requests': recent_requests
         })
+
+
+# Enhanced Workflow API Views
+
+from .workflow_service import ManufacturingWorkflowService
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.permissions import IsAuthenticated
+from django.core.exceptions import ValidationError
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def create_mo_workflow(request):
+    """
+    Create MO and initialize approval workflow
+    """
+    try:
+        mo_id = request.data.get('mo_id')
+        if not mo_id:
+            return Response({
+                'success': False,
+                'error': 'MO ID is required'
+            }, status=status.HTTP_400_BAD_REQUEST)
+        
+        workflow = ManufacturingWorkflowService.create_mo_workflow(mo_id, request.user)
+        
+        return Response({
+            'success': True,
+            'message': 'MO workflow created successfully',
+            'workflow_id': workflow.id,
+            'status': workflow.status
+        }, status=status.HTTP_201_CREATED)
+        
+    except ValidationError as e:
+        return Response({
+            'success': False,
+            'error': str(e)
+        }, status=status.HTTP_400_BAD_REQUEST)
+    except Exception as e:
+        return Response({
+            'success': False,
+            'error': str(e)
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def approve_mo(request):
+    """
+    Manager approves MO
+    """
+    try:
+        mo_id = request.data.get('mo_id')
+        approval_notes = request.data.get('approval_notes', '')
+        
+        if not mo_id:
+            return Response({
+                'success': False,
+                'error': 'MO ID is required'
+            }, status=status.HTTP_400_BAD_REQUEST)
+        
+        workflow = ManufacturingWorkflowService.approve_mo(mo_id, request.user, approval_notes)
+        
+        return Response({
+            'success': True,
+            'message': 'MO approved successfully',
+            'workflow_id': workflow.id,
+            'status': workflow.status
+        }, status=status.HTTP_200_OK)
+        
+    except ValidationError as e:
+        return Response({
+            'success': False,
+            'error': str(e)
+        }, status=status.HTTP_400_BAD_REQUEST)
+    except Exception as e:
+        return Response({
+            'success': False,
+            'error': str(e)
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def allocate_rm_to_mo(request):
+    """
+    RM Store allocates raw materials to MO
+    """
+    try:
+        mo_id = request.data.get('mo_id')
+        allocation_notes = request.data.get('allocation_notes', '')
+        
+        if not mo_id:
+            return Response({
+                'success': False,
+                'error': 'MO ID is required'
+            }, status=status.HTTP_400_BAD_REQUEST)
+        
+        workflow = ManufacturingWorkflowService.allocate_rm_to_mo(mo_id, request.user, allocation_notes)
+        
+        return Response({
+            'success': True,
+            'message': 'RM allocated successfully',
+            'workflow_id': workflow.id,
+            'status': workflow.status
+        }, status=status.HTTP_200_OK)
+        
+    except ValidationError as e:
+        return Response({
+            'success': False,
+            'error': str(e)
+        }, status=status.HTTP_400_BAD_REQUEST)
+    except Exception as e:
+        return Response({
+            'success': False,
+            'error': str(e)
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def assign_process_to_operator(request):
+    """
+    Production Head assigns process to operator
+    """
+    try:
+        mo_process_execution_id = request.data.get('mo_process_execution_id')
+        operator_id = request.data.get('operator_id')
+        supervisor_id = request.data.get('supervisor_id')
+        
+        if not all([mo_process_execution_id, operator_id]):
+            return Response({
+                'success': False,
+                'error': 'MO Process Execution ID and Operator ID are required'
+            }, status=status.HTTP_400_BAD_REQUEST)
+        
+        operator = User.objects.get(id=operator_id)
+        supervisor = User.objects.get(id=supervisor_id) if supervisor_id else None
+        
+        assignment = ManufacturingWorkflowService.assign_process_to_operator(
+            mo_process_execution_id, operator, request.user, supervisor
+        )
+        
+        return Response({
+            'success': True,
+            'message': 'Process assigned successfully',
+            'assignment_id': assignment.id,
+            'status': assignment.status
+        }, status=status.HTTP_201_CREATED)
+        
+    except User.DoesNotExist:
+        return Response({
+            'success': False,
+            'error': 'User not found'
+        }, status=status.HTTP_400_BAD_REQUEST)
+    except ValidationError as e:
+        return Response({
+            'success': False,
+            'error': str(e)
+        }, status=status.HTTP_400_BAD_REQUEST)
+    except Exception as e:
+        return Response({
+            'success': False,
+            'error': str(e)
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def reassign_process(request):
+    """
+    Production Head reassigns process to different operator
+    """
+    try:
+        assignment_id = request.data.get('assignment_id')
+        new_operator_id = request.data.get('new_operator_id')
+        reassignment_reason = request.data.get('reassignment_reason', '')
+        
+        if not all([assignment_id, new_operator_id]):
+            return Response({
+                'success': False,
+                'error': 'Assignment ID and New Operator ID are required'
+            }, status=status.HTTP_400_BAD_REQUEST)
+        
+        new_operator = User.objects.get(id=new_operator_id)
+        
+        assignment = ManufacturingWorkflowService.reassign_process(
+            assignment_id, new_operator, request.user, reassignment_reason
+        )
+        
+        return Response({
+            'success': True,
+            'message': 'Process reassigned successfully',
+            'assignment_id': assignment.id,
+            'status': assignment.status
+        }, status=status.HTTP_200_OK)
+        
+    except User.DoesNotExist:
+        return Response({
+            'success': False,
+            'error': 'User not found'
+        }, status=status.HTTP_400_BAD_REQUEST)
+    except ValidationError as e:
+        return Response({
+            'success': False,
+            'error': str(e)
+        }, status=status.HTTP_400_BAD_REQUEST)
+    except Exception as e:
+        return Response({
+            'success': False,
+            'error': str(e)
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def get_available_heat_numbers_for_mo(request, mo_id):
+    """
+    Get available heat numbers for an MO's material
+    """
+    try:
+        mo = ManufacturingOrder.objects.select_related('product_code__material').get(id=mo_id)
+        material = mo.product_code.material
+        
+        if not material:
+            return Response({
+                'success': False,
+                'error': 'MO product has no material assigned'
+            }, status=status.HTTP_400_BAD_REQUEST)
+        
+        # Get available heat numbers for this material
+        heat_numbers = HeatNumber.objects.filter(
+            raw_material=material,
+            is_available=True
+        ).select_related('grm_receipt', 'raw_material').order_by('-created_at')
+        
+        # Serialize heat number data with coil information
+        heat_numbers_data = []
+        for heat in heat_numbers:
+            available_qty = heat.get_available_quantity_kg()
+            if available_qty > 0:  # Only show heat numbers with available quantity
+                # Parse items JSONField to get coil/sheet information
+                coils = []
+                if heat.items:
+                    for item in heat.items:
+                        coils.append({
+                            'number': item.get('number', ''),
+                            'weight': float(item.get('weight', 0))
+                        })
+                
+                heat_numbers_data.append({
+                    'id': heat.id,
+                    'heat_number': heat.heat_number,
+                    'grm_number': heat.grm_receipt.grm_number if heat.grm_receipt else None,
+                    'total_weight_kg': float(heat.total_weight_kg or 0),
+                    'consumed_quantity_kg': float(heat.consumed_quantity_kg),
+                    'available_quantity_kg': float(available_qty),
+                    'coils_received': heat.coils_received,
+                    'sheets_received': heat.sheets_received,
+                    'coils': coils,
+                    'created_at': heat.created_at.isoformat()
+                })
+        
+        return Response({
+            'success': True,
+            'heat_numbers': heat_numbers_data,
+            'material': {
+                'id': material.id,
+                'material_code': material.material_code,
+                'material_name': material.material_name,
+                'material_type': material.material_type
+            }
+        })
+        
+    except ManufacturingOrder.DoesNotExist:
+        return Response({
+            'success': False,
+            'error': 'Manufacturing Order not found'
+        }, status=status.HTTP_404_NOT_FOUND)
+    except Exception as e:
+        return Response({
+            'success': False,
+            'error': str(e)
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def allocate_batch_to_process(request):
+    """
+    RM Store allocates batch to specific process
+    """
+    try:
+        batch_id = request.data.get('batch_id')
+        process_id = request.data.get('process_id')
+        operator_id = request.data.get('operator_id')
+        heat_number_ids = request.data.get('heat_number_ids', [])
+        
+        if not all([batch_id, process_id, operator_id]):
+            return Response({
+                'success': False,
+                'error': 'Batch ID, Process ID, and Operator ID are required'
+            }, status=status.HTTP_400_BAD_REQUEST)
+        
+        operator = User.objects.get(id=operator_id)
+        heat_numbers = HeatNumber.objects.filter(id__in=heat_number_ids) if heat_number_ids else None
+        
+        allocation = ManufacturingWorkflowService.allocate_batch_to_process(
+            batch_id, process_id, operator, request.user, heat_numbers
+        )
+        
+        return Response({
+            'success': True,
+            'message': 'Batch allocated successfully',
+            'allocation_id': allocation.id,
+            'status': allocation.status
+        }, status=status.HTTP_201_CREATED)
+        
+    except User.DoesNotExist:
+        return Response({
+            'success': False,
+            'error': 'User not found'
+        }, status=status.HTTP_400_BAD_REQUEST)
+    except ValidationError as e:
+        return Response({
+            'success': False,
+            'error': str(e)
+        }, status=status.HTTP_400_BAD_REQUEST)
+    except Exception as e:
+        return Response({
+            'success': False,
+            'error': str(e)
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def receive_batch_by_operator(request):
+    """
+    Operator receives batch and starts process
+    """
+    try:
+        allocation_id = request.data.get('allocation_id')
+        location = request.data.get('location', '')
+        
+        if not allocation_id:
+            return Response({
+                'success': False,
+                'error': 'Allocation ID is required'
+            }, status=status.HTTP_400_BAD_REQUEST)
+        
+        allocation = ManufacturingWorkflowService.receive_batch_by_operator(
+            allocation_id, request.user, location
+        )
+        
+        return Response({
+            'success': True,
+            'message': 'Batch received successfully',
+            'allocation_id': allocation.id,
+            'status': allocation.status
+        }, status=status.HTTP_200_OK)
+        
+    except ValidationError as e:
+        return Response({
+            'success': False,
+            'error': str(e)
+        }, status=status.HTTP_400_BAD_REQUEST)
+    except Exception as e:
+        return Response({
+            'success': False,
+            'error': str(e)
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def complete_process(request):
+    """
+    Operator completes process
+    """
+    try:
+        allocation_id = request.data.get('allocation_id')
+        completion_notes = request.data.get('completion_notes', '')
+        quantity_processed = request.data.get('quantity_processed')
+        
+        if not allocation_id:
+            return Response({
+                'success': False,
+                'error': 'Allocation ID is required'
+            }, status=status.HTTP_400_BAD_REQUEST)
+        
+        allocation = ManufacturingWorkflowService.complete_process(
+            allocation_id, request.user, completion_notes, quantity_processed
+        )
+        
+        return Response({
+            'success': True,
+            'message': 'Process completed successfully',
+            'allocation_id': allocation.id,
+            'status': allocation.status
+        }, status=status.HTTP_200_OK)
+        
+    except ValidationError as e:
+        return Response({
+            'success': False,
+            'error': str(e)
+        }, status=status.HTTP_400_BAD_REQUEST)
+    except Exception as e:
+        return Response({
+            'success': False,
+            'error': str(e)
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def verify_finished_goods(request):
+    """
+    Quality check for finished goods
+    """
+    try:
+        batch_id = request.data.get('batch_id')
+        quality_notes = request.data.get('quality_notes', '')
+        passed = request.data.get('passed', True)
+        
+        if not batch_id:
+            return Response({
+                'success': False,
+                'error': 'Batch ID is required'
+            }, status=status.HTTP_400_BAD_REQUEST)
+        
+        fg_verification = ManufacturingWorkflowService.verify_finished_goods(
+            batch_id, request.user, quality_notes, passed
+        )
+        
+        return Response({
+            'success': True,
+            'message': 'FG verification completed successfully',
+            'verification_id': fg_verification.id,
+            'status': fg_verification.status
+        }, status=status.HTTP_200_OK)
+        
+    except ValidationError as e:
+        return Response({
+            'success': False,
+            'error': str(e)
+        }, status=status.HTTP_400_BAD_REQUEST)
+    except Exception as e:
+        return Response({
+            'success': False,
+            'error': str(e)
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

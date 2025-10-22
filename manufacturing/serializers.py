@@ -138,7 +138,7 @@ class BatchListSerializer(serializers.ModelSerializer):
 class ManufacturingOrderListSerializer(serializers.ModelSerializer):
     """Optimized serializer for MO list view"""
     product_code = ProductBasicSerializer(read_only=True)
-    assigned_rm_store = UserBasicSerializer(read_only=True)
+    # NOTE: assigned_rm_store removed - all RM store users see all MOs
     # NOTE: assigned_supervisor removed - supervisor tracking moved to work center level
     created_by = UserBasicSerializer(read_only=True)
     status_display = serializers.CharField(source='get_status_display', read_only=True)
@@ -219,7 +219,7 @@ class ManufacturingOrderListSerializer(serializers.ModelSerializer):
         fields = [
             'id', 'mo_id', 'date_time', 'product_code', 'quantity', 'status', 
             'status_display', 'priority', 'priority_display', 'shift', 'shift_display',
-            'assigned_rm_store', 'planned_start_date', 'planned_end_date',
+            'planned_start_date', 'planned_end_date',
             'delivery_date', 'created_by', 'created_at', 'strips_required', 
             'total_pieces_from_strips', 'excess_pieces', 'tolerance_percentage',
             'material_type', 'material_name', 'batches', 'remaining_rm', 'rm_unit', 'can_create_batch'
@@ -230,7 +230,7 @@ class ManufacturingOrderListSerializer(serializers.ModelSerializer):
 class ManufacturingOrderDetailSerializer(serializers.ModelSerializer):
     """Detailed serializer for MO create/update/detail view"""
     product_code = ProductBasicSerializer(read_only=True)
-    assigned_rm_store = UserBasicSerializer(read_only=True)
+    # NOTE: assigned_rm_store removed - all RM store users see all MOs
     # NOTE: assigned_supervisor removed - supervisor tracking moved to work center level
     created_by = UserBasicSerializer(read_only=True)
     gm_approved_by = UserBasicSerializer(read_only=True)
@@ -248,7 +248,7 @@ class ManufacturingOrderDetailSerializer(serializers.ModelSerializer):
     
     # Write-only fields for creation
     product_code_id = serializers.IntegerField(write_only=True)
-    assigned_rm_store_id = serializers.IntegerField(write_only=True, required=False)
+    # NOTE: assigned_rm_store_id removed - all RM store users see all MOs
     # NOTE: assigned_supervisor_id removed - supervisor tracking moved to work center level
     customer_id = serializers.IntegerField(write_only=True, required=False)
     
@@ -260,7 +260,6 @@ class ManufacturingOrderDetailSerializer(serializers.ModelSerializer):
             'thickness_mm', 'finishing', 'manufacturer_brand', 'weight_kg',
             'loose_fg_stock', 'rm_required_kg', 'tolerance_percentage', 'scrap_percentage', 
             'rm_released_kg', 'strips_required', 'total_pieces_from_strips', 'excess_pieces',
-            'assigned_rm_store', 'assigned_rm_store_id',
             'shift', 'shift_display', 'planned_start_date', 'planned_end_date',
             'actual_start_date', 'actual_end_date', 'status', 'status_display',
             'priority', 'priority_display', 'customer', 'customer_id', 'customer_name', 
@@ -278,7 +277,7 @@ class ManufacturingOrderDetailSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         """Create MO with auto-population of product details"""
         product_code_id = validated_data.pop('product_code_id')
-        assigned_rm_store_id = validated_data.pop('assigned_rm_store_id', None)
+        # NOTE: assigned_rm_store_id removed - all RM store users see all MOs
         # NOTE: assigned_supervisor_id removed - supervisor tracking moved to work center level
         customer_id = validated_data.pop('customer_id', None)
         
@@ -309,14 +308,7 @@ class ManufacturingOrderDetailSerializer(serializers.ModelSerializer):
                 created_by=self.context['request'].user
             )
         
-        # Handle optional rm_store user
-        rm_store_user = None
-        if assigned_rm_store_id:
-            try:
-                rm_store_user = User.objects.get(id=assigned_rm_store_id)
-            except User.DoesNotExist:
-                raise serializers.ValidationError("Invalid rm_store user reference")
-        
+        # NOTE: RM store assignment removed - all RM store users see all MOs
         # NOTE: Supervisor handling removed - supervisor tracking moved to work center level
         
         # Handle optional customer
@@ -331,7 +323,7 @@ class ManufacturingOrderDetailSerializer(serializers.ModelSerializer):
         # Auto-populate product details
         validated_data.update({
             'product_code': product,
-            'assigned_rm_store': rm_store_user,
+            # NOTE: assigned_rm_store removed - all RM store users see all MOs
             # NOTE: assigned_supervisor removed - supervisor tracking moved to work center level
             'customer_c_id': customer,
             'customer_name': customer.name if customer else validated_data.get('customer_name', ''),
@@ -382,15 +374,7 @@ class ManufacturingOrderDetailSerializer(serializers.ModelSerializer):
             except Product.DoesNotExist:
                 raise serializers.ValidationError("Invalid product reference")
         
-        # Handle rm_store change
-        if 'assigned_rm_store_id' in validated_data:
-            rm_store_id = validated_data.pop('assigned_rm_store_id')
-            try:
-                rm_store_user = User.objects.get(id=rm_store_id)
-                validated_data['assigned_rm_store'] = rm_store_user
-            except User.DoesNotExist:
-                raise serializers.ValidationError("Invalid rm_store user reference")
-        
+        # NOTE: RM store assignment removed - all RM store users see all MOs
         # NOTE: Supervisor handling removed - supervisor tracking moved to work center level
         
         instance = super().update(instance, validated_data)
@@ -468,6 +452,7 @@ class MOProcessExecutionListSerializer(serializers.ModelSerializer):
     is_overdue = serializers.ReadOnlyField()
     step_count = serializers.SerializerMethodField()
     completed_steps = serializers.SerializerMethodField()
+    batch_counts = serializers.SerializerMethodField()
     
     class Meta:
         model = MOProcessExecution
@@ -477,7 +462,7 @@ class MOProcessExecutionListSerializer(serializers.ModelSerializer):
             'planned_end_time', 'actual_start_time', 'actual_end_time',
             'assigned_operator', 'assigned_operator_name', 'assigned_supervisor', 'assigned_supervisor_name',
             'progress_percentage', 'duration_minutes', 'is_overdue', 'step_count', 'completed_steps',
-            'created_at', 'updated_at'
+            'batch_counts', 'created_at', 'updated_at'
         ]
         read_only_fields = ['created_at', 'updated_at']
     
@@ -486,6 +471,20 @@ class MOProcessExecutionListSerializer(serializers.ModelSerializer):
     
     def get_completed_steps(self, obj):
         return obj.step_executions.filter(status='completed').count()
+    
+    def get_batch_counts(self, obj):
+        """Get batch counts by status for this process"""
+        from django.db.models import Q
+        batches = Batch.objects.filter(
+            mo=obj.mo
+        )
+        return {
+            'pending': batches.filter(status='created').count(),
+            'in_progress': batches.filter(status__in=['in_process', 'quality_check']).count(),
+            'completed': batches.filter(status='completed').count(),
+            'failed': batches.filter(status='cancelled').count(),
+            'total': batches.count()
+        }
 
 
 class MOProcessExecutionDetailSerializer(serializers.ModelSerializer):
@@ -493,12 +492,13 @@ class MOProcessExecutionDetailSerializer(serializers.ModelSerializer):
     process_name = serializers.CharField(source='process.name', read_only=True)
     process_code = serializers.IntegerField(source='process.code', read_only=True)
     status_display = serializers.CharField(source='get_status_display', read_only=True)
-    assigned_operator_name = serializers.CharField(source='assigned_operator.get_full_name', read_only=True)
+    assigned_operator_name = serializers.CharField(source='assigned_supervisor.get_full_name', read_only=True)
     assigned_supervisor_name = serializers.CharField(source='assigned_supervisor.get_full_name', read_only=True)
     duration_minutes = serializers.ReadOnlyField()
     is_overdue = serializers.ReadOnlyField()
     step_executions = MOProcessStepExecutionSerializer(many=True, read_only=True)
     alerts = serializers.SerializerMethodField()
+    batch_counts = serializers.SerializerMethodField()
     
     class Meta:
         model = MOProcessExecution
@@ -508,7 +508,7 @@ class MOProcessExecutionDetailSerializer(serializers.ModelSerializer):
             'planned_end_time', 'actual_start_time', 'actual_end_time',
             'assigned_operator', 'assigned_operator_name', 'assigned_supervisor', 'assigned_supervisor_name',
             'progress_percentage', 'notes', 'duration_minutes', 'is_overdue', 'step_executions',
-            'alerts', 'created_at', 'updated_at'
+            'alerts', 'batch_counts', 'created_at', 'updated_at'
         ]
         read_only_fields = ['created_at', 'updated_at']
     
@@ -517,6 +517,19 @@ class MOProcessExecutionDetailSerializer(serializers.ModelSerializer):
         return MOProcessAlertSerializer(
             obj.alerts.filter(is_resolved=False), many=True
         ).data
+    
+    def get_batch_counts(self, obj):
+        """Get batch counts by status for this process"""
+        batches = Batch.objects.filter(
+            mo=obj.mo
+        )
+        return {
+            'pending': batches.filter(status='created').count(),
+            'in_progress': batches.filter(status__in=['in_process', 'quality_check']).count(),
+            'completed': batches.filter(status='completed').count(),
+            'failed': batches.filter(status='cancelled').count(),
+            'total': batches.count()
+        }
 
 
 class MOProcessAlertSerializer(serializers.ModelSerializer):
@@ -544,8 +557,6 @@ class ManufacturingOrderWithProcessesSerializer(serializers.ModelSerializer):
     status_display = serializers.CharField(source='get_status_display', read_only=True)
     priority_display = serializers.CharField(source='get_priority_display', read_only=True)
     shift_display = serializers.CharField(source='get_shift_display', read_only=True)
-    assigned_rm_store_name = serializers.CharField(source='assigned_rm_store.get_full_name', read_only=True)
-    # NOTE: assigned_supervisor_name removed - supervisor tracking moved to work center level
     created_by_name = serializers.CharField(source='created_by.get_full_name', read_only=True)
     process_executions = MOProcessExecutionListSerializer(many=True, read_only=True)
     overall_progress = serializers.SerializerMethodField()
@@ -558,8 +569,7 @@ class ManufacturingOrderWithProcessesSerializer(serializers.ModelSerializer):
             'quantity', 'product_type', 'material_name', 'material_type', 'grade',
             'wire_diameter_mm', 'thickness_mm', 'finishing', 'manufacturer_brand',
             'weight_kg', 'loose_fg_stock', 'rm_required_kg', 'strips_required', 
-            'total_pieces_from_strips', 'excess_pieces', 'assigned_rm_store',
-            'assigned_rm_store_name', 'shift', 'shift_display', 'planned_start_date',
+            'total_pieces_from_strips', 'excess_pieces', 'shift', 'shift_display', 'planned_start_date',
             'planned_end_date', 'actual_start_date', 'actual_end_date', 'status',
             'status_display', 'priority', 'priority_display', 'customer_name',
             'delivery_date', 'special_instructions', 'created_at', 'created_by',

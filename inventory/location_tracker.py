@@ -435,6 +435,31 @@ class BatchLocationTracker:
         }
     
     @staticmethod
+    def move_batch_to_packing(batch_id, user, mo_id=None):
+        """
+        Move completed batch to packing zone (mandatory step before FG store)
+        
+        Args:
+            batch_id: ID of the batch
+            user: User performing the move
+            mo_id: Manufacturing Order ID
+            
+        Returns:
+            dict: Result of the move operation
+        """
+        notes = f"Batch moved to packing zone - mandatory step before FG store"
+        
+        return LocationTracker.move_item(
+            item_type='batch',
+            item_id=batch_id,
+            to_location_code='PACKING_ZONE',
+            user=user,
+            reference_type='mo',
+            reference_id=mo_id,
+            notes=notes
+        )
+    
+    @staticmethod
     def move_batch_to_fg_store(batch_id, user, mo_id=None):
         """
         Move completed batch to FG store

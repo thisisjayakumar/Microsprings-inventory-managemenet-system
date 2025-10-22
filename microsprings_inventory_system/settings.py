@@ -75,6 +75,7 @@ INSTALLED_APPS = [
     # Phase 3: Advanced Features
     'quality',             # Quality checks, traceability, compliance
     'logistics',           # Packaging, dispatch, shipping
+    'fg_store',            # FG Store & Dispatch management
     'notifications',       # Alerts, notifications, communication
     
     # Phase 4: Analytics & Integration

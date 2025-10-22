@@ -179,11 +179,20 @@ class BatchProcessExecutionViewSet(viewsets.ViewSet):
                 batch_completed_all = False
                 break
         
-        # If batch completed all processes, mark batch as completed
+        # If batch completed all processes, mark as completed and move to packing zone (mandatory step)
         if batch_completed_all:
             batch.status = 'completed'
             batch.actual_end_date = timezone.now()
             batch.save()
+            
+            packing_move_result = BatchLocationTracker.move_batch_to_packing(
+                batch_id=batch.id,
+                user=request.user,
+                mo_id=batch.mo.id
+            )
+            
+            if not packing_move_result['success']:
+                print(f"Warning: Failed to move completed batch to packing zone: {packing_move_result.get('error')}")
         
         # Check if all batches have completed this process to complete the process execution
         mo_batches = Batch.objects.filter(mo=batch.mo).exclude(status='cancelled')
@@ -225,16 +234,16 @@ class BatchProcessExecutionViewSet(viewsets.ViewSet):
             reference_id=process_execution.id
         )
         
-        # If this batch has completed all processes, move to FG store
+        # If this batch has completed all processes, move to packing zone (mandatory step)
         if batch_completed_all:
-            fg_move_result = BatchLocationTracker.move_batch_to_fg_store(
+            packing_move_result = BatchLocationTracker.move_batch_to_packing(
                 batch_id=batch.id,
                 user=request.user,
                 mo_id=batch.mo.id
             )
             
-            if not fg_move_result['success']:
-                print(f"Warning: Failed to move completed batch to FG store: {fg_move_result.get('error')}")
+            if not packing_move_result['success']:
+                print(f"Warning: Failed to move completed batch to packing zone: {packing_move_result.get('error')}")
         
         return Response({
             'message': f'Batch {batch.batch_id} completed in process {process_execution.process.name}',

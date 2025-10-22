@@ -24,6 +24,12 @@ urlpatterns = [
     # Dashboard stats
     path('dashboard/stats/', views.rm_store_dashboard_stats, name='dashboard_stats'),
     
+    # Handover Verification endpoints for Coiling Supervisors
+    path('coiling/pending-handover/', views.pending_handover_list, name='pending_handover_list'),
+    path('coiling/verify/', views.verify_handover, name='verify_handover'),
+    path('coiling/report/', views.report_handover_issue, name='report_handover_issue'),
+    path('coiling/issues/', views.handover_issues_list, name='handover_issues_list'),
+    
     # Include router URLs
     path('', include(router.urls)),
 ]
@@ -54,6 +60,12 @@ Raw Materials:
 - GET    /api/inventory/raw-materials/               - List all raw materials (with filtering, search, pagination)
 - GET    /api/inventory/raw-materials/{id}/          - Get specific raw material details
 - GET    /api/inventory/raw-materials/dropdown/      - Get raw materials dropdown
+
+Handover Verification (Coiling Supervisors only):
+- GET    /api/inventory/coiling/pending-handover/    - List heat numbers pending handover verification
+- POST   /api/inventory/coiling/verify/              - Verify handover of raw material
+- POST   /api/inventory/coiling/report/               - Report handover issue
+- GET    /api/inventory/coiling/issues/               - List reported handover issues
 
 Dashboard:
 - GET    /api/inventory/dashboard/stats/             - Get dashboard statistics

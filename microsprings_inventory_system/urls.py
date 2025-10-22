@@ -15,6 +15,7 @@ urlpatterns = [
     path('api/processes/', include('processes.urls')),
     path('api/third-party/', include('third_party.urls')),
     path('api/notifications/', include('notifications.urls')),
+    path('api/fg-store/', include('fg_store.urls')),
 ]
 
 # Serve media files during development

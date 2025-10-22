@@ -103,3 +103,138 @@ class NotificationLog(models.Model):
 
     def __str__(self):
         return f"{self.alert.title} -> {self.recipient.email} via {self.method}"
+
+
+# Enhanced Workflow Notifications
+
+class WorkflowNotification(models.Model):
+    """
+    Workflow-specific notifications for MO process assignments and updates
+    """
+    NOTIFICATION_TYPE_CHOICES = [
+        ('mo_created', 'MO Created'),
+        ('mo_approved', 'MO Approved'),
+        ('mo_rejected', 'MO Rejected'),
+        ('rm_allocation_required', 'RM Allocation Required'),
+        ('rm_allocated', 'RM Allocated'),
+        ('process_assigned', 'Process Assigned'),
+        ('process_reassigned', 'Process Reassigned'),
+        ('batch_allocated', 'Batch Allocated'),
+        ('batch_received', 'Batch Received'),
+        ('process_started', 'Process Started'),
+        ('process_completed', 'Process Completed'),
+        ('quality_check_required', 'Quality Check Required'),
+        ('fg_verification_required', 'FG Verification Required'),
+        ('ready_for_dispatch', 'Ready for Dispatch'),
+    ]
+    
+    PRIORITY_CHOICES = [
+        ('low', 'Low'),
+        ('medium', 'Medium'),
+        ('high', 'High'),
+        ('urgent', 'Urgent'),
+    ]
+    
+    # Notification details
+    notification_type = models.CharField(max_length=30, choices=NOTIFICATION_TYPE_CHOICES)
+    title = models.CharField(max_length=200)
+    message = models.TextField()
+    priority = models.CharField(max_length=10, choices=PRIORITY_CHOICES, default='medium')
+    
+    # Recipients
+    recipient = models.ForeignKey(
+        User, on_delete=models.CASCADE,
+        related_name='workflow_notifications'
+    )
+    
+    # Related objects
+    related_mo = models.ForeignKey(
+        'manufacturing.ManufacturingOrder',
+        on_delete=models.CASCADE,
+        null=True, blank=True,
+        related_name='notifications'
+    )
+    related_batch = models.ForeignKey(
+        'manufacturing.Batch',
+        on_delete=models.CASCADE,
+        null=True, blank=True,
+        related_name='notifications'
+    )
+    related_process_assignment = models.ForeignKey(
+        'manufacturing.ProcessAssignment',
+        on_delete=models.CASCADE,
+        null=True, blank=True,
+        related_name='notifications'
+    )
+    
+    # Status tracking
+    is_read = models.BooleanField(default=False)
+    read_at = models.DateTimeField(null=True, blank=True)
+    
+    # Action tracking
+    action_required = models.BooleanField(default=False)
+    action_taken = models.BooleanField(default=False)
+    action_taken_at = models.DateTimeField(null=True, blank=True)
+    
+    # Audit
+    created_at = models.DateTimeField(auto_now_add=True)
+    created_by = models.ForeignKey(
+        User, on_delete=models.SET_NULL, null=True, blank=True,
+        related_name='created_workflow_notifications'
+    )
+    
+    class Meta:
+        verbose_name = 'Workflow Notification'
+        verbose_name_plural = 'Workflow Notifications'
+        ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['recipient', 'is_read']),
+            models.Index(fields=['notification_type']),
+            models.Index(fields=['created_at']),
+        ]
+    
+    def __str__(self):
+        return f"{self.get_notification_type_display()} - {self.recipient.email}"
+
+
+class NotificationTemplate(models.Model):
+    """
+    Templates for workflow notifications
+    """
+    NOTIFICATION_TYPE_CHOICES = [
+        ('mo_created', 'MO Created'),
+        ('mo_approved', 'MO Approved'),
+        ('mo_rejected', 'MO Rejected'),
+        ('rm_allocation_required', 'RM Allocation Required'),
+        ('rm_allocated', 'RM Allocated'),
+        ('process_assigned', 'Process Assigned'),
+        ('process_reassigned', 'Process Reassigned'),
+        ('batch_allocated', 'Batch Allocated'),
+        ('batch_received', 'Batch Received'),
+        ('process_started', 'Process Started'),
+        ('process_completed', 'Process Completed'),
+        ('quality_check_required', 'Quality Check Required'),
+        ('fg_verification_required', 'FG Verification Required'),
+        ('ready_for_dispatch', 'Ready for Dispatch'),
+    ]
+    
+    notification_type = models.CharField(max_length=30, choices=NOTIFICATION_TYPE_CHOICES, unique=True)
+    title_template = models.CharField(max_length=200)
+    message_template = models.TextField()
+    
+    # Template variables documentation
+    variables = models.JSONField(
+        default=list,
+        help_text="List of available variables for this template (e.g., ['mo_id', 'product_name', 'operator_name'])"
+    )
+    
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        verbose_name = 'Notification Template'
+        verbose_name_plural = 'Notification Templates'
+    
+    def __str__(self):
+        return f"{self.get_notification_type_display()} Template"

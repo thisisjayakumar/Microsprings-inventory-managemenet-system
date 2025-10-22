@@ -8948,3 +8948,1777 @@ WARNING 2025-10-15 23:16:54,680 log 9993 6223917056 Not Found: /api/manufacturin
 WARNING 2025-10-15 23:17:26,176 log 9993 6223917056 Not Found: /api/manufacturing/api/purchase-orders/dashboard_stats/
 WARNING 2025-10-15 23:18:03,505 log 9993 6291222528 Bad Request: /api/processes/api/work-centers/
 INFO 2025-10-18 23:17:12,359 sync_service 33970 8697225408 Database sync service started
+INFO 2025-10-19 16:36:32,452 autoreload 9295 8726667456 Watching for file changes with StatReloader
+WARNING 2025-10-19 16:36:39,349 log 9295 6161510400 Unauthorized: /api/auth/profile/
+WARNING 2025-10-19 16:38:22,039 log 9295 6195163136 Unauthorized: /api/manufacturing/api/manufacturing-orders/dashboard_stats/
+WARNING 2025-10-19 16:38:23,079 log 9295 6195163136 Not Found: /api/manufacturing/api/purchase-orders/dashboard_stats/
+WARNING 2025-10-19 16:38:43,071 log 9295 6262468608 Not Found: /api/manufacturing/api/purchase-orders/dashboard_stats/
+INFO 2025-10-19 17:27:51,951 autoreload 9295 8726667456 /Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/microsprings_inventory_system/settings.py changed, reloading.
+INFO 2025-10-19 17:27:52,788 autoreload 67022 8726667456 Watching for file changes with StatReloader
+INFO 2025-10-19 17:28:13,366 autoreload 67022 8726667456 /Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/microsprings_inventory_system/urls.py changed, reloading.
+INFO 2025-10-19 17:28:13,985 autoreload 67607 8726667456 Watching for file changes with StatReloader
+INFO 2025-10-19 17:37:20,659 autoreload 67607 8726667456 /Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/fg_store/admin.py changed, reloading.
+INFO 2025-10-19 17:37:21,504 autoreload 82211 8726667456 Watching for file changes with StatReloader
+INFO 2025-10-19 17:41:06,394 autoreload 82211 8726667456 /Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/fg_store/models.py changed, reloading.
+INFO 2025-10-19 17:41:07,353 autoreload 88237 8726667456 Watching for file changes with StatReloader
+INFO 2025-10-19 17:41:10,895 autoreload 88237 8726667456 /Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/logistics/models.py changed, reloading.
+INFO 2025-10-19 17:41:11,596 autoreload 88316 8726667456 Watching for file changes with StatReloader
+INFO 2025-10-19 17:41:14,089 autoreload 88316 8726667456 /Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/fg_store/views.py changed, reloading.
+INFO 2025-10-19 17:41:17,131 autoreload 88424 8726667456 Watching for file changes with StatReloader
+INFO 2025-10-19 17:42:22,091 autoreload 88424 8726667456 /Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/fg_store/views.py changed, reloading.
+INFO 2025-10-19 17:42:23,354 autoreload 90338 8726667456 Watching for file changes with StatReloader
+INFO 2025-10-19 17:43:52,406 autoreload 90338 8726667456 /Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/fg_store/views.py changed, reloading.
+INFO 2025-10-19 17:43:53,068 autoreload 92660 8726667456 Watching for file changes with StatReloader
+INFO 2025-10-19 17:44:05,136 autoreload 92660 8726667456 /Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/fg_store/views.py changed, reloading.
+INFO 2025-10-19 17:44:14,291 autoreload 93102 8726667456 Watching for file changes with StatReloader
+INFO 2025-10-19 17:44:49,776 autoreload 94004 8726667456 Watching for file changes with StatReloader
+INFO 2025-10-19 17:45:00,346 autoreload 93102 8726667456 /Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/fg_store/views.py changed, reloading.
+INFO 2025-10-19 17:45:03,783 autoreload 94298 8726667456 Watching for file changes with StatReloader
+INFO 2025-10-19 17:45:09,913 autoreload 94298 8726667456 /Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/fg_store/views.py changed, reloading.
+INFO 2025-10-19 17:45:11,061 autoreload 94535 8726667456 Watching for file changes with StatReloader
+WARNING 2025-10-19 17:57:31,366 log 94535 6170324992 Not Found: /api/fg-store/dashboard/stock_levels/
+INFO 2025-10-19 17:57:34,833 autoreload 94535 8726667456 /Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/fg_store/urls.py changed, reloading.
+INFO 2025-10-19 17:57:35,699 autoreload 14886 8726667456 Watching for file changes with StatReloader
+WARNING 2025-10-19 17:57:36,965 log 14886 6122893312 Unauthorized: /api/fg-store/dashboard/stock_levels/
+WARNING 2025-10-19 17:57:40,632 log 14886 6122893312 Not Found: /api/auth/token/
+WARNING 2025-10-19 17:57:45,356 log 14886 6122893312 Bad Request: /api/auth/login/
+ERROR 2025-10-19 17:59:26,752 log 14886 6139719680 Internal Server Error: /api/fg-store/dashboard/stock_levels/
+Traceback (most recent call last):
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/django/db/backends/utils.py", line 105, in _execute
+    return self.cursor.execute(sql, params)
+           ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/django/db/backends/mysql/base.py", line 76, in execute
+    return self.cursor.execute(query, args)
+           ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/pymysql/cursors.py", line 153, in execute
+    result = self._query(query)
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/pymysql/cursors.py", line 322, in _query
+    conn.query(q)
+    ~~~~~~~~~~^^^
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/pymysql/connections.py", line 575, in query
+    self._affected_rows = self._read_query_result(unbuffered=unbuffered)
+                          ~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/pymysql/connections.py", line 826, in _read_query_result
+    result.read()
+    ~~~~~~~~~~~^^
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/pymysql/connections.py", line 1203, in read
+    first_packet = self.connection._read_packet()
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/pymysql/connections.py", line 782, in _read_packet
+    packet.raise_for_error()
+    ~~~~~~~~~~~~~~~~~~~~~~^^
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/pymysql/protocol.py", line 219, in raise_for_error
+    err.raise_mysql_exception(self._data)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/pymysql/err.py", line 150, in raise_mysql_exception
+    raise errorclass(errno, errval)
+pymysql.err.ProgrammingError: (1146, "Table 'microsprings.fg_store_dispatchbatch' doesn't exist")
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/django/core/handlers/exception.py", line 55, in inner
+    response = get_response(request)
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/django/core/handlers/base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/django/views/decorators/csrf.py", line 65, in _view_wrapper
+    return view_func(request, *args, **kwargs)
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/rest_framework/viewsets.py", line 124, in view
+    return self.dispatch(request, *args, **kwargs)
+           ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/rest_framework/views.py", line 509, in dispatch
+    response = self.handle_exception(exc)
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/rest_framework/views.py", line 469, in handle_exception
+    self.raise_uncaught_exception(exc)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/rest_framework/views.py", line 480, in raise_uncaught_exception
+    raise exc
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/rest_framework/views.py", line 506, in dispatch
+    response = handler(request, *args, **kwargs)
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/fg_store/views.py", line 261, in stock_levels
+    for batch in queryset:
+                 ^^^^^^^^
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/django/db/models/query.py", line 384, in __iter__
+    self._fetch_all()
+    ~~~~~~~~~~~~~~~^^
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/django/db/models/query.py", line 1949, in _fetch_all
+    self._result_cache = list(self._iterable_class(self))
+                         ~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/django/db/models/query.py", line 91, in __iter__
+    results = compiler.execute_sql(
+        chunked_fetch=self.chunked_fetch, chunk_size=self.chunk_size
+    )
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/django/db/models/sql/compiler.py", line 1623, in execute_sql
+    cursor.execute(sql, params)
+    ~~~~~~~~~~~~~~^^^^^^^^^^^^^
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/django/db/backends/utils.py", line 122, in execute
+    return super().execute(sql, params)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/django/db/backends/utils.py", line 79, in execute
+    return self._execute_with_wrappers(
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        sql, params, many=False, executor=self._execute
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/django/db/backends/utils.py", line 92, in _execute_with_wrappers
+    return executor(sql, params, many, context)
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/django/db/backends/utils.py", line 100, in _execute
+    with self.db.wrap_database_errors:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/django/db/utils.py", line 91, in __exit__
+    raise dj_exc_value.with_traceback(traceback) from exc_value
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/django/db/backends/utils.py", line 105, in _execute
+    return self.cursor.execute(sql, params)
+           ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/django/db/backends/mysql/base.py", line 76, in execute
+    return self.cursor.execute(query, args)
+           ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/pymysql/cursors.py", line 153, in execute
+    result = self._query(query)
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/pymysql/cursors.py", line 322, in _query
+    conn.query(q)
+    ~~~~~~~~~~^^^
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/pymysql/connections.py", line 575, in query
+    self._affected_rows = self._read_query_result(unbuffered=unbuffered)
+                          ~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/pymysql/connections.py", line 826, in _read_query_result
+    result.read()
+    ~~~~~~~~~~~^^
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/pymysql/connections.py", line 1203, in read
+    first_packet = self.connection._read_packet()
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/pymysql/connections.py", line 782, in _read_packet
+    packet.raise_for_error()
+    ~~~~~~~~~~~~~~~~~~~~~~^^
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/pymysql/protocol.py", line 219, in raise_for_error
+    err.raise_mysql_exception(self._data)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/pymysql/err.py", line 150, in raise_mysql_exception
+    raise errorclass(errno, errval)
+django.db.utils.ProgrammingError: (1146, "Table 'microsprings.fg_store_dispatchbatch' doesn't exist")
+INFO 2025-10-19 18:01:00,772 autoreload 21215 8726667456 Watching for file changes with StatReloader
+INFO 2025-10-19 18:10:16,116 autoreload 21215 8726667456 /Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/manufacturing/batch_process_views.py changed, reloading.
+INFO 2025-10-19 18:10:16,953 autoreload 36225 8726667456 Watching for file changes with StatReloader
+INFO 2025-10-19 18:10:24,852 autoreload 36225 8726667456 /Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/inventory/location_tracker.py changed, reloading.
+INFO 2025-10-19 18:10:25,657 autoreload 36479 8726667456 Watching for file changes with StatReloader
+INFO 2025-10-19 18:10:28,056 autoreload 36479 8726667456 /Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/inventory/location_tracker.py changed, reloading.
+INFO 2025-10-19 18:10:28,688 autoreload 36547 8726667456 Watching for file changes with StatReloader
+INFO 2025-10-19 18:10:37,556 autoreload 36547 8726667456 /Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/inventory/location_tracker.py changed, reloading.
+INFO 2025-10-19 18:10:38,588 autoreload 36821 8726667456 Watching for file changes with StatReloader
+INFO 2025-10-19 18:10:42,145 autoreload 36821 8726667456 /Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/manufacturing/batch_process_views.py changed, reloading.
+INFO 2025-10-19 18:10:42,795 autoreload 36899 8726667456 Watching for file changes with StatReloader
+INFO 2025-10-19 18:10:53,860 autoreload 36899 8726667456 /Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/manufacturing/views.py changed, reloading.
+INFO 2025-10-19 18:10:54,446 autoreload 37207 8726667456 Watching for file changes with StatReloader
+INFO 2025-10-19 18:10:56,955 autoreload 37207 8726667456 /Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/manufacturing/views.py changed, reloading.
+INFO 2025-10-19 18:10:57,608 autoreload 37371 8726667456 Watching for file changes with StatReloader
+INFO 2025-10-19 18:11:00,116 autoreload 37371 8726667456 /Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/manufacturing/views.py changed, reloading.
+INFO 2025-10-19 18:11:00,792 autoreload 37431 8726667456 Watching for file changes with StatReloader
+INFO 2025-10-19 18:11:10,780 autoreload 37431 8726667456 /Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/manufacturing/models.py changed, reloading.
+INFO 2025-10-19 18:11:11,446 autoreload 37711 8726667456 Watching for file changes with StatReloader
+INFO 2025-10-19 18:11:12,891 autoreload 37711 8726667456 /Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/manufacturing/models.py changed, reloading.
+INFO 2025-10-19 18:11:13,553 autoreload 37760 8726667456 Watching for file changes with StatReloader
+INFO 2025-10-19 18:11:32,028 autoreload 37760 8726667456 /Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/inventory/location_tracker.py changed, reloading.
+INFO 2025-10-19 18:11:32,741 autoreload 38284 8726667456 Watching for file changes with StatReloader
+INFO 2025-10-19 18:11:37,459 autoreload 38284 8726667456 /Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/manufacturing/models.py changed, reloading.
+INFO 2025-10-19 18:11:38,093 autoreload 38486 8726667456 Watching for file changes with StatReloader
+WARNING 2025-10-19 18:18:55,681 log 38486 6173700096 Not Found: /api/manufacturing/api/purchase-orders/dashboard_stats/
+WARNING 2025-10-19 18:19:37,040 log 38486 6257831936 Unauthorized: /api/manufacturing/api/manufacturing-orders/products/
+WARNING 2025-10-19 18:19:37,043 log 38486 6257831936 Unauthorized: /api/manufacturing/api/manufacturing-orders/products/
+WARNING 2025-10-19 18:20:34,258 log 38486 6274658304 Not Found: /api/manufacturing/api/purchase-orders/dashboard_stats/
+ERROR 2025-10-19 18:21:04,548 log 38486 6257831936 Internal Server Error: /api/manufacturing/api/manufacturing-orders/rm_store_dashboard/
+Traceback (most recent call last):
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/django/core/handlers/exception.py", line 55, in inner
+    response = get_response(request)
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/django/core/handlers/base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/django/views/decorators/csrf.py", line 65, in _view_wrapper
+    return view_func(request, *args, **kwargs)
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/rest_framework/viewsets.py", line 124, in view
+    return self.dispatch(request, *args, **kwargs)
+           ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/rest_framework/views.py", line 509, in dispatch
+    response = self.handle_exception(exc)
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/rest_framework/views.py", line 469, in handle_exception
+    self.raise_uncaught_exception(exc)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/rest_framework/views.py", line 480, in raise_uncaught_exception
+    raise exc
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/rest_framework/views.py", line 506, in dispatch
+    response = handler(request, *args, **kwargs)
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/manufacturing/views.py", line 985, in rm_store_dashboard
+    'on_hold': on_hold_serializer.data,
+               ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/rest_framework/serializers.py", line 795, in data
+    ret = super().data
+          ^^^^^^^^^^^^
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/rest_framework/serializers.py", line 249, in data
+    self._data = self.to_representation(self.instance)
+                 ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/rest_framework/serializers.py", line 714, in to_representation
+    self.child.to_representation(item) for item in iterable
+                                                   ^^^^^^^^
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/django/db/models/query.py", line 384, in __iter__
+    self._fetch_all()
+    ~~~~~~~~~~~~~~~^^
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/django/db/models/query.py", line 1949, in _fetch_all
+    self._result_cache = list(self._iterable_class(self))
+                         ~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/django/db/models/query.py", line 91, in __iter__
+    results = compiler.execute_sql(
+        chunked_fetch=self.chunked_fetch, chunk_size=self.chunk_size
+    )
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/django/db/models/sql/compiler.py", line 1610, in execute_sql
+    sql, params = self.as_sql()
+                  ~~~~~~~~~~~^^
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/django/db/models/sql/compiler.py", line 766, in as_sql
+    extra_select, order_by, group_by = self.pre_sql_setup(
+                                       ~~~~~~~~~~~~~~~~~~^
+        with_col_aliases=with_col_aliases or bool(combinator),
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/django/db/models/sql/compiler.py", line 85, in pre_sql_setup
+    self.setup_query(with_col_aliases=with_col_aliases)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/django/db/models/sql/compiler.py", line 74, in setup_query
+    self.select, self.klass_info, self.annotation_col_map = self.get_select(
+                                                            ~~~~~~~~~~~~~~~^
+        with_col_aliases=with_col_aliases,
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/django/db/models/sql/compiler.py", line 299, in get_select
+    related_klass_infos = self.get_related_selections(select, select_mask)
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/django/db/models/sql/compiler.py", line 1396, in get_related_selections
+    raise FieldError(
+    ...<6 lines>...
+    )
+django.core.exceptions.FieldError: Invalid field name(s) given in select_related: 'assigned_supervisor'. Choices are: product_code, assigned_rm_store, customer_c_id, gm_approved_by, rm_allocated_by, created_by
+ERROR 2025-10-19 18:21:27,769 log 38486 6257831936 Internal Server Error: /api/manufacturing/api/manufacturing-orders/rm_store_dashboard/
+Traceback (most recent call last):
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/django/core/handlers/exception.py", line 55, in inner
+    response = get_response(request)
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/django/core/handlers/base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/django/views/decorators/csrf.py", line 65, in _view_wrapper
+    return view_func(request, *args, **kwargs)
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/rest_framework/viewsets.py", line 124, in view
+    return self.dispatch(request, *args, **kwargs)
+           ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/rest_framework/views.py", line 509, in dispatch
+    response = self.handle_exception(exc)
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/rest_framework/views.py", line 469, in handle_exception
+    self.raise_uncaught_exception(exc)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/rest_framework/views.py", line 480, in raise_uncaught_exception
+    raise exc
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/rest_framework/views.py", line 506, in dispatch
+    response = handler(request, *args, **kwargs)
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/manufacturing/views.py", line 985, in rm_store_dashboard
+    'on_hold': on_hold_serializer.data,
+               ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/rest_framework/serializers.py", line 795, in data
+    ret = super().data
+          ^^^^^^^^^^^^
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/rest_framework/serializers.py", line 249, in data
+    self._data = self.to_representation(self.instance)
+                 ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/rest_framework/serializers.py", line 714, in to_representation
+    self.child.to_representation(item) for item in iterable
+                                                   ^^^^^^^^
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/django/db/models/query.py", line 384, in __iter__
+    self._fetch_all()
+    ~~~~~~~~~~~~~~~^^
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/django/db/models/query.py", line 1949, in _fetch_all
+    self._result_cache = list(self._iterable_class(self))
+                         ~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/django/db/models/query.py", line 91, in __iter__
+    results = compiler.execute_sql(
+        chunked_fetch=self.chunked_fetch, chunk_size=self.chunk_size
+    )
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/django/db/models/sql/compiler.py", line 1610, in execute_sql
+    sql, params = self.as_sql()
+                  ~~~~~~~~~~~^^
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/django/db/models/sql/compiler.py", line 766, in as_sql
+    extra_select, order_by, group_by = self.pre_sql_setup(
+                                       ~~~~~~~~~~~~~~~~~~^
+        with_col_aliases=with_col_aliases or bool(combinator),
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/django/db/models/sql/compiler.py", line 85, in pre_sql_setup
+    self.setup_query(with_col_aliases=with_col_aliases)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/django/db/models/sql/compiler.py", line 74, in setup_query
+    self.select, self.klass_info, self.annotation_col_map = self.get_select(
+                                                            ~~~~~~~~~~~~~~~^
+        with_col_aliases=with_col_aliases,
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/django/db/models/sql/compiler.py", line 299, in get_select
+    related_klass_infos = self.get_related_selections(select, select_mask)
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/django/db/models/sql/compiler.py", line 1396, in get_related_selections
+    raise FieldError(
+    ...<6 lines>...
+    )
+django.core.exceptions.FieldError: Invalid field name(s) given in select_related: 'assigned_supervisor'. Choices are: product_code, assigned_rm_store, customer_c_id, gm_approved_by, rm_allocated_by, created_by
+WARNING 2025-10-19 18:21:34,287 log 38486 6173700096 Not Found: /api/manufacturing/api/purchase-orders/dashboard_stats/
+WARNING 2025-10-19 18:22:20,396 log 38486 6190526464 Not Found: /api/manufacturing/api/purchase-orders/dashboard_stats/
+WARNING 2025-10-19 18:22:52,988 log 38486 6190526464 Not Found: /api/manufacturing/api/purchase-orders/dashboard_stats/
+INFO 2025-10-19 18:25:43,457 autoreload 38486 8726667456 /Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/manufacturing/views.py changed, reloading.
+INFO 2025-10-19 18:25:44,357 autoreload 60959 8726667456 Watching for file changes with StatReloader
+INFO 2025-10-19 18:25:49,131 autoreload 60959 8726667456 /Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/manufacturing/views.py changed, reloading.
+INFO 2025-10-19 18:25:49,849 autoreload 61140 8726667456 Watching for file changes with StatReloader
+INFO 2025-10-19 18:25:58,719 autoreload 61140 8726667456 /Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/manufacturing/serializers.py changed, reloading.
+INFO 2025-10-19 18:25:59,368 autoreload 61415 8726667456 Watching for file changes with StatReloader
+INFO 2025-10-19 18:26:02,993 autoreload 61415 8726667456 /Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/manufacturing/serializers.py changed, reloading.
+INFO 2025-10-19 18:26:03,722 autoreload 61495 8726667456 Watching for file changes with StatReloader
+INFO 2025-10-19 18:26:14,378 autoreload 61495 8726667456 /Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/manufacturing/serializers.py changed, reloading.
+INFO 2025-10-19 18:26:15,275 autoreload 61803 8726667456 Watching for file changes with StatReloader
+INFO 2025-10-19 18:26:25,436 autoreload 61803 8726667456 /Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/manufacturing/serializers.py changed, reloading.
+INFO 2025-10-19 18:26:26,071 autoreload 62155 8726667456 Watching for file changes with StatReloader
+INFO 2025-10-19 18:26:28,565 autoreload 62155 8726667456 /Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/manufacturing/serializers.py changed, reloading.
+INFO 2025-10-19 18:26:29,222 autoreload 62252 8726667456 Watching for file changes with StatReloader
+INFO 2025-10-19 18:26:34,901 autoreload 62252 8726667456 /Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/manufacturing/serializers.py changed, reloading.
+INFO 2025-10-19 18:26:35,532 autoreload 62357 8726667456 Watching for file changes with StatReloader
+INFO 2025-10-19 18:27:47,690 autoreload 62357 8726667456 /Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/manufacturing/models.py changed, reloading.
+INFO 2025-10-19 18:27:48,334 autoreload 64410 8726667456 Watching for file changes with StatReloader
+INFO 2025-10-19 18:27:58,377 autoreload 64410 8726667456 /Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/manufacturing/migrations/0018_remove_assigned_rm_store.py changed, reloading.
+INFO 2025-10-19 18:27:59,206 autoreload 64702 8726667456 Watching for file changes with StatReloader
+INFO 2025-10-19 18:29:35,710 autoreload 67634 8726667456 Watching for file changes with StatReloader
+ERROR 2025-10-19 18:29:40,603 log 67634 6189838336 Internal Server Error: /api/manufacturing/api/manufacturing-orders/17/process_tracking/
+Traceback (most recent call last):
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/django/core/handlers/exception.py", line 55, in inner
+    response = get_response(request)
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/django/core/handlers/base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/django/views/decorators/csrf.py", line 65, in _view_wrapper
+    return view_func(request, *args, **kwargs)
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/rest_framework/viewsets.py", line 124, in view
+    return self.dispatch(request, *args, **kwargs)
+           ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/rest_framework/views.py", line 509, in dispatch
+    response = self.handle_exception(exc)
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/rest_framework/views.py", line 469, in handle_exception
+    self.raise_uncaught_exception(exc)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/rest_framework/views.py", line 480, in raise_uncaught_exception
+    raise exc
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/rest_framework/views.py", line 506, in dispatch
+    response = handler(request, *args, **kwargs)
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/manufacturing/views.py", line 652, in process_tracking
+    return Response(serializer.data)
+                    ^^^^^^^^^^^^^^^
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/rest_framework/serializers.py", line 571, in data
+    ret = super().data
+          ^^^^^^^^^^^^
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/rest_framework/serializers.py", line 249, in data
+    self._data = self.to_representation(self.instance)
+                 ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/rest_framework/serializers.py", line 523, in to_representation
+    for field in fields:
+                 ^^^^^^
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/rest_framework/serializers.py", line 384, in _readable_fields
+    for field in self.fields.values():
+                 ^^^^^^^^^^^
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/django/utils/functional.py", line 47, in __get__
+    res = instance.__dict__[self.name] = self.func(instance)
+                                         ~~~~~~~~~^^^^^^^^^^
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/rest_framework/serializers.py", line 372, in fields
+    for key, value in self.get_fields().items():
+                      ~~~~~~~~~~~~~~~^^
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/rest_framework/serializers.py", line 1103, in get_fields
+    field_class, field_kwargs = self.build_field(
+                                ~~~~~~~~~~~~~~~~^
+        source, info, model, depth
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/rest_framework/serializers.py", line 1249, in build_field
+    return self.build_unknown_field(field_name, model_class)
+           ~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/rest_framework/serializers.py", line 1367, in build_unknown_field
+    raise ImproperlyConfigured(
+    ...<2 lines>...
+    )
+django.core.exceptions.ImproperlyConfigured: Field name `assigned_rm_store` is not valid for model `ManufacturingOrder` in `manufacturing.serializers.ManufacturingOrderWithProcessesSerializer`.
+ERROR 2025-10-19 18:29:42,159 log 67634 6189838336 Internal Server Error: /api/manufacturing/api/manufacturing-orders/17/process_tracking/
+Traceback (most recent call last):
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/django/core/handlers/exception.py", line 55, in inner
+    response = get_response(request)
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/django/core/handlers/base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/django/views/decorators/csrf.py", line 65, in _view_wrapper
+    return view_func(request, *args, **kwargs)
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/rest_framework/viewsets.py", line 124, in view
+    return self.dispatch(request, *args, **kwargs)
+           ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/rest_framework/views.py", line 509, in dispatch
+    response = self.handle_exception(exc)
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/rest_framework/views.py", line 469, in handle_exception
+    self.raise_uncaught_exception(exc)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/rest_framework/views.py", line 480, in raise_uncaught_exception
+    raise exc
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/rest_framework/views.py", line 506, in dispatch
+    response = handler(request, *args, **kwargs)
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/manufacturing/views.py", line 652, in process_tracking
+    return Response(serializer.data)
+                    ^^^^^^^^^^^^^^^
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/rest_framework/serializers.py", line 571, in data
+    ret = super().data
+          ^^^^^^^^^^^^
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/rest_framework/serializers.py", line 249, in data
+    self._data = self.to_representation(self.instance)
+                 ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/rest_framework/serializers.py", line 523, in to_representation
+    for field in fields:
+                 ^^^^^^
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/rest_framework/serializers.py", line 384, in _readable_fields
+    for field in self.fields.values():
+                 ^^^^^^^^^^^
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/django/utils/functional.py", line 47, in __get__
+    res = instance.__dict__[self.name] = self.func(instance)
+                                         ~~~~~~~~~^^^^^^^^^^
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/rest_framework/serializers.py", line 372, in fields
+    for key, value in self.get_fields().items():
+                      ~~~~~~~~~~~~~~~^^
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/rest_framework/serializers.py", line 1103, in get_fields
+    field_class, field_kwargs = self.build_field(
+                                ~~~~~~~~~~~~~~~~^
+        source, info, model, depth
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/rest_framework/serializers.py", line 1249, in build_field
+    return self.build_unknown_field(field_name, model_class)
+           ~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/rest_framework/serializers.py", line 1367, in build_unknown_field
+    raise ImproperlyConfigured(
+    ...<2 lines>...
+    )
+django.core.exceptions.ImproperlyConfigured: Field name `assigned_rm_store` is not valid for model `ManufacturingOrder` in `manufacturing.serializers.ManufacturingOrderWithProcessesSerializer`.
+ERROR 2025-10-19 18:29:45,053 log 67634 6189838336 Internal Server Error: /api/manufacturing/api/manufacturing-orders/17/process_tracking/
+Traceback (most recent call last):
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/django/core/handlers/exception.py", line 55, in inner
+    response = get_response(request)
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/django/core/handlers/base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/django/views/decorators/csrf.py", line 65, in _view_wrapper
+    return view_func(request, *args, **kwargs)
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/rest_framework/viewsets.py", line 124, in view
+    return self.dispatch(request, *args, **kwargs)
+           ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/rest_framework/views.py", line 509, in dispatch
+    response = self.handle_exception(exc)
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/rest_framework/views.py", line 469, in handle_exception
+    self.raise_uncaught_exception(exc)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/rest_framework/views.py", line 480, in raise_uncaught_exception
+    raise exc
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/rest_framework/views.py", line 506, in dispatch
+    response = handler(request, *args, **kwargs)
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/manufacturing/views.py", line 652, in process_tracking
+    return Response(serializer.data)
+                    ^^^^^^^^^^^^^^^
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/rest_framework/serializers.py", line 571, in data
+    ret = super().data
+          ^^^^^^^^^^^^
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/rest_framework/serializers.py", line 249, in data
+    self._data = self.to_representation(self.instance)
+                 ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/rest_framework/serializers.py", line 523, in to_representation
+    for field in fields:
+                 ^^^^^^
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/rest_framework/serializers.py", line 384, in _readable_fields
+    for field in self.fields.values():
+                 ^^^^^^^^^^^
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/django/utils/functional.py", line 47, in __get__
+    res = instance.__dict__[self.name] = self.func(instance)
+                                         ~~~~~~~~~^^^^^^^^^^
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/rest_framework/serializers.py", line 372, in fields
+    for key, value in self.get_fields().items():
+                      ~~~~~~~~~~~~~~~^^
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/rest_framework/serializers.py", line 1103, in get_fields
+    field_class, field_kwargs = self.build_field(
+                                ~~~~~~~~~~~~~~~~^
+        source, info, model, depth
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/rest_framework/serializers.py", line 1249, in build_field
+    return self.build_unknown_field(field_name, model_class)
+           ~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/rest_framework/serializers.py", line 1367, in build_unknown_field
+    raise ImproperlyConfigured(
+    ...<2 lines>...
+    )
+django.core.exceptions.ImproperlyConfigured: Field name `assigned_rm_store` is not valid for model `ManufacturingOrder` in `manufacturing.serializers.ManufacturingOrderWithProcessesSerializer`.
+ERROR 2025-10-19 18:30:01,221 log 67634 6189838336 Internal Server Error: /api/manufacturing/api/manufacturing-orders/17/process_tracking/
+Traceback (most recent call last):
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/django/core/handlers/exception.py", line 55, in inner
+    response = get_response(request)
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/django/core/handlers/base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/django/views/decorators/csrf.py", line 65, in _view_wrapper
+    return view_func(request, *args, **kwargs)
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/rest_framework/viewsets.py", line 124, in view
+    return self.dispatch(request, *args, **kwargs)
+           ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/rest_framework/views.py", line 509, in dispatch
+    response = self.handle_exception(exc)
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/rest_framework/views.py", line 469, in handle_exception
+    self.raise_uncaught_exception(exc)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/rest_framework/views.py", line 480, in raise_uncaught_exception
+    raise exc
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/rest_framework/views.py", line 506, in dispatch
+    response = handler(request, *args, **kwargs)
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/manufacturing/views.py", line 652, in process_tracking
+    return Response(serializer.data)
+                    ^^^^^^^^^^^^^^^
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/rest_framework/serializers.py", line 571, in data
+    ret = super().data
+          ^^^^^^^^^^^^
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/rest_framework/serializers.py", line 249, in data
+    self._data = self.to_representation(self.instance)
+                 ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/rest_framework/serializers.py", line 523, in to_representation
+    for field in fields:
+                 ^^^^^^
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/rest_framework/serializers.py", line 384, in _readable_fields
+    for field in self.fields.values():
+                 ^^^^^^^^^^^
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/django/utils/functional.py", line 47, in __get__
+    res = instance.__dict__[self.name] = self.func(instance)
+                                         ~~~~~~~~~^^^^^^^^^^
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/rest_framework/serializers.py", line 372, in fields
+    for key, value in self.get_fields().items():
+                      ~~~~~~~~~~~~~~~^^
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/rest_framework/serializers.py", line 1103, in get_fields
+    field_class, field_kwargs = self.build_field(
+                                ~~~~~~~~~~~~~~~~^
+        source, info, model, depth
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/rest_framework/serializers.py", line 1249, in build_field
+    return self.build_unknown_field(field_name, model_class)
+           ~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/rest_framework/serializers.py", line 1367, in build_unknown_field
+    raise ImproperlyConfigured(
+    ...<2 lines>...
+    )
+django.core.exceptions.ImproperlyConfigured: Field name `assigned_rm_store` is not valid for model `ManufacturingOrder` in `manufacturing.serializers.ManufacturingOrderWithProcessesSerializer`.
+ERROR 2025-10-19 18:30:02,977 log 67634 6189838336 Internal Server Error: /api/manufacturing/api/manufacturing-orders/17/process_tracking/
+Traceback (most recent call last):
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/django/core/handlers/exception.py", line 55, in inner
+    response = get_response(request)
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/django/core/handlers/base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/django/views/decorators/csrf.py", line 65, in _view_wrapper
+    return view_func(request, *args, **kwargs)
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/rest_framework/viewsets.py", line 124, in view
+    return self.dispatch(request, *args, **kwargs)
+           ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/rest_framework/views.py", line 509, in dispatch
+    response = self.handle_exception(exc)
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/rest_framework/views.py", line 469, in handle_exception
+    self.raise_uncaught_exception(exc)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/rest_framework/views.py", line 480, in raise_uncaught_exception
+    raise exc
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/rest_framework/views.py", line 506, in dispatch
+    response = handler(request, *args, **kwargs)
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/manufacturing/views.py", line 652, in process_tracking
+    return Response(serializer.data)
+                    ^^^^^^^^^^^^^^^
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/rest_framework/serializers.py", line 571, in data
+    ret = super().data
+          ^^^^^^^^^^^^
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/rest_framework/serializers.py", line 249, in data
+    self._data = self.to_representation(self.instance)
+                 ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/rest_framework/serializers.py", line 523, in to_representation
+    for field in fields:
+                 ^^^^^^
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/rest_framework/serializers.py", line 384, in _readable_fields
+    for field in self.fields.values():
+                 ^^^^^^^^^^^
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/django/utils/functional.py", line 47, in __get__
+    res = instance.__dict__[self.name] = self.func(instance)
+                                         ~~~~~~~~~^^^^^^^^^^
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/rest_framework/serializers.py", line 372, in fields
+    for key, value in self.get_fields().items():
+                      ~~~~~~~~~~~~~~~^^
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/rest_framework/serializers.py", line 1103, in get_fields
+    field_class, field_kwargs = self.build_field(
+                                ~~~~~~~~~~~~~~~~^
+        source, info, model, depth
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/rest_framework/serializers.py", line 1249, in build_field
+    return self.build_unknown_field(field_name, model_class)
+           ~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/rest_framework/serializers.py", line 1367, in build_unknown_field
+    raise ImproperlyConfigured(
+    ...<2 lines>...
+    )
+django.core.exceptions.ImproperlyConfigured: Field name `assigned_rm_store` is not valid for model `ManufacturingOrder` in `manufacturing.serializers.ManufacturingOrderWithProcessesSerializer`.
+ERROR 2025-10-19 18:30:05,298 log 67634 6189838336 Internal Server Error: /api/manufacturing/api/manufacturing-orders/17/process_tracking/
+Traceback (most recent call last):
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/django/core/handlers/exception.py", line 55, in inner
+    response = get_response(request)
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/django/core/handlers/base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/django/views/decorators/csrf.py", line 65, in _view_wrapper
+    return view_func(request, *args, **kwargs)
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/rest_framework/viewsets.py", line 124, in view
+    return self.dispatch(request, *args, **kwargs)
+           ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/rest_framework/views.py", line 509, in dispatch
+    response = self.handle_exception(exc)
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/rest_framework/views.py", line 469, in handle_exception
+    self.raise_uncaught_exception(exc)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/rest_framework/views.py", line 480, in raise_uncaught_exception
+    raise exc
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/rest_framework/views.py", line 506, in dispatch
+    response = handler(request, *args, **kwargs)
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/manufacturing/views.py", line 652, in process_tracking
+    return Response(serializer.data)
+                    ^^^^^^^^^^^^^^^
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/rest_framework/serializers.py", line 571, in data
+    ret = super().data
+          ^^^^^^^^^^^^
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/rest_framework/serializers.py", line 249, in data
+    self._data = self.to_representation(self.instance)
+                 ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/rest_framework/serializers.py", line 523, in to_representation
+    for field in fields:
+                 ^^^^^^
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/rest_framework/serializers.py", line 384, in _readable_fields
+    for field in self.fields.values():
+                 ^^^^^^^^^^^
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/django/utils/functional.py", line 47, in __get__
+    res = instance.__dict__[self.name] = self.func(instance)
+                                         ~~~~~~~~~^^^^^^^^^^
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/rest_framework/serializers.py", line 372, in fields
+    for key, value in self.get_fields().items():
+                      ~~~~~~~~~~~~~~~^^
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/rest_framework/serializers.py", line 1103, in get_fields
+    field_class, field_kwargs = self.build_field(
+                                ~~~~~~~~~~~~~~~~^
+        source, info, model, depth
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/rest_framework/serializers.py", line 1249, in build_field
+    return self.build_unknown_field(field_name, model_class)
+           ~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/rest_framework/serializers.py", line 1367, in build_unknown_field
+    raise ImproperlyConfigured(
+    ...<2 lines>...
+    )
+django.core.exceptions.ImproperlyConfigured: Field name `assigned_rm_store` is not valid for model `ManufacturingOrder` in `manufacturing.serializers.ManufacturingOrderWithProcessesSerializer`.
+ERROR 2025-10-19 18:30:10,539 log 67634 6189838336 Internal Server Error: /api/manufacturing/api/manufacturing-orders/17/process_tracking/
+Traceback (most recent call last):
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/django/core/handlers/exception.py", line 55, in inner
+    response = get_response(request)
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/django/core/handlers/base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/django/views/decorators/csrf.py", line 65, in _view_wrapper
+    return view_func(request, *args, **kwargs)
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/rest_framework/viewsets.py", line 124, in view
+    return self.dispatch(request, *args, **kwargs)
+           ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/rest_framework/views.py", line 509, in dispatch
+    response = self.handle_exception(exc)
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/rest_framework/views.py", line 469, in handle_exception
+    self.raise_uncaught_exception(exc)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/rest_framework/views.py", line 480, in raise_uncaught_exception
+    raise exc
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/rest_framework/views.py", line 506, in dispatch
+    response = handler(request, *args, **kwargs)
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/manufacturing/views.py", line 652, in process_tracking
+    return Response(serializer.data)
+                    ^^^^^^^^^^^^^^^
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/rest_framework/serializers.py", line 571, in data
+    ret = super().data
+          ^^^^^^^^^^^^
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/rest_framework/serializers.py", line 249, in data
+    self._data = self.to_representation(self.instance)
+                 ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/rest_framework/serializers.py", line 523, in to_representation
+    for field in fields:
+                 ^^^^^^
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/rest_framework/serializers.py", line 384, in _readable_fields
+    for field in self.fields.values():
+                 ^^^^^^^^^^^
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/django/utils/functional.py", line 47, in __get__
+    res = instance.__dict__[self.name] = self.func(instance)
+                                         ~~~~~~~~~^^^^^^^^^^
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/rest_framework/serializers.py", line 372, in fields
+    for key, value in self.get_fields().items():
+                      ~~~~~~~~~~~~~~~^^
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/rest_framework/serializers.py", line 1103, in get_fields
+    field_class, field_kwargs = self.build_field(
+                                ~~~~~~~~~~~~~~~~^
+        source, info, model, depth
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/rest_framework/serializers.py", line 1249, in build_field
+    return self.build_unknown_field(field_name, model_class)
+           ~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/rest_framework/serializers.py", line 1367, in build_unknown_field
+    raise ImproperlyConfigured(
+    ...<2 lines>...
+    )
+django.core.exceptions.ImproperlyConfigured: Field name `assigned_rm_store` is not valid for model `ManufacturingOrder` in `manufacturing.serializers.ManufacturingOrderWithProcessesSerializer`.
+ERROR 2025-10-19 18:30:12,435 log 67634 6189838336 Internal Server Error: /api/manufacturing/api/manufacturing-orders/17/process_tracking/
+Traceback (most recent call last):
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/django/core/handlers/exception.py", line 55, in inner
+    response = get_response(request)
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/django/core/handlers/base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/django/views/decorators/csrf.py", line 65, in _view_wrapper
+    return view_func(request, *args, **kwargs)
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/rest_framework/viewsets.py", line 124, in view
+    return self.dispatch(request, *args, **kwargs)
+           ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/rest_framework/views.py", line 509, in dispatch
+    response = self.handle_exception(exc)
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/rest_framework/views.py", line 469, in handle_exception
+    self.raise_uncaught_exception(exc)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/rest_framework/views.py", line 480, in raise_uncaught_exception
+    raise exc
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/rest_framework/views.py", line 506, in dispatch
+    response = handler(request, *args, **kwargs)
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/manufacturing/views.py", line 652, in process_tracking
+    return Response(serializer.data)
+                    ^^^^^^^^^^^^^^^
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/rest_framework/serializers.py", line 571, in data
+    ret = super().data
+          ^^^^^^^^^^^^
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/rest_framework/serializers.py", line 249, in data
+    self._data = self.to_representation(self.instance)
+                 ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/rest_framework/serializers.py", line 523, in to_representation
+    for field in fields:
+                 ^^^^^^
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/rest_framework/serializers.py", line 384, in _readable_fields
+    for field in self.fields.values():
+                 ^^^^^^^^^^^
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/django/utils/functional.py", line 47, in __get__
+    res = instance.__dict__[self.name] = self.func(instance)
+                                         ~~~~~~~~~^^^^^^^^^^
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/rest_framework/serializers.py", line 372, in fields
+    for key, value in self.get_fields().items():
+                      ~~~~~~~~~~~~~~~^^
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/rest_framework/serializers.py", line 1103, in get_fields
+    field_class, field_kwargs = self.build_field(
+                                ~~~~~~~~~~~~~~~~^
+        source, info, model, depth
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/rest_framework/serializers.py", line 1249, in build_field
+    return self.build_unknown_field(field_name, model_class)
+           ~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/rest_framework/serializers.py", line 1367, in build_unknown_field
+    raise ImproperlyConfigured(
+    ...<2 lines>...
+    )
+django.core.exceptions.ImproperlyConfigured: Field name `assigned_rm_store` is not valid for model `ManufacturingOrder` in `manufacturing.serializers.ManufacturingOrderWithProcessesSerializer`.
+ERROR 2025-10-19 18:30:14,657 log 67634 6189838336 Internal Server Error: /api/manufacturing/api/manufacturing-orders/17/process_tracking/
+Traceback (most recent call last):
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/django/core/handlers/exception.py", line 55, in inner
+    response = get_response(request)
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/django/core/handlers/base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/django/views/decorators/csrf.py", line 65, in _view_wrapper
+    return view_func(request, *args, **kwargs)
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/rest_framework/viewsets.py", line 124, in view
+    return self.dispatch(request, *args, **kwargs)
+           ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/rest_framework/views.py", line 509, in dispatch
+    response = self.handle_exception(exc)
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/rest_framework/views.py", line 469, in handle_exception
+    self.raise_uncaught_exception(exc)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/rest_framework/views.py", line 480, in raise_uncaught_exception
+    raise exc
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/rest_framework/views.py", line 506, in dispatch
+    response = handler(request, *args, **kwargs)
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/manufacturing/views.py", line 652, in process_tracking
+    return Response(serializer.data)
+                    ^^^^^^^^^^^^^^^
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/rest_framework/serializers.py", line 571, in data
+    ret = super().data
+          ^^^^^^^^^^^^
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/rest_framework/serializers.py", line 249, in data
+    self._data = self.to_representation(self.instance)
+                 ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/rest_framework/serializers.py", line 523, in to_representation
+    for field in fields:
+                 ^^^^^^
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/rest_framework/serializers.py", line 384, in _readable_fields
+    for field in self.fields.values():
+                 ^^^^^^^^^^^
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/django/utils/functional.py", line 47, in __get__
+    res = instance.__dict__[self.name] = self.func(instance)
+                                         ~~~~~~~~~^^^^^^^^^^
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/rest_framework/serializers.py", line 372, in fields
+    for key, value in self.get_fields().items():
+                      ~~~~~~~~~~~~~~~^^
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/rest_framework/serializers.py", line 1103, in get_fields
+    field_class, field_kwargs = self.build_field(
+                                ~~~~~~~~~~~~~~~~^
+        source, info, model, depth
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/rest_framework/serializers.py", line 1249, in build_field
+    return self.build_unknown_field(field_name, model_class)
+           ~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/rest_framework/serializers.py", line 1367, in build_unknown_field
+    raise ImproperlyConfigured(
+    ...<2 lines>...
+    )
+django.core.exceptions.ImproperlyConfigured: Field name `assigned_rm_store` is not valid for model `ManufacturingOrder` in `manufacturing.serializers.ManufacturingOrderWithProcessesSerializer`.
+INFO 2025-10-19 18:30:16,781 autoreload 67634 8726667456 /Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/manufacturing/serializers.py changed, reloading.
+INFO 2025-10-19 18:30:17,729 autoreload 68773 8726667456 Watching for file changes with StatReloader
+ERROR 2025-10-19 18:30:31,244 log 68773 6341865472 Internal Server Error: /api/manufacturing/api/manufacturing-orders/17/process_tracking/
+Traceback (most recent call last):
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/django/core/handlers/exception.py", line 55, in inner
+    response = get_response(request)
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/django/core/handlers/base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/django/views/decorators/csrf.py", line 65, in _view_wrapper
+    return view_func(request, *args, **kwargs)
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/rest_framework/viewsets.py", line 124, in view
+    return self.dispatch(request, *args, **kwargs)
+           ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/rest_framework/views.py", line 509, in dispatch
+    response = self.handle_exception(exc)
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/rest_framework/views.py", line 469, in handle_exception
+    self.raise_uncaught_exception(exc)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/rest_framework/views.py", line 480, in raise_uncaught_exception
+    raise exc
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/rest_framework/views.py", line 506, in dispatch
+    response = handler(request, *args, **kwargs)
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/manufacturing/views.py", line 652, in process_tracking
+    return Response(serializer.data)
+                    ^^^^^^^^^^^^^^^
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/rest_framework/serializers.py", line 571, in data
+    ret = super().data
+          ^^^^^^^^^^^^
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/rest_framework/serializers.py", line 249, in data
+    self._data = self.to_representation(self.instance)
+                 ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/rest_framework/serializers.py", line 523, in to_representation
+    for field in fields:
+                 ^^^^^^
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/rest_framework/serializers.py", line 384, in _readable_fields
+    for field in self.fields.values():
+                 ^^^^^^^^^^^
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/django/utils/functional.py", line 47, in __get__
+    res = instance.__dict__[self.name] = self.func(instance)
+                                         ~~~~~~~~~^^^^^^^^^^
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/rest_framework/serializers.py", line 372, in fields
+    for key, value in self.get_fields().items():
+                      ~~~~~~~~~~~~~~~^^
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/rest_framework/serializers.py", line 1103, in get_fields
+    field_class, field_kwargs = self.build_field(
+                                ~~~~~~~~~~~~~~~~^
+        source, info, model, depth
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/rest_framework/serializers.py", line 1249, in build_field
+    return self.build_unknown_field(field_name, model_class)
+           ~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/rest_framework/serializers.py", line 1367, in build_unknown_field
+    raise ImproperlyConfigured(
+    ...<2 lines>...
+    )
+django.core.exceptions.ImproperlyConfigured: Field name `assigned_rm_store` is not valid for model `ManufacturingOrder` in `manufacturing.serializers.ManufacturingOrderWithProcessesSerializer`.
+ERROR 2025-10-19 18:30:32,738 log 68773 6341865472 Internal Server Error: /api/manufacturing/api/manufacturing-orders/17/process_tracking/
+Traceback (most recent call last):
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/django/core/handlers/exception.py", line 55, in inner
+    response = get_response(request)
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/django/core/handlers/base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/django/views/decorators/csrf.py", line 65, in _view_wrapper
+    return view_func(request, *args, **kwargs)
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/rest_framework/viewsets.py", line 124, in view
+    return self.dispatch(request, *args, **kwargs)
+           ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/rest_framework/views.py", line 509, in dispatch
+    response = self.handle_exception(exc)
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/rest_framework/views.py", line 469, in handle_exception
+    self.raise_uncaught_exception(exc)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/rest_framework/views.py", line 480, in raise_uncaught_exception
+    raise exc
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/rest_framework/views.py", line 506, in dispatch
+    response = handler(request, *args, **kwargs)
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/manufacturing/views.py", line 652, in process_tracking
+    return Response(serializer.data)
+                    ^^^^^^^^^^^^^^^
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/rest_framework/serializers.py", line 571, in data
+    ret = super().data
+          ^^^^^^^^^^^^
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/rest_framework/serializers.py", line 249, in data
+    self._data = self.to_representation(self.instance)
+                 ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/rest_framework/serializers.py", line 523, in to_representation
+    for field in fields:
+                 ^^^^^^
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/rest_framework/serializers.py", line 384, in _readable_fields
+    for field in self.fields.values():
+                 ^^^^^^^^^^^
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/django/utils/functional.py", line 47, in __get__
+    res = instance.__dict__[self.name] = self.func(instance)
+                                         ~~~~~~~~~^^^^^^^^^^
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/rest_framework/serializers.py", line 372, in fields
+    for key, value in self.get_fields().items():
+                      ~~~~~~~~~~~~~~~^^
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/rest_framework/serializers.py", line 1103, in get_fields
+    field_class, field_kwargs = self.build_field(
+                                ~~~~~~~~~~~~~~~~^
+        source, info, model, depth
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/rest_framework/serializers.py", line 1249, in build_field
+    return self.build_unknown_field(field_name, model_class)
+           ~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/rest_framework/serializers.py", line 1367, in build_unknown_field
+    raise ImproperlyConfigured(
+    ...<2 lines>...
+    )
+django.core.exceptions.ImproperlyConfigured: Field name `assigned_rm_store` is not valid for model `ManufacturingOrder` in `manufacturing.serializers.ManufacturingOrderWithProcessesSerializer`.
+ERROR 2025-10-19 18:30:35,687 log 68773 6341865472 Internal Server Error: /api/manufacturing/api/manufacturing-orders/17/process_tracking/
+Traceback (most recent call last):
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/django/core/handlers/exception.py", line 55, in inner
+    response = get_response(request)
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/django/core/handlers/base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/django/views/decorators/csrf.py", line 65, in _view_wrapper
+    return view_func(request, *args, **kwargs)
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/rest_framework/viewsets.py", line 124, in view
+    return self.dispatch(request, *args, **kwargs)
+           ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/rest_framework/views.py", line 509, in dispatch
+    response = self.handle_exception(exc)
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/rest_framework/views.py", line 469, in handle_exception
+    self.raise_uncaught_exception(exc)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/rest_framework/views.py", line 480, in raise_uncaught_exception
+    raise exc
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/rest_framework/views.py", line 506, in dispatch
+    response = handler(request, *args, **kwargs)
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/manufacturing/views.py", line 652, in process_tracking
+    return Response(serializer.data)
+                    ^^^^^^^^^^^^^^^
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/rest_framework/serializers.py", line 571, in data
+    ret = super().data
+          ^^^^^^^^^^^^
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/rest_framework/serializers.py", line 249, in data
+    self._data = self.to_representation(self.instance)
+                 ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/rest_framework/serializers.py", line 523, in to_representation
+    for field in fields:
+                 ^^^^^^
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/rest_framework/serializers.py", line 384, in _readable_fields
+    for field in self.fields.values():
+                 ^^^^^^^^^^^
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/django/utils/functional.py", line 47, in __get__
+    res = instance.__dict__[self.name] = self.func(instance)
+                                         ~~~~~~~~~^^^^^^^^^^
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/rest_framework/serializers.py", line 372, in fields
+    for key, value in self.get_fields().items():
+                      ~~~~~~~~~~~~~~~^^
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/rest_framework/serializers.py", line 1103, in get_fields
+    field_class, field_kwargs = self.build_field(
+                                ~~~~~~~~~~~~~~~~^
+        source, info, model, depth
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/rest_framework/serializers.py", line 1249, in build_field
+    return self.build_unknown_field(field_name, model_class)
+           ~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/rest_framework/serializers.py", line 1367, in build_unknown_field
+    raise ImproperlyConfigured(
+    ...<2 lines>...
+    )
+django.core.exceptions.ImproperlyConfigured: Field name `assigned_rm_store` is not valid for model `ManufacturingOrder` in `manufacturing.serializers.ManufacturingOrderWithProcessesSerializer`.
+ERROR 2025-10-19 18:30:40,725 log 68773 6341865472 Internal Server Error: /api/manufacturing/api/manufacturing-orders/17/process_tracking/
+Traceback (most recent call last):
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/django/core/handlers/exception.py", line 55, in inner
+    response = get_response(request)
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/django/core/handlers/base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/django/views/decorators/csrf.py", line 65, in _view_wrapper
+    return view_func(request, *args, **kwargs)
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/rest_framework/viewsets.py", line 124, in view
+    return self.dispatch(request, *args, **kwargs)
+           ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/rest_framework/views.py", line 509, in dispatch
+    response = self.handle_exception(exc)
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/rest_framework/views.py", line 469, in handle_exception
+    self.raise_uncaught_exception(exc)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/rest_framework/views.py", line 480, in raise_uncaught_exception
+    raise exc
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/rest_framework/views.py", line 506, in dispatch
+    response = handler(request, *args, **kwargs)
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/manufacturing/views.py", line 652, in process_tracking
+    return Response(serializer.data)
+                    ^^^^^^^^^^^^^^^
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/rest_framework/serializers.py", line 571, in data
+    ret = super().data
+          ^^^^^^^^^^^^
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/rest_framework/serializers.py", line 249, in data
+    self._data = self.to_representation(self.instance)
+                 ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/rest_framework/serializers.py", line 523, in to_representation
+    for field in fields:
+                 ^^^^^^
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/rest_framework/serializers.py", line 384, in _readable_fields
+    for field in self.fields.values():
+                 ^^^^^^^^^^^
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/django/utils/functional.py", line 47, in __get__
+    res = instance.__dict__[self.name] = self.func(instance)
+                                         ~~~~~~~~~^^^^^^^^^^
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/rest_framework/serializers.py", line 372, in fields
+    for key, value in self.get_fields().items():
+                      ~~~~~~~~~~~~~~~^^
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/rest_framework/serializers.py", line 1103, in get_fields
+    field_class, field_kwargs = self.build_field(
+                                ~~~~~~~~~~~~~~~~^
+        source, info, model, depth
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/rest_framework/serializers.py", line 1249, in build_field
+    return self.build_unknown_field(field_name, model_class)
+           ~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/rest_framework/serializers.py", line 1367, in build_unknown_field
+    raise ImproperlyConfigured(
+    ...<2 lines>...
+    )
+django.core.exceptions.ImproperlyConfigured: Field name `assigned_rm_store` is not valid for model `ManufacturingOrder` in `manufacturing.serializers.ManufacturingOrderWithProcessesSerializer`.
+ERROR 2025-10-19 18:30:42,425 log 68773 6341865472 Internal Server Error: /api/manufacturing/api/manufacturing-orders/17/process_tracking/
+Traceback (most recent call last):
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/django/core/handlers/exception.py", line 55, in inner
+    response = get_response(request)
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/django/core/handlers/base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/django/views/decorators/csrf.py", line 65, in _view_wrapper
+    return view_func(request, *args, **kwargs)
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/rest_framework/viewsets.py", line 124, in view
+    return self.dispatch(request, *args, **kwargs)
+           ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/rest_framework/views.py", line 509, in dispatch
+    response = self.handle_exception(exc)
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/rest_framework/views.py", line 469, in handle_exception
+    self.raise_uncaught_exception(exc)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/rest_framework/views.py", line 480, in raise_uncaught_exception
+    raise exc
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/rest_framework/views.py", line 506, in dispatch
+    response = handler(request, *args, **kwargs)
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/manufacturing/views.py", line 652, in process_tracking
+    return Response(serializer.data)
+                    ^^^^^^^^^^^^^^^
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/rest_framework/serializers.py", line 571, in data
+    ret = super().data
+          ^^^^^^^^^^^^
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/rest_framework/serializers.py", line 249, in data
+    self._data = self.to_representation(self.instance)
+                 ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/rest_framework/serializers.py", line 523, in to_representation
+    for field in fields:
+                 ^^^^^^
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/rest_framework/serializers.py", line 384, in _readable_fields
+    for field in self.fields.values():
+                 ^^^^^^^^^^^
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/django/utils/functional.py", line 47, in __get__
+    res = instance.__dict__[self.name] = self.func(instance)
+                                         ~~~~~~~~~^^^^^^^^^^
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/rest_framework/serializers.py", line 372, in fields
+    for key, value in self.get_fields().items():
+                      ~~~~~~~~~~~~~~~^^
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/rest_framework/serializers.py", line 1103, in get_fields
+    field_class, field_kwargs = self.build_field(
+                                ~~~~~~~~~~~~~~~~^
+        source, info, model, depth
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/rest_framework/serializers.py", line 1249, in build_field
+    return self.build_unknown_field(field_name, model_class)
+           ~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/rest_framework/serializers.py", line 1367, in build_unknown_field
+    raise ImproperlyConfigured(
+    ...<2 lines>...
+    )
+django.core.exceptions.ImproperlyConfigured: Field name `assigned_rm_store` is not valid for model `ManufacturingOrder` in `manufacturing.serializers.ManufacturingOrderWithProcessesSerializer`.
+INFO 2025-10-19 18:30:43,687 autoreload 68773 8726667456 /Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/manufacturing/serializers.py changed, reloading.
+INFO 2025-10-19 18:30:44,466 autoreload 69427 8726667456 Watching for file changes with StatReloader
+INFO 2025-10-19 18:31:06,250 autoreload 69427 8726667456 /Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/manufacturing/serializers.py changed, reloading.
+INFO 2025-10-19 18:31:06,899 autoreload 70126 8726667456 Watching for file changes with StatReloader
+INFO 2025-10-19 18:31:18,006 autoreload 70126 8726667456 /Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/manufacturing/serializers.py changed, reloading.
+INFO 2025-10-19 18:31:18,665 autoreload 70420 8726667456 Watching for file changes with StatReloader
+INFO 2025-10-19 18:31:26,474 autoreload 70420 8726667456 /Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/manufacturing/serializers.py changed, reloading.
+INFO 2025-10-19 18:31:28,968 autoreload 70576 8726667456 Watching for file changes with StatReloader
+WARNING 2025-10-19 18:31:37,527 log 70576 6136885248 Unauthorized: /api/manufacturing/api/manufacturing-orders/17/process_tracking/
+INFO 2025-10-19 18:31:49,479 autoreload 70576 8726667456 /Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/manufacturing/serializers.py changed, reloading.
+INFO 2025-10-19 18:31:50,125 autoreload 71259 8726667456 Watching for file changes with StatReloader
+INFO 2025-10-19 18:31:58,247 autoreload 71531 8726667456 Watching for file changes with StatReloader
+INFO 2025-10-19 18:32:57,171 autoreload 73692 8726667456 Watching for file changes with StatReloader
+INFO 2025-10-19 18:33:29,527 autoreload 74965 8726667456 Watching for file changes with StatReloader
+WARNING 2025-10-19 18:33:37,349 log 74965 6202454016 Not Found: /api/manufacturing/api/purchase-orders/dashboard_stats/
+ERROR 2025-10-19 18:34:55,515 log 74965 6252933120 Internal Server Error: /api/manufacturing/api/manufacturing-orders/rm_store_dashboard/
+Traceback (most recent call last):
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/django/core/handlers/exception.py", line 55, in inner
+    response = get_response(request)
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/django/core/handlers/base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/django/views/decorators/csrf.py", line 65, in _view_wrapper
+    return view_func(request, *args, **kwargs)
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/rest_framework/viewsets.py", line 124, in view
+    return self.dispatch(request, *args, **kwargs)
+           ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/rest_framework/views.py", line 509, in dispatch
+    response = self.handle_exception(exc)
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/rest_framework/views.py", line 469, in handle_exception
+    self.raise_uncaught_exception(exc)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/rest_framework/views.py", line 480, in raise_uncaught_exception
+    raise exc
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/rest_framework/views.py", line 506, in dispatch
+    response = handler(request, *args, **kwargs)
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/manufacturing/views.py", line 960, in rm_store_dashboard
+    'on_hold': on_hold_serializer.data,
+               ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/rest_framework/serializers.py", line 795, in data
+    ret = super().data
+          ^^^^^^^^^^^^
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/rest_framework/serializers.py", line 249, in data
+    self._data = self.to_representation(self.instance)
+                 ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/rest_framework/serializers.py", line 714, in to_representation
+    self.child.to_representation(item) for item in iterable
+                                                   ^^^^^^^^
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/django/db/models/query.py", line 384, in __iter__
+    self._fetch_all()
+    ~~~~~~~~~~~~~~~^^
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/django/db/models/query.py", line 1949, in _fetch_all
+    self._result_cache = list(self._iterable_class(self))
+                         ~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/django/db/models/query.py", line 91, in __iter__
+    results = compiler.execute_sql(
+        chunked_fetch=self.chunked_fetch, chunk_size=self.chunk_size
+    )
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/django/db/models/sql/compiler.py", line 1610, in execute_sql
+    sql, params = self.as_sql()
+                  ~~~~~~~~~~~^^
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/django/db/models/sql/compiler.py", line 766, in as_sql
+    extra_select, order_by, group_by = self.pre_sql_setup(
+                                       ~~~~~~~~~~~~~~~~~~^
+        with_col_aliases=with_col_aliases or bool(combinator),
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/django/db/models/sql/compiler.py", line 85, in pre_sql_setup
+    self.setup_query(with_col_aliases=with_col_aliases)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/django/db/models/sql/compiler.py", line 74, in setup_query
+    self.select, self.klass_info, self.annotation_col_map = self.get_select(
+                                                            ~~~~~~~~~~~~~~~^
+        with_col_aliases=with_col_aliases,
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/django/db/models/sql/compiler.py", line 299, in get_select
+    related_klass_infos = self.get_related_selections(select, select_mask)
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/django/db/models/sql/compiler.py", line 1396, in get_related_selections
+    raise FieldError(
+    ...<6 lines>...
+    )
+django.core.exceptions.FieldError: Invalid field name(s) given in select_related: 'assigned_supervisor'. Choices are: product_code, customer_c_id, gm_approved_by, rm_allocated_by, created_by
+ERROR 2025-10-19 18:37:31,934 log 74965 6252933120 Internal Server Error: /api/manufacturing/api/manufacturing-orders/rm_store_dashboard/
+Traceback (most recent call last):
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/django/core/handlers/exception.py", line 55, in inner
+    response = get_response(request)
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/django/core/handlers/base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/django/views/decorators/csrf.py", line 65, in _view_wrapper
+    return view_func(request, *args, **kwargs)
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/rest_framework/viewsets.py", line 124, in view
+    return self.dispatch(request, *args, **kwargs)
+           ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/rest_framework/views.py", line 509, in dispatch
+    response = self.handle_exception(exc)
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/rest_framework/views.py", line 469, in handle_exception
+    self.raise_uncaught_exception(exc)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/rest_framework/views.py", line 480, in raise_uncaught_exception
+    raise exc
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/rest_framework/views.py", line 506, in dispatch
+    response = handler(request, *args, **kwargs)
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/manufacturing/views.py", line 960, in rm_store_dashboard
+    'on_hold': on_hold_serializer.data,
+               ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/rest_framework/serializers.py", line 795, in data
+    ret = super().data
+          ^^^^^^^^^^^^
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/rest_framework/serializers.py", line 249, in data
+    self._data = self.to_representation(self.instance)
+                 ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/rest_framework/serializers.py", line 714, in to_representation
+    self.child.to_representation(item) for item in iterable
+                                                   ^^^^^^^^
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/django/db/models/query.py", line 384, in __iter__
+    self._fetch_all()
+    ~~~~~~~~~~~~~~~^^
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/django/db/models/query.py", line 1949, in _fetch_all
+    self._result_cache = list(self._iterable_class(self))
+                         ~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/django/db/models/query.py", line 91, in __iter__
+    results = compiler.execute_sql(
+        chunked_fetch=self.chunked_fetch, chunk_size=self.chunk_size
+    )
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/django/db/models/sql/compiler.py", line 1610, in execute_sql
+    sql, params = self.as_sql()
+                  ~~~~~~~~~~~^^
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/django/db/models/sql/compiler.py", line 766, in as_sql
+    extra_select, order_by, group_by = self.pre_sql_setup(
+                                       ~~~~~~~~~~~~~~~~~~^
+        with_col_aliases=with_col_aliases or bool(combinator),
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/django/db/models/sql/compiler.py", line 85, in pre_sql_setup
+    self.setup_query(with_col_aliases=with_col_aliases)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/django/db/models/sql/compiler.py", line 74, in setup_query
+    self.select, self.klass_info, self.annotation_col_map = self.get_select(
+                                                            ~~~~~~~~~~~~~~~^
+        with_col_aliases=with_col_aliases,
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/django/db/models/sql/compiler.py", line 299, in get_select
+    related_klass_infos = self.get_related_selections(select, select_mask)
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/django/db/models/sql/compiler.py", line 1396, in get_related_selections
+    raise FieldError(
+    ...<6 lines>...
+    )
+django.core.exceptions.FieldError: Invalid field name(s) given in select_related: 'assigned_supervisor'. Choices are: product_code, customer_c_id, gm_approved_by, rm_allocated_by, created_by
+WARNING 2025-10-19 18:37:35,441 log 74965 6202454016 Not Found: /api/manufacturing/api/purchase-orders/dashboard_stats/
+WARNING 2025-10-19 18:37:41,812 log 74965 6236106752 Not Found: /api/manufacturing/api/purchase-orders/dashboard_stats/
+ERROR 2025-10-19 18:37:46,621 log 74965 6252933120 Internal Server Error: /api/manufacturing/api/manufacturing-orders/rm_store_dashboard/
+Traceback (most recent call last):
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/django/core/handlers/exception.py", line 55, in inner
+    response = get_response(request)
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/django/core/handlers/base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/django/views/decorators/csrf.py", line 65, in _view_wrapper
+    return view_func(request, *args, **kwargs)
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/rest_framework/viewsets.py", line 124, in view
+    return self.dispatch(request, *args, **kwargs)
+           ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/rest_framework/views.py", line 509, in dispatch
+    response = self.handle_exception(exc)
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/rest_framework/views.py", line 469, in handle_exception
+    self.raise_uncaught_exception(exc)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/rest_framework/views.py", line 480, in raise_uncaught_exception
+    raise exc
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/rest_framework/views.py", line 506, in dispatch
+    response = handler(request, *args, **kwargs)
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/manufacturing/views.py", line 960, in rm_store_dashboard
+    'on_hold': on_hold_serializer.data,
+               ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/rest_framework/serializers.py", line 795, in data
+    ret = super().data
+          ^^^^^^^^^^^^
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/rest_framework/serializers.py", line 249, in data
+    self._data = self.to_representation(self.instance)
+                 ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/rest_framework/serializers.py", line 714, in to_representation
+    self.child.to_representation(item) for item in iterable
+                                                   ^^^^^^^^
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/django/db/models/query.py", line 384, in __iter__
+    self._fetch_all()
+    ~~~~~~~~~~~~~~~^^
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/django/db/models/query.py", line 1949, in _fetch_all
+    self._result_cache = list(self._iterable_class(self))
+                         ~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/django/db/models/query.py", line 91, in __iter__
+    results = compiler.execute_sql(
+        chunked_fetch=self.chunked_fetch, chunk_size=self.chunk_size
+    )
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/django/db/models/sql/compiler.py", line 1610, in execute_sql
+    sql, params = self.as_sql()
+                  ~~~~~~~~~~~^^
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/django/db/models/sql/compiler.py", line 766, in as_sql
+    extra_select, order_by, group_by = self.pre_sql_setup(
+                                       ~~~~~~~~~~~~~~~~~~^
+        with_col_aliases=with_col_aliases or bool(combinator),
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/django/db/models/sql/compiler.py", line 85, in pre_sql_setup
+    self.setup_query(with_col_aliases=with_col_aliases)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/django/db/models/sql/compiler.py", line 74, in setup_query
+    self.select, self.klass_info, self.annotation_col_map = self.get_select(
+                                                            ~~~~~~~~~~~~~~~^
+        with_col_aliases=with_col_aliases,
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/django/db/models/sql/compiler.py", line 299, in get_select
+    related_klass_infos = self.get_related_selections(select, select_mask)
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/django/db/models/sql/compiler.py", line 1396, in get_related_selections
+    raise FieldError(
+    ...<6 lines>...
+    )
+django.core.exceptions.FieldError: Invalid field name(s) given in select_related: 'assigned_supervisor'. Choices are: product_code, customer_c_id, gm_approved_by, rm_allocated_by, created_by
+ERROR 2025-10-19 18:40:47,987 log 74965 6252933120 Internal Server Error: /api/manufacturing/api/manufacturing-orders/rm_store_dashboard/
+Traceback (most recent call last):
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/django/core/handlers/exception.py", line 55, in inner
+    response = get_response(request)
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/django/core/handlers/base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/django/views/decorators/csrf.py", line 65, in _view_wrapper
+    return view_func(request, *args, **kwargs)
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/rest_framework/viewsets.py", line 124, in view
+    return self.dispatch(request, *args, **kwargs)
+           ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/rest_framework/views.py", line 509, in dispatch
+    response = self.handle_exception(exc)
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/rest_framework/views.py", line 469, in handle_exception
+    self.raise_uncaught_exception(exc)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/rest_framework/views.py", line 480, in raise_uncaught_exception
+    raise exc
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/rest_framework/views.py", line 506, in dispatch
+    response = handler(request, *args, **kwargs)
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/manufacturing/views.py", line 960, in rm_store_dashboard
+    'on_hold': on_hold_serializer.data,
+               ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/rest_framework/serializers.py", line 795, in data
+    ret = super().data
+          ^^^^^^^^^^^^
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/rest_framework/serializers.py", line 249, in data
+    self._data = self.to_representation(self.instance)
+                 ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/rest_framework/serializers.py", line 714, in to_representation
+    self.child.to_representation(item) for item in iterable
+                                                   ^^^^^^^^
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/django/db/models/query.py", line 384, in __iter__
+    self._fetch_all()
+    ~~~~~~~~~~~~~~~^^
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/django/db/models/query.py", line 1949, in _fetch_all
+    self._result_cache = list(self._iterable_class(self))
+                         ~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/django/db/models/query.py", line 91, in __iter__
+    results = compiler.execute_sql(
+        chunked_fetch=self.chunked_fetch, chunk_size=self.chunk_size
+    )
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/django/db/models/sql/compiler.py", line 1610, in execute_sql
+    sql, params = self.as_sql()
+                  ~~~~~~~~~~~^^
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/django/db/models/sql/compiler.py", line 766, in as_sql
+    extra_select, order_by, group_by = self.pre_sql_setup(
+                                       ~~~~~~~~~~~~~~~~~~^
+        with_col_aliases=with_col_aliases or bool(combinator),
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/django/db/models/sql/compiler.py", line 85, in pre_sql_setup
+    self.setup_query(with_col_aliases=with_col_aliases)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/django/db/models/sql/compiler.py", line 74, in setup_query
+    self.select, self.klass_info, self.annotation_col_map = self.get_select(
+                                                            ~~~~~~~~~~~~~~~^
+        with_col_aliases=with_col_aliases,
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/django/db/models/sql/compiler.py", line 299, in get_select
+    related_klass_infos = self.get_related_selections(select, select_mask)
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/django/db/models/sql/compiler.py", line 1396, in get_related_selections
+    raise FieldError(
+    ...<6 lines>...
+    )
+django.core.exceptions.FieldError: Invalid field name(s) given in select_related: 'assigned_supervisor'. Choices are: product_code, customer_c_id, gm_approved_by, rm_allocated_by, created_by
+INFO 2025-10-19 18:41:14,174 autoreload 74965 8726667456 /Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/manufacturing/views.py changed, reloading.
+INFO 2025-10-19 18:41:16,535 autoreload 87448 8726667456 Watching for file changes with StatReloader
+INFO 2025-10-19 18:41:22,343 autoreload 87448 8726667456 /Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/manufacturing/views.py changed, reloading.
+INFO 2025-10-19 18:41:23,017 autoreload 87687 8726667456 Watching for file changes with StatReloader
+INFO 2025-10-19 18:41:36,140 autoreload 87687 8726667456 /Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/manufacturing/views.py changed, reloading.
+INFO 2025-10-19 18:41:36,765 autoreload 88104 8726667456 Watching for file changes with StatReloader
+WARNING 2025-10-19 22:02:26,843 log 88104 6169571328 Unauthorized: /api/manufacturing/api/manufacturing-orders/17/process_tracking/
+WARNING 2025-10-19 22:06:17,061 log 88104 6186397696 Unauthorized: /api/auth/profile/
+INFO 2025-10-19 22:11:10,959 serializers 88104 6203224064 Creating batch with validated_data: {'mo_id': 15, 'planned_quantity': 4000, 'status': 'created'}
+INFO 2025-10-19 22:11:10,962 serializers 88104 6203224064 Batch RM allocation: Base=4.0kg, Tolerance=2.00%, Final=4.080kg
+WARNING 2025-10-19 22:11:57,735 log 88104 6169571328 Not Found: /api/manufacturing/api/purchase-orders/dashboard_stats/
+WARNING 2025-10-19 22:12:13,576 log 88104 6220050432 Not Found: /api/manufacturing/api/purchase-orders/dashboard_stats/
+WARNING 2025-10-19 22:12:19,340 log 88104 6236876800 Not Found: /api/manufacturing/api/purchase-orders/dashboard_stats/
+WARNING 2025-10-19 22:12:34,624 log 88104 6236876800 Not Found: /api/manufacturing/api/purchase-orders/dashboard_stats/
+WARNING 2025-10-19 22:13:27,678 log 88104 6236876800 Not Found: /api/manufacturing/api/purchase-orders/dashboard_stats/
+WARNING 2025-10-19 22:13:35,435 log 88104 6220050432 Not Found: /api/manufacturing/api/purchase-orders/dashboard_stats/
+INFO 2025-10-19 22:17:41,734 autoreload 88104 8726667456 /Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/manufacturing/views.py changed, reloading.
+INFO 2025-10-19 22:17:42,565 autoreload 19637 8726667456 Watching for file changes with StatReloader
+INFO 2025-10-19 22:17:54,768 autoreload 19637 8726667456 /Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/manufacturing/views.py changed, reloading.
+INFO 2025-10-19 22:17:55,579 autoreload 20041 8726667456 Watching for file changes with StatReloader
+INFO 2025-10-19 22:18:10,019 autoreload 20041 8726667456 /Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/manufacturing/views.py changed, reloading.
+INFO 2025-10-19 22:18:10,738 autoreload 20474 8726667456 Watching for file changes with StatReloader
+INFO 2025-10-19 22:22:37,681 autoreload 20474 8726667456 /Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/manufacturing/views.py changed, reloading.
+INFO 2025-10-19 22:22:39,189 autoreload 27705 8726667456 Watching for file changes with StatReloader
+INFO 2025-10-19 22:23:07,720 autoreload 27705 8726667456 /Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/manufacturing/views.py changed, reloading.
+INFO 2025-10-19 22:23:09,094 autoreload 28504 8726667456 Watching for file changes with StatReloader
+INFO 2025-10-19 22:23:20,587 autoreload 28504 8726667456 /Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/manufacturing/views.py changed, reloading.
+INFO 2025-10-19 22:23:21,220 autoreload 28822 8726667456 Watching for file changes with StatReloader
+WARNING 2025-10-19 22:25:28,973 log 28822 6131953664 Not Found: /api/manufacturing/api/purchase-orders/dashboard_stats/
+INFO 2025-10-19 22:30:27,373 autoreload 28822 8726667456 /Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/manufacturing/views.py changed, reloading.
+INFO 2025-10-19 22:30:30,113 autoreload 40237 8726667456 Watching for file changes with StatReloader
+INFO 2025-10-19 22:31:03,993 autoreload 40237 8726667456 /Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/manufacturing/views.py changed, reloading.
+INFO 2025-10-19 22:31:04,961 autoreload 41267 8726667456 Watching for file changes with StatReloader
+INFO 2025-10-19 22:31:23,685 autoreload 41267 8726667456 /Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/manufacturing/views.py changed, reloading.
+INFO 2025-10-19 22:31:24,529 autoreload 41808 8726667456 Watching for file changes with StatReloader
+INFO 2025-10-19 22:32:53,569 autoreload 41808 8726667456 /Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/manufacturing/views.py changed, reloading.
+INFO 2025-10-19 22:32:54,552 autoreload 44276 8726667456 Watching for file changes with StatReloader
+WARNING 2025-10-19 23:01:49,870 log 44276 6154940416 Not Found: /api/manufacturing/api/purchase-orders/dashboard_stats/
+WARNING 2025-10-19 23:01:55,905 log 44276 6138114048 Not Found: /api/manufacturing/api/purchase-orders/dashboard_stats/
+WARNING 2025-10-19 23:02:38,499 log 44276 6154940416 Unauthorized: /api/manufacturing/api/manufacturing-orders/
+WARNING 2025-10-19 23:06:32,616 log 44276 6188593152 Bad Request: /api/manufacturing/api/manufacturing-orders/17/update_mo_details/
+WARNING 2025-10-19 23:06:57,647 log 44276 6205419520 Not Found: /api/manufacturing/api/purchase-orders/dashboard_stats/
+WARNING 2025-10-19 23:13:04,816 log 44276 6255898624 Unauthorized: /api/manufacturing/api/manufacturing-orders/17/process_tracking/
+WARNING 2025-10-19 23:14:54,263 log 44276 6154940416 Unauthorized: /api/manufacturing/api/batches/mo-batch-summary/15/
+WARNING 2025-10-19 23:14:54,268 log 44276 6154940416 Unauthorized: /api/manufacturing/api/batches/mo-batch-summary/15/
+WARNING 2025-10-19 23:19:09,912 log 44276 6205419520 Not Found: /api/manufacturing/api/purchase-orders/dashboard_stats/
+WARNING 2025-10-19 23:19:19,346 log 44276 6205419520 Not Found: /api/manufacturing/api/purchase-orders/dashboard_stats/
+WARNING 2025-10-19 23:19:50,096 log 44276 6188593152 Not Found: /api/manufacturing/api/purchase-orders/dashboard_stats/
+WARNING 2025-10-19 23:19:58,580 log 44276 6255898624 Not Found: /api/manufacturing/api/purchase-orders/dashboard_stats/
+WARNING 2025-10-19 23:20:06,236 log 44276 6222245888 Not Found: /api/manufacturing/api/purchase-orders/dashboard_stats/
+WARNING 2025-10-19 23:20:24,248 log 44276 6255898624 Not Found: /api/manufacturing/api/purchase-orders/dashboard_stats/
+WARNING 2025-10-19 23:28:20,645 log 44276 6188593152 Too Many Requests: /api/manufacturing/api/manufacturing-orders/17/process_tracking/
+WARNING 2025-10-19 23:28:50,654 log 44276 6188593152 Too Many Requests: /api/manufacturing/api/manufacturing-orders/17/process_tracking/
+INFO 2025-10-19 23:36:34,359 autoreload 44276 8726667456 /Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/manufacturing/views.py changed, reloading.
+INFO 2025-10-19 23:36:35,241 autoreload 46045 8726667456 Watching for file changes with StatReloader
+INFO 2025-10-19 23:36:43,151 autoreload 46045 8726667456 /Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/manufacturing/views.py changed, reloading.
+INFO 2025-10-19 23:36:43,764 autoreload 46293 8726667456 Watching for file changes with StatReloader
+INFO 2025-10-19 23:37:21,391 autoreload 46293 8726667456 /Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/manufacturing/views.py changed, reloading.
+INFO 2025-10-19 23:37:21,994 autoreload 47352 8726667456 Watching for file changes with StatReloader
+INFO 2025-10-20 11:48:35,066 autoreload 7381 8664424640 Watching for file changes with StatReloader
+WARNING 2025-10-20 11:49:15,028 log 7381 6122680320 Unauthorized: /api/manufacturing/api/manufacturing-orders/dashboard_stats/
+WARNING 2025-10-20 11:49:16,260 log 7381 6122680320 Not Found: /api/manufacturing/api/purchase-orders/dashboard_stats/
+WARNING 2025-10-20 11:49:18,664 log 7381 6139506688 Unauthorized: /api/auth/profile/
+INFO 2025-10-20 13:02:16,712 autoreload 7381 8664424640 /Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/inventory/models.py changed, reloading.
+INFO 2025-10-20 13:02:17,463 autoreload 46911 8664424640 Watching for file changes with StatReloader
+INFO 2025-10-20 13:02:43,335 autoreload 46911 8664424640 /Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/inventory/models.py changed, reloading.
+INFO 2025-10-20 13:02:44,050 autoreload 47247 8664424640 Watching for file changes with StatReloader
+INFO 2025-10-20 13:04:54,263 autoreload 47247 8664424640 /Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/inventory/admin.py changed, reloading.
+INFO 2025-10-20 13:04:55,026 autoreload 48949 8664424640 Watching for file changes with StatReloader
+INFO 2025-10-20 13:04:59,677 autoreload 48949 8664424640 /Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/inventory/admin.py changed, reloading.
+INFO 2025-10-20 13:05:00,276 autoreload 48968 8664424640 Watching for file changes with StatReloader
+INFO 2025-10-20 13:05:07,010 autoreload 48968 8664424640 /Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/inventory/admin.py changed, reloading.
+INFO 2025-10-20 13:05:07,608 autoreload 49083 8664424640 Watching for file changes with StatReloader
+INFO 2025-10-20 13:05:28,242 autoreload 49083 8664424640 /Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/inventory/admin.py changed, reloading.
+INFO 2025-10-20 13:05:28,868 autoreload 49300 8664424640 Watching for file changes with StatReloader
+INFO 2025-10-20 13:05:58,921 autoreload 49300 8664424640 /Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/inventory/serializers.py changed, reloading.
+INFO 2025-10-20 13:05:59,544 autoreload 49680 8664424640 Watching for file changes with StatReloader
+INFO 2025-10-20 13:06:31,805 autoreload 49680 8664424640 /Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/inventory/serializers.py changed, reloading.
+INFO 2025-10-20 13:06:32,422 autoreload 50033 8664424640 Watching for file changes with StatReloader
+INFO 2025-10-20 13:06:37,017 autoreload 50033 8664424640 /Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/inventory/serializers.py changed, reloading.
+INFO 2025-10-20 13:06:37,615 autoreload 50142 8664424640 Watching for file changes with StatReloader
+INFO 2025-10-20 13:06:48,597 autoreload 50142 8664424640 /Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/inventory/views.py changed, reloading.
+INFO 2025-10-20 13:06:49,352 autoreload 50262 8664424640 Watching for file changes with StatReloader
+INFO 2025-10-20 13:06:57,671 autoreload 50262 8664424640 /Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/inventory/views.py changed, reloading.
+INFO 2025-10-20 13:06:58,311 autoreload 50439 8664424640 Watching for file changes with StatReloader
+INFO 2025-10-20 13:07:43,415 autoreload 50439 8664424640 /Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/inventory/views.py changed, reloading.
+INFO 2025-10-20 13:07:44,228 autoreload 50938 8664424640 Watching for file changes with StatReloader
+INFO 2025-10-20 13:08:06,001 autoreload 50938 8664424640 /Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/inventory/urls.py changed, reloading.
+INFO 2025-10-20 13:08:06,696 autoreload 51176 8664424640 Watching for file changes with StatReloader
+INFO 2025-10-20 13:08:47,409 autoreload 51176 8664424640 /Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/inventory/urls.py changed, reloading.
+INFO 2025-10-20 13:08:48,088 autoreload 51617 8664424640 Watching for file changes with StatReloader
+INFO 2025-10-20 13:16:43,509 autoreload 51617 8664424640 /Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/inventory/serializers.py changed, reloading.
+INFO 2025-10-20 13:16:44,234 autoreload 61819 8664424640 Watching for file changes with StatReloader
+INFO 2025-10-20 14:17:57,332 autoreload 32521 8664424640 Watching for file changes with StatReloader
+WARNING 2025-10-20 14:19:57,058 log 32521 6169833472 Unauthorized: /api/inventory/coiling/pending-handover/
+WARNING 2025-10-20 14:19:57,061 log 32521 6186659840 Unauthorized: /api/inventory/coiling/issues/
+INFO 2025-10-20 14:20:21,836 autoreload 32521 8664424640 /Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/inventory/migrations/0013_add_missing_handover_fields.py changed, reloading.
+INFO 2025-10-20 14:20:22,514 autoreload 36458 8664424640 Watching for file changes with StatReloader
+INFO 2025-10-20 14:21:54,557 autoreload 39168 8664424640 Watching for file changes with StatReloader
+WARNING 2025-10-20 14:22:07,965 log 39168 6124400640 Unauthorized: /api/auth/profile/
+WARNING 2025-10-20 14:24:24,781 log 39168 6124400640 Unauthorized: /api/manufacturing/api/purchase-orders/
+WARNING 2025-10-20 14:24:29,927 log 39168 6141227008 Not Found: /api/manufacturing/api/purchase-orders/dashboard_stats/
+INFO 2025-10-20 14:39:46,531 autoreload 39168 8664424640 /Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/manufacturing/models.py changed, reloading.
+INFO 2025-10-20 14:39:47,323 autoreload 67836 8664424640 Watching for file changes with StatReloader
+INFO 2025-10-20 14:41:27,560 autoreload 67836 8664424640 /Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/notifications/models.py changed, reloading.
+INFO 2025-10-20 14:41:28,191 autoreload 70572 8664424640 Watching for file changes with StatReloader
+INFO 2025-10-20 14:44:25,844 autoreload 70572 8664424640 /Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/manufacturing/views.py changed, reloading.
+INFO 2025-10-20 14:44:27,802 autoreload 75373 8664424640 Watching for file changes with StatReloader
+INFO 2025-10-20 14:45:18,411 autoreload 75373 8664424640 /Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/manufacturing/views.py changed, reloading.
+INFO 2025-10-20 14:45:19,238 autoreload 76759 8664424640 Watching for file changes with StatReloader
+INFO 2025-10-20 14:45:34,538 autoreload 76759 8664424640 /Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/manufacturing/urls.py changed, reloading.
+INFO 2025-10-20 14:45:35,160 autoreload 77250 8664424640 Watching for file changes with StatReloader
+INFO 2025-10-20 14:45:45,082 autoreload 77250 8664424640 /Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/manufacturing/urls.py changed, reloading.
+INFO 2025-10-20 14:45:45,685 autoreload 77525 8664424640 Watching for file changes with StatReloader
+INFO 2025-10-20 14:45:52,409 autoreload 77525 8664424640 /Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/manufacturing/urls.py changed, reloading.
+INFO 2025-10-20 14:45:53,043 autoreload 77658 8664424640 Watching for file changes with StatReloader
+INFO 2025-10-20 14:46:17,973 autoreload 77658 8664424640 /Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/manufacturing/models.py changed, reloading.
+INFO 2025-10-20 14:46:18,575 autoreload 78433 8664424640 Watching for file changes with StatReloader
+INFO 2025-10-20 14:46:20,018 autoreload 78433 8664424640 /Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/manufacturing/models.py changed, reloading.
+INFO 2025-10-20 14:46:20,609 autoreload 78465 8664424640 Watching for file changes with StatReloader
+WARNING 2025-10-20 14:46:38,503 log 78465 6159101952 Not Found: /api/manufacturing/api/purchase-orders/dashboard_stats/
+WARNING 2025-10-20 14:46:40,540 log 78465 6159101952 Not Found: /api/manufacturing/api/purchase-orders/dashboard_stats/
+WARNING 2025-10-20 14:46:47,363 log 78465 6159101952 Not Found: /api/manufacturing/api/purchase-orders/dashboard_stats/
+WARNING 2025-10-20 15:25:16,769 log 78465 6159101952 Unauthorized: /api/manufacturing/api/manufacturing-orders/17/process_tracking/
+WARNING 2025-10-20 15:25:16,771 log 78465 6175928320 Unauthorized: /api/manufacturing/api/manufacturing-orders/15/process_tracking/
+WARNING 2025-10-20 16:35:45,835 log 78465 6175928320 Unauthorized: /api/manufacturing/api/manufacturing-orders/17/process_tracking/
+WARNING 2025-10-20 16:35:45,836 log 78465 6159101952 Unauthorized: /api/manufacturing/api/manufacturing-orders/15/process_tracking/
+WARNING 2025-10-20 17:35:58,309 log 78465 6159101952 Unauthorized: /api/manufacturing/api/manufacturing-orders/17/process_tracking/
+WARNING 2025-10-20 17:35:58,310 log 78465 6175928320 Unauthorized: /api/manufacturing/api/manufacturing-orders/15/process_tracking/
+WARNING 2025-10-20 18:36:39,853 log 78465 6175928320 Unauthorized: /api/manufacturing/api/manufacturing-orders/15/process_tracking/
+WARNING 2025-10-20 18:36:39,854 log 78465 6159101952 Unauthorized: /api/manufacturing/api/manufacturing-orders/17/process_tracking/
+WARNING 2025-10-20 20:09:01,112 log 78465 6159101952 Unauthorized: /api/manufacturing/api/manufacturing-orders/17/process_tracking/
+WARNING 2025-10-20 20:09:01,115 log 78465 6175928320 Unauthorized: /api/manufacturing/api/manufacturing-orders/15/process_tracking/
+WARNING 2025-10-20 20:11:19,556 log 78465 6175928320 Not Found: /api/manufacturing/api/purchase-orders/dashboard_stats/
+WARNING 2025-10-20 20:11:25,104 log 78465 6159101952 Not Found: /api/manufacturing/api/purchase-orders/dashboard_stats/
+WARNING 2025-10-20 20:12:38,900 log 78465 6209581056 Unauthorized: /api/inventory/transactions/
+WARNING 2025-10-20 20:13:06,164 log 78465 6226407424 Not Found: /api/manufacturing/api/purchase-orders/dashboard_stats/
+WARNING 2025-10-20 20:14:02,905 log 78465 6175928320 Not Found: /api/manufacturing/api/purchase-orders/dashboard_stats/
+WARNING 2025-10-20 22:24:33,368 log 78465 6159101952 Unauthorized: /api/manufacturing/api/manufacturing-orders/17/process_tracking/
+WARNING 2025-10-20 22:24:33,370 log 78465 6175928320 Unauthorized: /api/manufacturing/api/manufacturing-orders/17/process_tracking/
+WARNING 2025-10-20 23:45:24,620 log 78465 6159101952 Unauthorized: /api/manufacturing/api/manufacturing-orders/17/process_tracking/
+WARNING 2025-10-20 23:45:24,622 log 78465 6175928320 Unauthorized: /api/manufacturing/api/manufacturing-orders/15/process_tracking/
+INFO 2025-10-21 07:43:04,040 autoreload 11328 8469930176 Watching for file changes with StatReloader
+WARNING 2025-10-21 07:43:15,191 log 11328 6165573632 Unauthorized: /api/manufacturing/api/manufacturing-orders/dashboard_stats/
+WARNING 2025-10-21 07:43:16,287 log 11328 6165573632 Not Found: /api/manufacturing/api/purchase-orders/dashboard_stats/
+WARNING 2025-10-21 07:43:21,839 log 11328 6165573632 Not Found: /api/manufacturing/api/purchase-orders/dashboard_stats/
+WARNING 2025-10-21 07:44:14,342 log 11328 6216052736 Unauthorized: /api/auth/profile/
+WARNING 2025-10-21 07:49:49,053 log 11328 6182400000 Not Found: /api/manufacturing/api/purchase-orders/dashboard_stats/
+WARNING 2025-10-21 07:50:09,411 log 11328 6199226368 Not Found: /api/manufacturing/api/purchase-orders/dashboard_stats/
+INFO 2025-10-21 08:10:41,239 autoreload 11328 8469930176 /Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/manufacturing/serializers.py changed, reloading.
+INFO 2025-10-21 08:10:42,195 autoreload 55674 8469930176 Watching for file changes with StatReloader
+INFO 2025-10-21 08:10:51,184 autoreload 55674 8469930176 /Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/manufacturing/serializers.py changed, reloading.
+INFO 2025-10-21 08:10:51,874 autoreload 55956 8469930176 Watching for file changes with StatReloader
+INFO 2025-10-21 08:11:20,978 autoreload 55956 8469930176 /Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/manufacturing/views.py changed, reloading.
+INFO 2025-10-21 08:11:21,660 autoreload 56670 8469930176 Watching for file changes with StatReloader
+WARNING 2025-10-21 08:28:54,275 log 56670 6164639744 Not Found: /api/manufacturing/api/purchase-orders/dashboard_stats/
+WARNING 2025-10-21 08:29:16,913 log 56670 6164639744 Not Found: /api/manufacturing/api/purchase-orders/dashboard_stats/
+WARNING 2025-10-21 08:29:24,103 log 56670 6164639744 Not Found: /api/manufacturing/api/purchase-orders/dashboard_stats/
+WARNING 2025-10-21 08:31:17,851 log 56670 6215118848 Not Found: /api/manufacturing/api/purchase-orders/dashboard_stats/
+INFO 2025-10-21 08:38:59,088 autoreload 56670 8469930176 /Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/manufacturing/serializers.py changed, reloading.
+INFO 2025-10-21 08:38:59,854 autoreload 94481 8469930176 Watching for file changes with StatReloader
+INFO 2025-10-21 08:42:45,300 autoreload 94481 8469930176 /Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/manufacturing/serializers.py changed, reloading.
+INFO 2025-10-21 08:42:46,146 autoreload 1086 8469930176 Watching for file changes with StatReloader
+WARNING 2025-10-21 08:43:35,312 log 1086 6127775744 Unauthorized: /api/manufacturing/api/manufacturing-orders/15/process_tracking/
+INFO 2025-10-21 08:50:39,870 autoreload 1086 8469930176 /Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/manufacturing/serializers.py changed, reloading.
+INFO 2025-10-21 08:50:40,663 autoreload 13828 8469930176 Watching for file changes with StatReloader
+INFO 2025-10-21 08:51:00,201 autoreload 13828 8469930176 /Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/manufacturing/serializers.py changed, reloading.
+INFO 2025-10-21 08:51:00,796 autoreload 14390 8469930176 Watching for file changes with StatReloader
+INFO 2025-10-21 08:56:30,396 autoreload 14390 8469930176 /Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/manufacturing/views.py changed, reloading.
+INFO 2025-10-21 08:56:32,049 autoreload 23252 8469930176 Watching for file changes with StatReloader
+WARNING 2025-10-21 08:56:40,483 log 23252 6146600960 Unauthorized: /api/manufacturing/api/batches/mo-batch-summary/15/
+WARNING 2025-10-21 08:56:40,485 log 23252 6146600960 Unauthorized: /api/manufacturing/api/batches/mo-batch-summary/15/
+INFO 2025-10-21 08:56:56,520 serializers 23252 6163427328 Creating batch with validated_data: {'mo_id': 15, 'planned_quantity': 500, 'status': 'created'}
+INFO 2025-10-21 08:56:56,524 serializers 23252 6163427328 Batch RM allocation: Base=0.5kg, Tolerance=2.00%, Final=0.510kg
+INFO 2025-10-21 08:59:15,105 autoreload 23252 8469930176 /Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/inventory/models.py changed, reloading.
+INFO 2025-10-21 08:59:15,833 autoreload 27658 8469930176 Watching for file changes with StatReloader
+INFO 2025-10-21 09:05:59,258 autoreload 37219 8469930176 Watching for file changes with StatReloader
+INFO 2025-10-21 09:06:05,996 autoreload 37219 8469930176 /Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/inventory/migrations/0014_increase_transaction_id_length.py changed, reloading.
+INFO 2025-10-21 09:06:06,614 autoreload 37452 8469930176 Watching for file changes with StatReloader
+INFO 2025-10-21 09:07:02,287 autoreload 37452 8469930176 /Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/manufacturing/views.py changed, reloading.
+INFO 2025-10-21 09:07:03,366 autoreload 38898 8469930176 Watching for file changes with StatReloader
+INFO 2025-10-21 09:11:00,833 autoreload 38898 8469930176 /Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/manufacturing/serializers.py changed, reloading.
+INFO 2025-10-21 09:11:01,598 autoreload 45402 8469930176 Watching for file changes with StatReloader
+INFO 2025-10-21 09:11:15,881 autoreload 45402 8469930176 /Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/manufacturing/serializers.py changed, reloading.
+INFO 2025-10-21 09:11:16,607 autoreload 45774 8469930176 Watching for file changes with StatReloader
+INFO 2025-10-21 09:11:39,564 autoreload 45774 8469930176 /Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/manufacturing/serializers.py changed, reloading.
+INFO 2025-10-21 09:11:40,263 autoreload 46393 8469930176 Watching for file changes with StatReloader
+INFO 2025-10-21 09:11:45,994 autoreload 46393 8469930176 /Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/manufacturing/serializers.py changed, reloading.
+INFO 2025-10-21 09:11:46,730 autoreload 46595 8469930176 Watching for file changes with StatReloader
+INFO 2025-10-21 09:11:48,179 autoreload 46595 8469930176 /Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/manufacturing/serializers.py changed, reloading.
+INFO 2025-10-21 09:11:48,836 autoreload 46647 8469930176 Watching for file changes with StatReloader
+INFO 2025-10-21 09:12:09,460 autoreload 46647 8469930176 /Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/manufacturing/serializers.py changed, reloading.
+INFO 2025-10-21 09:12:10,182 autoreload 47237 8469930176 Watching for file changes with StatReloader
+INFO 2025-10-21 09:12:12,786 autoreload 47237 8469930176 /Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/manufacturing/serializers.py changed, reloading.
+INFO 2025-10-21 09:12:13,362 autoreload 47297 8469930176 Watching for file changes with StatReloader
+INFO 2025-10-21 09:12:48,922 autoreload 47297 8469930176 /Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/manufacturing/serializers.py changed, reloading.
+INFO 2025-10-21 09:12:49,732 autoreload 48341 8469930176 Watching for file changes with StatReloader
+INFO 2025-10-21 09:14:16,804 autoreload 48341 8469930176 /Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/manufacturing/serializers.py changed, reloading.
+INFO 2025-10-21 09:14:17,612 autoreload 50749 8469930176 Watching for file changes with StatReloader
+INFO 2025-10-21 09:14:21,207 autoreload 50749 8469930176 /Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/manufacturing/serializers.py changed, reloading.
+INFO 2025-10-21 09:14:21,826 autoreload 50830 8469930176 Watching for file changes with StatReloader
+WARNING 2025-10-21 09:15:02,689 log 50830 6205517824 Not Found: /api/manufacturing/api/manufacturing-orders/process-execution/6/assign-supervisor/
+INFO 2025-10-21 09:15:27,804 autoreload 50830 8469930176 /Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/manufacturing/serializers.py changed, reloading.
+INFO 2025-10-21 09:15:28,540 autoreload 52600 8469930176 Watching for file changes with StatReloader
+WARNING 2025-10-21 09:15:35,401 log 52600 6193508352 Not Found: /api/manufacturing/api/manufacturing-orders/process-execution/6/assign-supervisor/
+INFO 2025-10-21 09:16:46,059 autoreload 52600 8469930176 /Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/manufacturing/views.py changed, reloading.
+INFO 2025-10-21 09:16:46,798 autoreload 54731 8469930176 Watching for file changes with StatReloader
+INFO 2025-10-21 09:16:56,746 autoreload 54731 8469930176 /Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/manufacturing/views.py changed, reloading.
+INFO 2025-10-21 09:16:57,368 autoreload 55005 8469930176 Watching for file changes with StatReloader
+WARNING 2025-10-21 09:24:04,775 log 55005 6198964224 Bad Request: /api/manufacturing/api/process-executions/6/complete_process/
+WARNING 2025-10-21 09:25:11,700 log 55005 6198964224 Bad Request: /api/manufacturing/api/process-executions/6/complete_process/
+WARNING 2025-10-21 09:25:59,185 log 55005 6165311488 Not Found: /api/manufacturing/manufacturing-orders/15/process_tracking/
+WARNING 2025-10-21 09:25:59,209 log 55005 6198964224 Not Found: /api/manufacturing/manufacturing-orders/15/process_tracking/
+WARNING 2025-10-21 09:25:59,629 log 55005 6165311488 Not Found: /api/manufacturing/api/purchase-orders/dashboard_stats/
+WARNING 2025-10-21 09:26:04,395 log 55005 6165311488 Not Found: /api/manufacturing/manufacturing-orders/15/process_tracking/
+WARNING 2025-10-21 09:26:35,394 log 55005 6165311488 Not Found: /api/manufacturing/manufacturing-orders/15/process_tracking/
+WARNING 2025-10-21 09:27:05,395 log 55005 6165311488 Not Found: /api/manufacturing/manufacturing-orders/15/process_tracking/
+WARNING 2025-10-21 09:27:35,392 log 55005 6165311488 Not Found: /api/manufacturing/manufacturing-orders/15/process_tracking/
+WARNING 2025-10-21 09:28:05,389 log 55005 6165311488 Not Found: /api/manufacturing/manufacturing-orders/15/process_tracking/
+WARNING 2025-10-21 09:28:35,392 log 55005 6165311488 Not Found: /api/manufacturing/manufacturing-orders/15/process_tracking/
+WARNING 2025-10-21 09:29:05,401 log 55005 6165311488 Not Found: /api/manufacturing/manufacturing-orders/15/process_tracking/
+WARNING 2025-10-21 09:29:35,385 log 55005 6165311488 Not Found: /api/manufacturing/manufacturing-orders/15/process_tracking/
+WARNING 2025-10-21 09:30:25,394 log 55005 6165311488 Not Found: /api/manufacturing/manufacturing-orders/15/process_tracking/
+WARNING 2025-10-21 09:30:39,415 log 55005 6165311488 Not Found: /api/manufacturing/manufacturing-orders/15/process_tracking/
+WARNING 2025-10-21 09:31:04,413 log 55005 6165311488 Not Found: /api/manufacturing/manufacturing-orders/15/process_tracking/
+WARNING 2025-10-21 09:31:34,413 log 55005 6165311488 Not Found: /api/manufacturing/manufacturing-orders/15/process_tracking/
+WARNING 2025-10-21 09:32:04,412 log 55005 6165311488 Not Found: /api/manufacturing/manufacturing-orders/15/process_tracking/
+WARNING 2025-10-21 09:32:34,409 log 55005 6165311488 Not Found: /api/manufacturing/manufacturing-orders/15/process_tracking/
+WARNING 2025-10-21 09:33:04,412 log 55005 6165311488 Not Found: /api/manufacturing/manufacturing-orders/15/process_tracking/
+WARNING 2025-10-21 09:33:34,409 log 55005 6165311488 Not Found: /api/manufacturing/manufacturing-orders/15/process_tracking/
+WARNING 2025-10-21 09:34:04,412 log 55005 6165311488 Not Found: /api/manufacturing/manufacturing-orders/15/process_tracking/
+WARNING 2025-10-21 09:34:34,403 log 55005 6165311488 Not Found: /api/manufacturing/manufacturing-orders/15/process_tracking/
+WARNING 2025-10-21 09:35:04,411 log 55005 6165311488 Not Found: /api/manufacturing/manufacturing-orders/15/process_tracking/
+WARNING 2025-10-21 09:35:34,407 log 55005 6165311488 Not Found: /api/manufacturing/manufacturing-orders/15/process_tracking/
+WARNING 2025-10-21 09:36:04,413 log 55005 6165311488 Not Found: /api/manufacturing/manufacturing-orders/15/process_tracking/
+WARNING 2025-10-21 09:58:50,773 log 55005 6182137856 Unauthorized: /api/manufacturing/api/manufacturing-orders/
+WARNING 2025-10-21 09:58:50,779 log 55005 6182137856 Unauthorized: /api/manufacturing/api/manufacturing-orders/
+WARNING 2025-10-21 09:58:50,845 log 55005 6198964224 Not Found: /api/manufacturing/manufacturing-orders/15/process_tracking/
+WARNING 2025-10-21 09:58:50,848 log 55005 6182137856 Not Found: /api/manufacturing/manufacturing-orders/14/process_tracking/
+WARNING 2025-10-21 09:58:50,854 log 55005 6215790592 Not Found: /api/manufacturing/manufacturing-orders/13/process_tracking/
+WARNING 2025-10-21 09:58:50,863 log 55005 6215790592 Not Found: /api/manufacturing/process-alerts/active_alerts/
+WARNING 2025-10-21 09:58:53,542 log 55005 6215790592 Not Found: /api/manufacturing/api/purchase-orders/dashboard_stats/
+WARNING 2025-10-21 09:58:56,292 log 55005 6215790592 Not Found: /api/manufacturing/manufacturing-orders/15/process_tracking/
+WARNING 2025-10-21 09:58:56,295 log 55005 6198964224 Not Found: /api/manufacturing/manufacturing-orders/14/process_tracking/
+WARNING 2025-10-21 09:58:56,298 log 55005 6232616960 Not Found: /api/manufacturing/manufacturing-orders/13/process_tracking/
+WARNING 2025-10-21 09:58:56,317 log 55005 6198964224 Not Found: /api/manufacturing/process-alerts/active_alerts/
+WARNING 2025-10-21 09:59:01,319 log 55005 6182137856 Not Found: /api/manufacturing/manufacturing-orders/15/process_tracking/
+WARNING 2025-10-21 09:59:01,324 log 55005 6232616960 Not Found: /api/manufacturing/manufacturing-orders/13/process_tracking/
+WARNING 2025-10-21 09:59:01,329 log 55005 6198964224 Not Found: /api/manufacturing/manufacturing-orders/14/process_tracking/
+WARNING 2025-10-21 09:59:01,346 log 55005 6232616960 Not Found: /api/manufacturing/process-alerts/active_alerts/
+WARNING 2025-10-21 09:59:37,826 log 55005 6232616960 Not Found: /api/manufacturing/api/purchase-orders/dashboard_stats/
+WARNING 2025-10-21 09:59:43,690 log 55005 6232616960 Not Found: /api/manufacturing/manufacturing-orders/17/process_tracking/
+WARNING 2025-10-21 09:59:43,872 log 55005 6232616960 Not Found: /api/manufacturing/api/purchase-orders/dashboard_stats/
+WARNING 2025-10-21 09:59:49,109 log 55005 6232616960 Not Found: /api/manufacturing/manufacturing-orders/17/process_tracking/
+INFO 2025-10-21 10:00:08,629 autoreload 88648 8469930176 Watching for file changes with StatReloader
+WARNING 2025-10-21 10:00:14,271 log 88648 6193819648 Not Found: /api/manufacturing/api/purchase-orders/dashboard_stats/
+WARNING 2025-10-21 10:00:17,335 log 88648 6193819648 Not Found: /api/manufacturing/manufacturing-orders/17/process_tracking/
+WARNING 2025-10-21 10:00:19,282 log 88648 6193819648 Not Found: /api/manufacturing/api/purchase-orders/dashboard_stats/
+WARNING 2025-10-21 10:00:22,349 log 88648 6193819648 Not Found: /api/manufacturing/manufacturing-orders/17/process_tracking/
+WARNING 2025-10-21 10:00:53,114 log 88648 6193819648 Not Found: /api/manufacturing/manufacturing-orders/17/process_tracking/
+WARNING 2025-10-21 10:01:23,109 log 88648 6193819648 Not Found: /api/manufacturing/manufacturing-orders/17/process_tracking/
+WARNING 2025-10-21 10:01:53,115 log 88648 6193819648 Not Found: /api/manufacturing/manufacturing-orders/17/process_tracking/
+WARNING 2025-10-21 10:02:23,115 log 88648 6193819648 Not Found: /api/manufacturing/manufacturing-orders/17/process_tracking/
+WARNING 2025-10-21 10:02:53,110 log 88648 6193819648 Not Found: /api/manufacturing/manufacturing-orders/17/process_tracking/
+WARNING 2025-10-21 10:03:19,506 log 88648 6193819648 Not Found: /api/manufacturing/api/purchase-orders/dashboard_stats/
+WARNING 2025-10-21 10:03:26,558 log 88648 6210646016 Not Found: /api/manufacturing/api/purchase-orders/dashboard_stats/
+WARNING 2025-10-21 10:12:47,119 log 88648 6244298752 Bad Request: /api/manufacturing/api/batch-process-executions/complete/
+WARNING 2025-10-21 10:17:10,096 log 88648 6244298752 Bad Request: /api/notifications/api/alerts/1/acknowledge/
+WARNING 2025-10-21 10:17:10,211 log 88648 6244298752 Not Found: /api/manufacturing/api/manufacturing-orders/1/process_tracking/
+WARNING 2025-10-21 10:26:15,752 log 88648 6210646016 Not Found: /api/manufacturing/api/purchase-orders/dashboard_stats/
+WARNING 2025-10-21 10:28:17,940 log 88648 6210646016 Not Found: /api/manufacturing/api/purchase-orders/dashboard_stats/
+ERROR 2025-10-21 10:40:17,676 log 88648 6244298752 Internal Server Error: /api/inventory/transactions/
+Traceback (most recent call last):
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/django/core/handlers/exception.py", line 55, in inner
+    response = get_response(request)
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/django/core/handlers/base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/django/views/decorators/csrf.py", line 65, in _view_wrapper
+    return view_func(request, *args, **kwargs)
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/rest_framework/viewsets.py", line 124, in view
+    return self.dispatch(request, *args, **kwargs)
+           ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/rest_framework/views.py", line 509, in dispatch
+    response = self.handle_exception(exc)
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/rest_framework/views.py", line 469, in handle_exception
+    self.raise_uncaught_exception(exc)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/rest_framework/views.py", line 480, in raise_uncaught_exception
+    raise exc
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/rest_framework/views.py", line 506, in dispatch
+    response = handler(request, *args, **kwargs)
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/rest_framework/mixins.py", line 43, in list
+    return self.get_paginated_response(serializer.data)
+                                       ^^^^^^^^^^^^^^^
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/rest_framework/serializers.py", line 795, in data
+    ret = super().data
+          ^^^^^^^^^^^^
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/rest_framework/serializers.py", line 249, in data
+    self._data = self.to_representation(self.instance)
+                 ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/rest_framework/serializers.py", line 714, in to_representation
+    self.child.to_representation(item) for item in iterable
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/rest_framework/serializers.py", line 538, in to_representation
+    ret[field.field_name] = field.to_representation(attribute)
+                            ~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/rest_framework/serializers.py", line 523, in to_representation
+    for field in fields:
+                 ^^^^^^
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/rest_framework/serializers.py", line 384, in _readable_fields
+    for field in self.fields.values():
+                 ^^^^^^^^^^^
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/django/utils/functional.py", line 47, in __get__
+    res = instance.__dict__[self.name] = self.func(instance)
+                                         ~~~~~~~~~^^^^^^^^^^
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/rest_framework/serializers.py", line 372, in fields
+    for key, value in self.get_fields().items():
+                      ~~~~~~~~~~~~~~~^^
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/rest_framework/serializers.py", line 1103, in get_fields
+    field_class, field_kwargs = self.build_field(
+                                ~~~~~~~~~~~~~~~~^
+        source, info, model, depth
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/rest_framework/serializers.py", line 1249, in build_field
+    return self.build_unknown_field(field_name, model_class)
+           ~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/venv/lib/python3.13/site-packages/rest_framework/serializers.py", line 1367, in build_unknown_field
+    raise ImproperlyConfigured(
+    ...<2 lines>...
+    )
+django.core.exceptions.ImproperlyConfigured: Field name `location_type` is not valid for model `Location` in `inventory.serializers.LocationBasicSerializer`.
+INFO 2025-10-21 10:49:43,373 autoreload 88648 8469930176 /Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/inventory/serializers.py changed, reloading.
+INFO 2025-10-21 10:49:44,182 autoreload 68754 8469930176 Watching for file changes with StatReloader
+INFO 2025-10-21 10:49:53,238 autoreload 68754 8469930176 /Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/inventory/views.py changed, reloading.
+INFO 2025-10-21 10:49:53,949 autoreload 69040 8469930176 Watching for file changes with StatReloader
+INFO 2025-10-21 10:52:57,364 autoreload 69040 8469930176 /Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/manufacturing/views.py changed, reloading.
+INFO 2025-10-21 10:52:59,037 autoreload 73969 8469930176 Watching for file changes with StatReloader
+INFO 2025-10-21 10:53:07,931 autoreload 73969 8469930176 /Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/manufacturing/urls.py changed, reloading.
+INFO 2025-10-21 10:53:08,575 autoreload 74253 8469930176 Watching for file changes with StatReloader
+INFO 2025-10-21 10:53:27,876 autoreload 74253 8469930176 /Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/manufacturing/views.py changed, reloading.
+INFO 2025-10-21 10:53:28,458 autoreload 74791 8469930176 Watching for file changes with StatReloader
+INFO 2025-10-21 10:55:01,035 autoreload 74791 8469930176 /Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/inventory/views.py changed, reloading.
+INFO 2025-10-21 10:55:01,961 autoreload 77355 8469930176 Watching for file changes with StatReloader
+INFO 2025-10-21 11:05:33,468 autoreload 77355 8469930176 /Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/manufacturing/views.py changed, reloading.
+INFO 2025-10-21 11:05:34,242 autoreload 94048 8469930176 Watching for file changes with StatReloader
+INFO 2025-10-21 11:57:54,360 autoreload 94048 8469930176 /Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/manufacturing/urls.py changed, reloading.
+INFO 2025-10-21 11:57:55,139 autoreload 14067 8469930176 Watching for file changes with StatReloader
+WARNING 2025-10-21 11:57:57,456 log 14067 6135771136 Unauthorized: /api/auth/profile/
+INFO 2025-10-21 11:58:03,067 autoreload 14067 8469930176 /Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/manufacturing/urls.py changed, reloading.
+INFO 2025-10-21 11:58:03,880 autoreload 14333 8469930176 Watching for file changes with StatReloader
+WARNING 2025-10-21 11:58:27,477 log 14333 6132051968 Unauthorized: /api/manufacturing/api/manufacturing-orders/15/process_tracking/
+INFO 2025-10-21 11:59:27,430 autoreload 14333 8469930176 /Users/jayakumarn/Documents/personal/microsprings/Microsprings-inventory-managemenet-system/manufacturing/urls.py changed, reloading.
+INFO 2025-10-21 11:59:28,415 autoreload 16525 8469930176 Watching for file changes with StatReloader
+INFO 2025-10-22 11:54:44,869 autoreload 9409 8617369792 Watching for file changes with StatReloader
+WARNING 2025-10-22 11:58:02,189 log 9409 6198947840 Unauthorized: /api/auth/profile/

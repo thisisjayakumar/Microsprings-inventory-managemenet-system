@@ -61,7 +61,7 @@ class DispatchOrder(models.Model):
     Dispatch and shipping management
     """
     dispatch_id = models.CharField(max_length=20, unique=True)
-    mo = models.ForeignKey('manufacturing.ManufacturingOrder', on_delete=models.PROTECT, related_name='dispatch_orders')
+    mo = models.ForeignKey('manufacturing.ManufacturingOrder', on_delete=models.PROTECT, related_name='logistics_dispatch_orders')
     
     # Customer details
     customer_name = models.CharField(max_length=200)

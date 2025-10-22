@@ -3,7 +3,13 @@ from rest_framework.routers import DefaultRouter
 from .views import (
     ManufacturingOrderViewSet, PurchaseOrderViewSet,
     MOProcessExecutionViewSet, MOProcessStepExecutionViewSet, MOProcessAlertViewSet,
-    BatchViewSet, OutsourcingRequestViewSet
+    BatchViewSet, OutsourcingRequestViewSet,
+    # Workflow API views
+    create_mo_workflow, approve_mo, allocate_rm_to_mo, assign_process_to_operator,
+    reassign_process, allocate_batch_to_process, receive_batch_by_operator,
+    complete_process, verify_finished_goods,
+    # Heat number API
+    get_available_heat_numbers_for_mo
 )
 from .batch_process_views import BatchProcessExecutionViewSet
 
@@ -22,10 +28,35 @@ app_name = 'manufacturing'
 
 urlpatterns = [
     path('api/', include(router.urls)),
+    
+    # Enhanced Workflow API endpoints
+    path('api/workflow/create-mo/', create_mo_workflow, name='create_mo_workflow'),
+    path('api/workflow/approve-mo/', approve_mo, name='approve_mo'),
+    path('api/workflow/allocate-rm/', allocate_rm_to_mo, name='allocate_rm_to_mo'),
+    path('api/workflow/assign-process/', assign_process_to_operator, name='assign_process_to_operator'),
+    path('api/workflow/reassign-process/', reassign_process, name='reassign_process'),
+    path('api/workflow/allocate-batch/', allocate_batch_to_process, name='allocate_batch_to_process'),
+    path('api/workflow/receive-batch/', receive_batch_by_operator, name='receive_batch_by_operator'),
+    path('api/workflow/complete-process/', complete_process, name='complete_process'),
+    path('api/workflow/verify-fg/', verify_finished_goods, name='verify_finished_goods'),
+    
+    # Heat number management
+    path('api/manufacturing-orders/<int:mo_id>/available-heat-numbers/', get_available_heat_numbers_for_mo, name='get_available_heat_numbers_for_mo'),
 ]
 
 # Available API endpoints:
 """
+Enhanced Manufacturing Workflow:
+- POST   /api/workflow/create-mo/                    - Create MO and initialize approval workflow
+- POST   /api/workflow/approve-mo/                    - Manager approves MO
+- POST   /api/workflow/allocate-rm/                   - RM Store allocates raw materials to MO
+- POST   /api/workflow/assign-process/                - Production Head assigns process to operator
+- POST   /api/workflow/reassign-process/              - Production Head reassigns process to different operator
+- POST   /api/workflow/allocate-batch/                - RM Store allocates batch to specific process
+- POST   /api/workflow/receive-batch/                 - Operator receives batch and starts process
+- POST   /api/workflow/complete-process/              - Operator completes process
+- POST   /api/workflow/verify-fg/                     - Quality check for finished goods
+
 Manufacturing Orders:
 - GET    /api/manufacturing-orders/                    - List all MOs (with filtering, search, pagination)
 - POST   /api/manufacturing-orders/                    - Create new MO

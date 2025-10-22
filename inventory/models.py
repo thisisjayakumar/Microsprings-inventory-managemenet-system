@@ -184,7 +184,7 @@ class InventoryTransaction(models.Model):
         ('adjustment', 'Stock Adjustment')
     ]
     
-    transaction_id = models.CharField(max_length=20, unique=True)
+    transaction_id = models.CharField(max_length=50, unique=True)
     transaction_type = models.CharField(max_length=20, choices=TRANSACTION_TYPES)
     
     # What
@@ -469,6 +469,28 @@ class HeatNumber(models.Model):
         help_text="Quantity consumed from this heat number"
     )
     
+    # Handover Verification Status
+    HANDOVER_STATUS_CHOICES = [
+        ('pending_handover', 'Pending Handover'),
+        ('verified', 'Verified'),
+        ('issue_reported', 'Issue Reported'),
+    ]
+    handover_status = models.CharField(
+        max_length=20,
+        choices=HANDOVER_STATUS_CHOICES,
+        default='pending_handover',
+        help_text="Status of handover verification to Coiling department"
+    )
+    verified_at = models.DateTimeField(null=True, blank=True, help_text="When the handover was verified")
+    verified_by = models.ForeignKey(
+        User, 
+        on_delete=models.SET_NULL, 
+        null=True, 
+        blank=True,
+        related_name='verified_heat_numbers',
+        help_text="User who verified the handover"
+    )
+    
     # Audit
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -672,3 +694,78 @@ class InventoryTransactionHeat(models.Model):
     
     def __str__(self):
         return f"{self.inventory_transaction.transaction_id} - {self.heat_number.heat_number}"
+
+
+class HandoverIssue(models.Model):
+    """
+    Track issues reported during raw material handover verification
+    """
+    ISSUE_TYPE_CHOICES = [
+        ('incorrect_weight', 'Incorrect Weight'),
+        ('damaged_material', 'Damaged Material'),
+        ('wrong_material', 'Wrong Material'),
+    ]
+    
+    # Related heat number (equivalent to ChildBatch)
+    heat_number = models.ForeignKey(
+        HeatNumber,
+        on_delete=models.CASCADE,
+        related_name='handover_issues',
+        help_text="Heat number for which issue was reported"
+    )
+    
+    # Issue details
+    issue_type = models.CharField(
+        max_length=20,
+        choices=ISSUE_TYPE_CHOICES,
+        help_text="Type of issue reported"
+    )
+    actual_weight = models.DecimalField(
+        max_digits=10,
+        decimal_places=3,
+        null=True,
+        blank=True,
+        help_text="Actual weight found (if different from expected)"
+    )
+    remarks = models.TextField(
+        blank=True,
+        help_text="Additional remarks about the issue"
+    )
+    
+    # Reporting details
+    reported_by = models.ForeignKey(
+        User,
+        on_delete=models.PROTECT,
+        related_name='reported_handover_issues',
+        help_text="User who reported the issue"
+    )
+    reported_at = models.DateTimeField(auto_now_add=True)
+    
+    # Resolution tracking
+    is_resolved = models.BooleanField(default=False)
+    resolved_at = models.DateTimeField(null=True, blank=True)
+    resolved_by = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='resolved_handover_issues',
+        help_text="User who resolved the issue"
+    )
+    resolution_notes = models.TextField(
+        blank=True,
+        help_text="Notes about how the issue was resolved"
+    )
+    
+    class Meta:
+        verbose_name = 'Handover Issue'
+        verbose_name_plural = 'Handover Issues'
+        ordering = ['-reported_at']
+        indexes = [
+            models.Index(fields=['heat_number']),
+            models.Index(fields=['reported_at']),
+            models.Index(fields=['is_resolved']),
+        ]
+    
+    def __str__(self):
+        return f"Issue #{self.id} - {self.heat_number.heat_number} ({self.get_issue_type_display()})"

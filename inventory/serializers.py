@@ -1,10 +1,12 @@
 from rest_framework import serializers
 from django.db import transaction
+from django.utils import timezone
 from decimal import Decimal
 from products.models import Product
 from .models import (
     RMStockBalance, RawMaterial, InventoryTransaction, Location,
-    GRMReceipt, HeatNumber, RMStockBalanceHeat, InventoryTransactionHeat
+    GRMReceipt, HeatNumber, RMStockBalanceHeat, InventoryTransactionHeat,
+    HandoverIssue
 )
 
 
@@ -31,6 +33,62 @@ class RawMaterialBasicSerializer(serializers.ModelSerializer):
         if stock_balance:
             return float(stock_balance.available_quantity)
         return 0.0
+
+
+class RawMaterialCreateSerializer(serializers.ModelSerializer):
+    """Serializer for creating raw materials"""
+    
+    class Meta:
+        model = RawMaterial
+        fields = [
+            'material_code', 'material_name', 'material_type', 'grade', 'finishing',
+            'wire_diameter_mm', 'weight_kg', 'thickness_mm', 
+            'length_mm', 'breadth_mm', 'quantity'
+        ]
+    
+    def validate_material_code(self, value):
+        """Validate material code uniqueness"""
+        if RawMaterial.objects.filter(material_code=value).exists():
+            raise serializers.ValidationError("Material code already exists.")
+        return value
+    
+    def validate(self, data):
+        """Validate raw material data based on material type"""
+        material_type = data.get('material_type')
+        wire_diameter_mm = data.get('wire_diameter_mm')
+        thickness_mm = data.get('thickness_mm')
+        weight_kg = data.get('weight_kg')
+        quantity = data.get('quantity')
+        
+        errors = {}
+        
+        if material_type == 'coil':
+            if not wire_diameter_mm:
+                errors['wire_diameter_mm'] = "Wire diameter is required for Coil type materials"
+            if thickness_mm:
+                errors['thickness_mm'] = "Thickness should not be set for Coil type materials"
+        elif material_type == 'sheet':
+            if not thickness_mm:
+                errors['thickness_mm'] = "Thickness is required for Sheet type materials"
+            if wire_diameter_mm:
+                errors['wire_diameter_mm'] = "Wire diameter should not be set for Sheet type materials"
+            if weight_kg:
+                errors['weight_kg'] = "Weight should not be set for Sheet type materials (use quantity instead)"
+        
+        # Validate positive values
+        if wire_diameter_mm is not None and wire_diameter_mm <= 0:
+            errors['wire_diameter_mm'] = "Wire diameter must be greater than 0"
+        
+        if weight_kg is not None and weight_kg <= 0:
+            errors['weight_kg'] = "Weight must be greater than 0"
+        
+        if thickness_mm is not None and thickness_mm <= 0:
+            errors['thickness_mm'] = "Thickness must be greater than 0"
+        
+        if errors:
+            raise serializers.ValidationError(errors)
+        
+        return data
 
 
 class ProductListSerializer(serializers.ModelSerializer):
@@ -535,3 +593,92 @@ class GRMReceiptListSerializer(serializers.ModelSerializer):
     def get_heat_numbers_count(self, obj):
         """Get count of heat numbers in this GRM"""
         return obj.heat_numbers.count()
+
+
+# Handover Verification Serializers
+
+class HeatNumberHandoverSerializer(serializers.ModelSerializer):
+    """Serializer for heat numbers pending handover verification"""
+    raw_material_details = RawMaterialBasicSerializer(source='raw_material', read_only=True)
+    grm_number = serializers.CharField(source='grm_receipt.grm_number', read_only=True)
+    handover_status_display = serializers.CharField(source='get_handover_status_display', read_only=True)
+    verified_by_name = serializers.CharField(source='verified_by.get_full_name', read_only=True)
+    
+    class Meta:
+        model = HeatNumber
+        fields = [
+            'id', 'heat_number', 'grm_number', 'raw_material', 'raw_material_details',
+            'total_weight_kg', 'coils_received', 'sheets_received', 'handover_status',
+            'handover_status_display', 'verified_at', 'verified_by', 'verified_by_name',
+            'created_at'
+        ]
+        read_only_fields = fields
+
+
+class HandoverIssueSerializer(serializers.ModelSerializer):
+    """Serializer for handover issues"""
+    heat_number_details = HeatNumberHandoverSerializer(source='heat_number', read_only=True)
+    issue_type_display = serializers.CharField(source='get_issue_type_display', read_only=True)
+    reported_by_name = serializers.CharField(source='reported_by.get_full_name', read_only=True)
+    resolved_by_name = serializers.CharField(source='resolved_by.get_full_name', read_only=True)
+    
+    class Meta:
+        model = HandoverIssue
+        fields = [
+            'id', 'heat_number', 'heat_number_details', 'issue_type', 'issue_type_display',
+            'actual_weight', 'remarks', 'reported_by', 'reported_by_name', 'reported_at',
+            'is_resolved', 'resolved_at', 'resolved_by', 'resolved_by_name', 'resolution_notes'
+        ]
+        read_only_fields = ['id', 'reported_at']
+
+
+class HandoverIssueCreateSerializer(serializers.ModelSerializer):
+    """Serializer for creating handover issues"""
+    
+    class Meta:
+        model = HandoverIssue
+        fields = ['heat_number', 'issue_type', 'actual_weight', 'remarks']
+    
+    def create(self, validated_data):
+        """Create handover issue and update heat number status"""
+        validated_data['reported_by'] = self.context['request'].user
+        
+        # Create the issue
+        issue = HandoverIssue.objects.create(**validated_data)
+        
+        # Update heat number status to issue_reported
+        heat_number = issue.heat_number
+        heat_number.handover_status = 'issue_reported'
+        heat_number.save()
+        
+        return issue
+
+
+class HandoverVerifySerializer(serializers.Serializer):
+    """Serializer for verifying handover"""
+    heat_number_id = serializers.IntegerField()
+    
+    def validate_heat_number_id(self, value):
+        """Validate that heat number exists and is pending handover"""
+        try:
+            heat_number = HeatNumber.objects.get(id=value)
+            if heat_number.handover_status != 'pending_handover':
+                raise serializers.ValidationError(
+                    f"Heat number {heat_number.heat_number} is not pending handover verification"
+                )
+            return value
+        except HeatNumber.DoesNotExist:
+            raise serializers.ValidationError("Heat number does not exist")
+    
+    def create(self, validated_data):
+        """Verify handover and update heat number status"""
+        heat_number_id = validated_data['heat_number_id']
+        user = self.context['request'].user
+        
+        heat_number = HeatNumber.objects.get(id=heat_number_id)
+        heat_number.handover_status = 'verified'
+        heat_number.verified_at = timezone.now()
+        heat_number.verified_by = user
+        heat_number.save()
+        
+        return heat_number
