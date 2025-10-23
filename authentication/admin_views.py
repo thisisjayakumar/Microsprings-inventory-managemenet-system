@@ -11,6 +11,7 @@ from django.db.models import Q, Count, Prefetch
 from django.db import transaction
 from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError as DjangoValidationError
+from django.db.models.deletion import ProtectedError
 
 from .models import CustomUser, UserProfile, Role, UserRole, LoginSession
 from .admin_serializers import (
@@ -61,6 +62,44 @@ class AdminUserManagementViewSet(viewsets.ModelViewSet):
     def perform_update(self, serializer):
         """Update user with audit trail"""
         serializer.save()
+    
+    def destroy(self, request, *args, **kwargs):
+        """
+        Delete user with proper error handling for protected foreign keys
+        """
+        user = self.get_object()
+        
+        try:
+            user_name = user.get_full_name() or user.username
+            user.delete()
+            return Response({
+                'message': f'User {user_name} has been deleted successfully'
+            }, status=status.HTTP_204_NO_CONTENT)
+        
+        except ProtectedError as e:
+            # Parse the protected error to extract model information
+            protected_objects = e.protected_objects
+            model_names = set()
+            
+            for obj in protected_objects:
+                model_name = obj._meta.verbose_name_plural or obj._meta.model_name
+                model_names.add(model_name)
+            
+            models_list = ', '.join(model_names)
+            
+            return Response({
+                'error': f'Cannot delete user {user_name}',
+                'detail': f'This user is referenced in the following records: {models_list}',
+                'suggestion': 'Consider deactivating the user instead of deleting them.',
+                'action': 'deactivate',
+                'protected_models': list(model_names)
+            }, status=status.HTTP_400_BAD_REQUEST)
+        
+        except Exception as e:
+            return Response({
+                'error': 'Failed to delete user',
+                'detail': str(e)
+            }, status=status.HTTP_400_BAD_REQUEST)
     
     @action(detail=False, methods=['post'])
     def bulk_action(self, request):

@@ -11,6 +11,9 @@ from django.db.models import Q, Prefetch, Count, Case, When, BooleanField
 from django.utils import timezone
 from django.core.cache import cache
 from django_filters.rest_framework import DjangoFilterBackend
+from django.middleware.csrf import get_token
+from django.http import JsonResponse
+from django.conf import settings
 
 from .models import (
     CustomUser, UserProfile, Role, UserRole, 
@@ -32,6 +35,7 @@ class CustomTokenObtainPairView(TokenObtainPairView):
     serializer_class = UserLoginSerializer
 
     def post(self, request, *args, **kwargs):
+        csrf_token = get_token(request)
         serializer = self.get_serializer(data=request.data, context={'request': request})
         serializer.is_valid(raise_exception=True)
         
@@ -52,11 +56,43 @@ class CustomTokenObtainPairView(TokenObtainPairView):
         # Get user details with optimized query
         user_data = self.get_user_details(user)
         
-        return Response({
+        response = JsonResponse({
             'refresh': str(refresh),
             'access': str(refresh.access_token),
-            'user': user_data
-        })
+            'user': user_data,
+            'message': 'Login successful'
+        }, status=status.HTTP_200_OK)
+        
+        # Set CSRF token in cookie
+        response.set_cookie(
+            'csrftoken',
+            csrf_token,
+            httponly=True,
+            samesite='Lax',
+            secure=not settings.DEBUG,  # Secure in production
+            max_age=60 * 60 * 24 * 30  # 30 days
+        )
+        
+        # Set JWT tokens in HTTP-only cookies if needed
+        response.set_cookie(
+            'access_token',
+            str(refresh.access_token),
+            httponly=True,
+            samesite='Lax',
+            secure=not settings.DEBUG,
+            max_age=60 * 60  # 1 hour
+        )
+        
+        response.set_cookie(
+            'refresh_token',
+            str(refresh),
+            httponly=True,
+            samesite='Lax',
+            secure=not settings.DEBUG,
+            max_age=60 * 60 * 24 * 30  # 30 days
+        )
+        
+        return response
     
     def get_user_details(self, user):
         """Get optimized user details for login response"""

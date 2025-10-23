@@ -35,7 +35,11 @@ class IsRMStoreUser(permissions.BasePermission):
     """
     
     def has_permission(self, request, view):
+        import logging
+        logger = logging.getLogger(__name__)
+        
         if not request.user or not request.user.is_authenticated:
+            logger.warning(f"IsRMStoreUser: User not authenticated - User: {request.user}")
             return False
         
         # Check if user has rm_store role
@@ -45,8 +49,11 @@ class IsRMStoreUser(permissions.BasePermission):
                 is_active=True,
                 role__name='rm_store'
             ).exists()
+            
+            logger.info(f"IsRMStoreUser check - User: {request.user.username}, Has rm_store role: {user_roles}")
             return user_roles
-        except:
+        except Exception as e:
+            logger.error(f"IsRMStoreUser: Exception checking roles - {str(e)}")
             return False
 
 
