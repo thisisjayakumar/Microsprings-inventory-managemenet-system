@@ -1,5 +1,6 @@
 from django.db import models
 from django.contrib.auth import get_user_model
+from utils.enums import ReportTypeChoices, ScheduleTypeChoices
 
 User = get_user_model()
 
@@ -8,16 +9,9 @@ class ReportTemplate(models.Model):
     """
     Configurable report templates
     """
-    REPORT_TYPE_CHOICES = [
-        ('production', 'Production Report'),
-        ('inventory', 'Inventory Report'),
-        ('quality', 'Quality Report'),
-        ('efficiency', 'Efficiency Report')
-    ]
-    
     name = models.CharField(max_length=100)
     description = models.TextField()
-    report_type = models.CharField(max_length=20, choices=REPORT_TYPE_CHOICES)
+    report_type = models.CharField(max_length=20, choices=ReportTypeChoices.choices)
     
     # Query definition
     data_source_query = models.TextField()  # SQL or Django ORM query
@@ -44,18 +38,11 @@ class ScheduledReport(models.Model):
     """
     Automated report scheduling
     """
-    SCHEDULE_TYPE_CHOICES = [
-        ('daily', 'Daily'),
-        ('weekly', 'Weekly'),
-        ('monthly', 'Monthly'),
-        ('custom', 'Custom Cron')
-    ]
-    
     template = models.ForeignKey(ReportTemplate, on_delete=models.CASCADE, related_name='scheduled_reports')
     name = models.CharField(max_length=100)
     
     # Schedule
-    schedule_type = models.CharField(max_length=20, choices=SCHEDULE_TYPE_CHOICES)
+    schedule_type = models.CharField(max_length=20, choices=ScheduleTypeChoices.choices)
     cron_expression = models.CharField(max_length=100, blank=True)
     
     # Parameters

@@ -3,6 +3,15 @@ from django.contrib.auth import get_user_model
 from django.utils import timezone
 from decimal import Decimal
 import uuid
+from utils.enums import (
+    MOStatusChoices, PriorityChoices, ShiftChoices, POStatusChoices,
+    MaterialTypeChoices, ExecutionStatusChoices, StepStatusChoices,
+    QualityStatusChoices, AlertTypeChoices, SeverityChoices,
+    BatchStatusChoices, OutsourcingStatusChoices, MOApprovalWorkflowStatusChoices,
+    ProcessAssignmentStatusChoices, BatchAllocationStatusChoices,
+    ProcessExecutionActionChoices, FGVerificationStatusChoices,
+    RMAllocationStatusChoices
+)
 
 User = get_user_model()
 
@@ -12,28 +21,6 @@ class ManufacturingOrder(models.Model):
     Manufacturing Order (MO) - Production orders for finished goods
     Based on the Production Head Functions workflow
     """
-    STATUS_CHOICES = [
-        ('submitted', 'Submitted'),
-        ('rm_allocated', 'RM Allocated'),
-        ('mo_approved', 'MO Approved'),
-        ('in_progress', 'In Progress'),
-        ('completed', 'Completed'),
-        ('cancelled', 'Cancelled'),
-        ('on_hold', 'On Hold')
-    ]
-    
-    PRIORITY_CHOICES = [
-        ('low', 'Low'),
-        ('medium', 'Medium'),
-        ('high', 'High'),
-        ('urgent', 'Urgent')
-    ]
-    
-    SHIFT_CHOICES = [
-        ('I', '9AM-5PM'),
-        ('II', '5PM-2AM'),
-        ('III', '2AM-9AM')
-    ]
     
     # Auto-generated fields
     mo_id = models.CharField(max_length=20, unique=True, editable=False)
@@ -117,7 +104,7 @@ class ManufacturingOrder(models.Model):
     # NOTE: Supervisor is no longer assigned at MO level
     # Supervisors are tracked per work center (Process) in DailySupervisorStatus
     # and linked to operations via MOProcessExecution.assigned_supervisor
-    shift = models.CharField(max_length=10, choices=SHIFT_CHOICES, null=True, blank=True)
+    shift = models.CharField(max_length=10, choices=ShiftChoices.choices, null=True, blank=True)
     
     # Planning dates
     planned_start_date = models.DateTimeField()
@@ -126,8 +113,8 @@ class ManufacturingOrder(models.Model):
     actual_end_date = models.DateTimeField(null=True, blank=True)
     
     # Status & Priority
-    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='on_hold')
-    priority = models.CharField(max_length=10, choices=PRIORITY_CHOICES, default='medium')
+    status = models.CharField(max_length=20, choices=MOStatusChoices.choices, default='on_hold')
+    priority = models.CharField(max_length=10, choices=PriorityChoices.choices, default='medium')
     
     # Business details - customer field that references c_id
     customer_c_id = models.ForeignKey(
@@ -223,19 +210,6 @@ class PurchaseOrder(models.Model):
     Purchase Order (PO) - Orders for raw materials from vendors
     Based on the Production Head Functions workflow
     """
-    STATUS_CHOICES = [
-        ('po_initiated', 'Purchase Order Initiated'),
-        ('po_approved', 'Approved by GM'),
-        ('po_cancelled', 'Cancelled by Manager'),
-        ('rm_pending', 'Awaiting RM Store Manager Action'),
-        ('rm_completed', 'Goods Receipt Completed')
-    ]
-    
-    MATERIAL_TYPE_CHOICES = [
-        ('coil', 'Coil'),
-        ('sheet', 'Sheet')
-    ]
-    
     # Auto-generated fields
     po_id = models.CharField(max_length=20, unique=True, editable=False)
     date_time = models.DateTimeField(auto_now_add=True)
@@ -247,7 +221,7 @@ class PurchaseOrder(models.Model):
         related_name='purchase_orders',
         help_text="Select from dropdown - auto fills other details"
     )
-    material_type = models.CharField(max_length=20, choices=MATERIAL_TYPE_CHOICES, blank=True)
+    material_type = models.CharField(max_length=20, choices=MaterialTypeChoices.choices, blank=True)
     
     # Auto-populated fields based on material selection
     # For Coil materials
@@ -295,7 +269,7 @@ class PurchaseOrder(models.Model):
     total_amount = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True)
     
     # Status
-    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='po_initiated')
+    status = models.CharField(max_length=20, choices=POStatusChoices.choices, default='po_initiated')
     
     # Workflow tracking
     submitted_at = models.DateTimeField(null=True, blank=True)
@@ -415,20 +389,11 @@ class MOProcessExecution(models.Model):
     Track process execution for Manufacturing Orders
     Links MO to specific processes and tracks their progress
     """
-    EXECUTION_STATUS_CHOICES = [
-        ('pending', 'Pending'),
-        ('in_progress', 'In Progress'),
-        ('completed', 'Completed'),
-        ('on_hold', 'On Hold'),
-        ('failed', 'Failed'),
-        ('skipped', 'Skipped'),
-    ]
-    
     mo = models.ForeignKey(ManufacturingOrder, on_delete=models.CASCADE, related_name='process_executions')
     process = models.ForeignKey('processes.Process', on_delete=models.CASCADE)
     
     # Execution tracking
-    status = models.CharField(max_length=20, choices=EXECUTION_STATUS_CHOICES, default='pending')
+    status = models.CharField(max_length=20, choices=ExecutionStatusChoices.choices, default='pending')
     sequence_order = models.IntegerField(help_text="Order of execution for this MO")
     
     # Timing
@@ -703,21 +668,6 @@ class MOProcessStepExecution(models.Model):
     """
     Track individual process step execution within a process
     """
-    STEP_STATUS_CHOICES = [
-        ('pending', 'Pending'),
-        ('in_progress', 'In Progress'),
-        ('completed', 'Completed'),
-        ('failed', 'Failed'),
-        ('skipped', 'Skipped'),
-    ]
-    
-    QUALITY_STATUS_CHOICES = [
-        ('pending', 'Pending'),
-        ('passed', 'Passed'),
-        ('failed', 'Failed'),
-        ('rework_required', 'Rework Required'),
-    ]
-    
     process_execution = models.ForeignKey(
         MOProcessExecution, 
         on_delete=models.CASCADE, 
@@ -726,8 +676,8 @@ class MOProcessStepExecution(models.Model):
     process_step = models.ForeignKey('processes.ProcessStep', on_delete=models.CASCADE)
     
     # Execution tracking
-    status = models.CharField(max_length=20, choices=STEP_STATUS_CHOICES, default='pending')
-    quality_status = models.CharField(max_length=20, choices=QUALITY_STATUS_CHOICES, default='pending')
+    status = models.CharField(max_length=20, choices=StepStatusChoices.choices, default='pending')
+    quality_status = models.CharField(max_length=20, choices=QualityStatusChoices.choices, default='pending')
     
     # Timing
     actual_start_time = models.DateTimeField(null=True, blank=True)
@@ -781,22 +731,6 @@ class MOProcessAlert(models.Model):
     """
     Alerts and notifications for process execution issues
     """
-    ALERT_TYPE_CHOICES = [
-        ('delay', 'Process Delay'),
-        ('quality_issue', 'Quality Issue'),
-        ('equipment_failure', 'Equipment Failure'),
-        ('material_shortage', 'Material Shortage'),
-        ('operator_issue', 'Operator Issue'),
-        ('custom', 'Custom Alert'),
-    ]
-    
-    SEVERITY_CHOICES = [
-        ('low', 'Low'),
-        ('medium', 'Medium'),
-        ('high', 'High'),
-        ('critical', 'Critical'),
-    ]
-    
     process_execution = models.ForeignKey(
         MOProcessExecution, 
         on_delete=models.CASCADE, 
@@ -810,8 +744,8 @@ class MOProcessAlert(models.Model):
         related_name='alerts'
     )
     
-    alert_type = models.CharField(max_length=20, choices=ALERT_TYPE_CHOICES)
-    severity = models.CharField(max_length=10, choices=SEVERITY_CHOICES, default='medium')
+    alert_type = models.CharField(max_length=20, choices=AlertTypeChoices.choices)
+    severity = models.CharField(max_length=10, choices=SeverityChoices.choices, default='medium')
     title = models.CharField(max_length=200)
     description = models.TextField()
     
@@ -844,18 +778,6 @@ class Batch(models.Model):
     
     Key Concept: 1 MO can have multiple Batches until total batch quantities fulfill MO target quantity
     """
-    
-    STATUS_CHOICES = [
-        ('created', 'Created'),
-        ('rm_allocated', 'Raw Material Allocated'),
-        ('in_process', 'In Process'),
-        ('quality_check', 'Quality Check'),
-        ('completed', 'Completed'),
-        ('packed', 'Packed'),
-        ('dispatched', 'Dispatched'),
-        ('cancelled', 'Cancelled')
-    ]
-    
     # Auto-generated unique identifier
     batch_id = models.CharField(max_length=30, unique=True, editable=False)
     
@@ -917,7 +839,7 @@ class Batch(models.Model):
     # Status and Progress
     status = models.CharField(
         max_length=20, 
-        choices=STATUS_CHOICES, 
+        choices=BatchStatusChoices.choices, 
         default='created'
     )
     progress_percentage = models.DecimalField(
@@ -1021,13 +943,6 @@ class OutsourcingRequest(models.Model):
     """
     Outsourcing Request - Track items sent to external vendors for processing
     """
-    STATUS_CHOICES = [
-        ('draft', 'Draft'),
-        ('sent', 'Sent'),
-        ('returned', 'Returned'),
-        ('closed', 'Closed'),
-    ]
-    
     # Auto-generated fields
     request_id = models.CharField(max_length=20, unique=True, editable=False)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -1042,7 +957,7 @@ class OutsourcingRequest(models.Model):
     expected_return_date = models.DateField()
     
     # Status tracking
-    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='draft')
+    status = models.CharField(max_length=20, choices=OutsourcingStatusChoices.choices, default='draft')
     
     # Collection info
     collected_by = models.ForeignKey(
@@ -1165,15 +1080,6 @@ class MOApprovalWorkflow(models.Model):
     """
     Track MO approval workflow from creation to manager approval
     """
-    STATUS_CHOICES = [
-        ('pending_manager_approval', 'Pending Manager Approval'),
-        ('manager_approved', 'Manager Approved'),
-        ('manager_rejected', 'Manager Rejected'),
-        ('rm_allocation_pending', 'RM Allocation Pending'),
-        ('rm_allocated', 'RM Allocated'),
-        ('ready_for_production', 'Ready for Production'),
-    ]
-    
     mo = models.OneToOneField(
         ManufacturingOrder, 
         on_delete=models.CASCADE, 
@@ -1181,7 +1087,7 @@ class MOApprovalWorkflow(models.Model):
     )
     
     # Approval tracking
-    status = models.CharField(max_length=30, choices=STATUS_CHOICES, default='pending_manager_approval')
+    status = models.CharField(max_length=30, choices=MOApprovalWorkflowStatusChoices.choices, default='pending_manager_approval')
     
     # Manager approval
     manager_approved_at = models.DateTimeField(null=True, blank=True)
@@ -1215,15 +1121,6 @@ class ProcessAssignment(models.Model):
     """
     Track process assignments by Production Head to operators
     """
-    STATUS_CHOICES = [
-        ('assigned', 'Assigned'),
-        ('accepted', 'Accepted by Operator'),
-        ('in_progress', 'In Progress'),
-        ('completed', 'Completed'),
-        ('reassigned', 'Reassigned'),
-        ('cancelled', 'Cancelled'),
-    ]
-    
     mo_process_execution = models.ForeignKey(
         MOProcessExecution,
         on_delete=models.CASCADE,
@@ -1241,7 +1138,7 @@ class ProcessAssignment(models.Model):
     )
     
     # Assignment tracking
-    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='assigned')
+    status = models.CharField(max_length=20, choices=ProcessAssignmentStatusChoices.choices, default='assigned')
     assigned_at = models.DateTimeField(auto_now_add=True)
     assigned_by = models.ForeignKey(
         User, on_delete=models.SET_NULL, null=True, blank=True,
@@ -1278,15 +1175,6 @@ class BatchAllocation(models.Model):
     """
     Track batch allocation from RM Store to specific processes
     """
-    STATUS_CHOICES = [
-        ('allocated', 'Allocated'),
-        ('in_transit', 'In Transit'),
-        ('received', 'Received by Process'),
-        ('in_process', 'In Process'),
-        ('completed', 'Completed'),
-        ('returned', 'Returned to RM Store'),
-    ]
-    
     batch = models.ForeignKey(
         Batch,
         on_delete=models.CASCADE,
@@ -1313,7 +1201,7 @@ class BatchAllocation(models.Model):
     )
     
     # Allocation tracking
-    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='allocated')
+    status = models.CharField(max_length=20, choices=BatchAllocationStatusChoices.choices, default='allocated')
     allocated_at = models.DateTimeField(auto_now_add=True)
     allocated_by = models.ForeignKey(
         User, on_delete=models.SET_NULL, null=True, blank=True,
@@ -1347,18 +1235,6 @@ class ProcessExecutionLog(models.Model):
     """
     Detailed log of process execution by operators
     """
-    ACTION_CHOICES = [
-        ('started', 'Process Started'),
-        ('paused', 'Process Paused'),
-        ('resumed', 'Process Resumed'),
-        ('completed', 'Process Completed'),
-        ('quality_check', 'Quality Check'),
-        ('issue_reported', 'Issue Reported'),
-        ('material_requested', 'Material Requested'),
-        ('tool_change', 'Tool Change'),
-        ('maintenance', 'Maintenance'),
-    ]
-    
     batch_allocation = models.ForeignKey(
         BatchAllocation,
         on_delete=models.CASCADE,
@@ -1366,7 +1242,7 @@ class ProcessExecutionLog(models.Model):
     )
     
     # Execution details
-    action = models.CharField(max_length=20, choices=ACTION_CHOICES)
+    action = models.CharField(max_length=20, choices=ProcessExecutionActionChoices.choices)
     performed_by = models.ForeignKey(
         User, on_delete=models.CASCADE,
         related_name='process_execution_logs'
@@ -1397,14 +1273,6 @@ class FinishedGoodsVerification(models.Model):
     """
     Track finished goods verification and quality check
     """
-    STATUS_CHOICES = [
-        ('pending_verification', 'Pending Verification'),
-        ('quality_check_passed', 'Quality Check Passed'),
-        ('quality_check_failed', 'Quality Check Failed'),
-        ('approved_for_dispatch', 'Approved for Dispatch'),
-        ('dispatched', 'Dispatched'),
-    ]
-    
     batch = models.OneToOneField(
         Batch,
         on_delete=models.CASCADE,
@@ -1412,7 +1280,7 @@ class FinishedGoodsVerification(models.Model):
     )
     
     # Verification details
-    status = models.CharField(max_length=30, choices=STATUS_CHOICES, default='pending_verification')
+    status = models.CharField(max_length=30, choices=FGVerificationStatusChoices.choices, default='pending_verification')
     
     # Quality check
     quality_checked_at = models.DateTimeField(null=True, blank=True)
@@ -1447,3 +1315,235 @@ class FinishedGoodsVerification(models.Model):
     
     def __str__(self):
         return f"{self.batch.batch_id} - {self.get_status_display()}"
+
+
+class RawMaterialAllocation(models.Model):
+    """
+    Track raw material allocations/reservations for Manufacturing Orders
+    Supports priority-based swapping before MO approval
+    """
+    # MO and RM references
+    mo = models.ForeignKey(
+        ManufacturingOrder,
+        on_delete=models.CASCADE,
+        related_name='rm_allocations',
+        help_text="Manufacturing Order this allocation is for"
+    )
+    raw_material = models.ForeignKey(
+        'inventory.RawMaterial',
+        on_delete=models.PROTECT,
+        related_name='mo_allocations',
+        help_text="Raw material being allocated"
+    )
+    
+    # Allocation details
+    allocated_quantity_kg = models.DecimalField(
+        max_digits=10,
+        decimal_places=3,
+        help_text="Quantity of raw material allocated in KG"
+    )
+    
+    # Status tracking
+    status = models.CharField(
+        max_length=20,
+        choices=RMAllocationStatusChoices.choices,
+        default='reserved'
+    )
+    
+    # Swapping tracking
+    can_be_swapped = models.BooleanField(
+        default=True,
+        help_text="Can this allocation be swapped to higher priority MO?"
+    )
+    swapped_to_mo = models.ForeignKey(
+        ManufacturingOrder,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='rm_allocations_received',
+        help_text="MO to which this allocation was swapped"
+    )
+    swapped_at = models.DateTimeField(null=True, blank=True)
+    swapped_by = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='rm_swaps_performed'
+    )
+    swap_reason = models.TextField(blank=True)
+    
+    # Locking (on MO approval)
+    locked_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        help_text="When this allocation was locked (MO approved)"
+    )
+    locked_by = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='rm_allocations_locked'
+    )
+    
+    # Allocation timestamps
+    allocated_at = models.DateTimeField(auto_now_add=True)
+    allocated_by = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='rm_allocations_created'
+    )
+    
+    # Audit
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    notes = models.TextField(blank=True)
+    
+    class Meta:
+        verbose_name = 'Raw Material Allocation'
+        verbose_name_plural = 'Raw Material Allocations'
+        ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['mo', 'status']),
+            models.Index(fields=['raw_material', 'status']),
+            models.Index(fields=['can_be_swapped']),
+        ]
+    
+    def __str__(self):
+        return f"{self.mo.mo_id} - {self.raw_material.material_code} ({self.allocated_quantity_kg}kg) - {self.status}"
+    
+    def lock_allocation(self, locked_by_user):
+        """
+        Lock this allocation (called when MO is approved)
+        Once locked, allocation cannot be swapped
+        """
+        if self.status == 'locked':
+            return False
+        
+        self.status = 'locked'
+        self.can_be_swapped = False
+        self.locked_at = timezone.now()
+        self.locked_by = locked_by_user
+        self.save()
+        
+        # Deduct from available stock
+        from inventory.models import RMStockBalanceHeat
+        stock_balance = RMStockBalanceHeat.objects.filter(
+            raw_material=self.raw_material
+        ).first()
+        
+        if stock_balance:
+            stock_balance.total_available_quantity_kg -= self.allocated_quantity_kg
+            stock_balance.save()
+        
+        return True
+    
+    def swap_to_mo(self, target_mo, swapped_by_user, reason=""):
+        """
+        Swap this allocation to a higher priority MO
+        """
+        if not self.can_be_swapped or self.status == 'locked':
+            return False, "Allocation is locked and cannot be swapped"
+        
+        # Check priority
+        priority_order = {'low': 1, 'medium': 2, 'high': 3, 'urgent': 4}
+        source_priority = priority_order.get(self.mo.priority, 0)
+        target_priority = priority_order.get(target_mo.priority, 0)
+        
+        if target_priority <= source_priority:
+            return False, f"Target MO priority ({target_mo.priority}) must be higher than source MO priority ({self.mo.priority})"
+        
+        # Perform swap
+        old_mo = self.mo
+        self.status = 'swapped'
+        self.swapped_to_mo = target_mo
+        self.swapped_at = timezone.now()
+        self.swapped_by = swapped_by_user
+        self.swap_reason = reason
+        self.can_be_swapped = False
+        self.save()
+        
+        # Create new allocation for target MO
+        new_allocation = RawMaterialAllocation.objects.create(
+            mo=target_mo,
+            raw_material=self.raw_material,
+            allocated_quantity_kg=self.allocated_quantity_kg,
+            status='reserved',
+            can_be_swapped=True,
+            allocated_by=swapped_by_user,
+            notes=f"Swapped from {old_mo.mo_id} due to higher priority"
+        )
+        
+        return True, f"Allocation swapped from {old_mo.mo_id} to {target_mo.mo_id}"
+    
+    def release_allocation(self):
+        """
+        Release this allocation back to stock (e.g., when MO is cancelled)
+        """
+        if self.status == 'locked':
+            # Add back to available stock
+            from inventory.models import RMStockBalanceHeat
+            stock_balance = RMStockBalanceHeat.objects.filter(
+                raw_material=self.raw_material
+            ).first()
+            
+            if stock_balance:
+                stock_balance.total_available_quantity_kg += self.allocated_quantity_kg
+                stock_balance.save()
+        
+        self.status = 'released'
+        self.can_be_swapped = False
+        self.save()
+        
+        return True
+
+
+class RMAllocationHistory(models.Model):
+    """
+    Track history of RM allocation changes (swaps, locks, releases)
+    """
+    allocation = models.ForeignKey(
+        RawMaterialAllocation,
+        on_delete=models.CASCADE,
+        related_name='history'
+    )
+    
+    action = models.CharField(
+        max_length=50,
+        help_text="Action performed (reserved, swapped, locked, released)"
+    )
+    from_mo = models.ForeignKey(
+        ManufacturingOrder,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='rm_allocation_history_from'
+    )
+    to_mo = models.ForeignKey(
+        ManufacturingOrder,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='rm_allocation_history_to'
+    )
+    
+    quantity_kg = models.DecimalField(max_digits=10, decimal_places=3)
+    performed_by = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True
+    )
+    performed_at = models.DateTimeField(auto_now_add=True)
+    reason = models.TextField(blank=True)
+    
+    class Meta:
+        verbose_name = 'RM Allocation History'
+        verbose_name_plural = 'RM Allocation Histories'
+        ordering = ['-performed_at']
+    
+    def __str__(self):
+        return f"{self.action} - {self.allocation.mo.mo_id} ({self.performed_at})"

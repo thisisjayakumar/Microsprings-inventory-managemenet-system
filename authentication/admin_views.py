@@ -19,6 +19,7 @@ from .admin_serializers import (
     RoleCreateUpdateSerializer, AdminDashboardStatsSerializer,
     BulkUserActionSerializer, UserRoleManagementSerializer, RoleSerializer
 )
+from utils.enums import DepartmentChoices
 from .permissions import IsAdminOrManager
 
 
@@ -148,7 +149,7 @@ class AdminUserManagementViewSet(viewsets.ModelViewSet):
                 elif action_type == 'change_department':
                     department = serializer.validated_data['department']
                     UserProfile.objects.filter(user__in=users).update(department=department)
-                    dept_display = dict(UserProfile.DEPARTMENT_CHOICES).get(department, department)
+                    dept_display = dict(DepartmentChoices.choices).get(department, department)
                     message = f'Changed department to {dept_display} for {users.count()} users'
                 
                 return Response({
@@ -342,7 +343,7 @@ def admin_dashboard_stats(request):
     
     # Users by department
     users_by_department = {}
-    for dept_code, dept_name in UserProfile.DEPARTMENT_CHOICES:
+    for dept_code, dept_name in DepartmentChoices.choices:
         count = UserProfile.objects.filter(department=dept_code, is_active=True).count()
         users_by_department[dept_name] = count
     
@@ -435,7 +436,7 @@ def department_summary(request):
     """
     department_data = []
     
-    for dept_code, dept_name in UserProfile.DEPARTMENT_CHOICES:
+    for dept_code, dept_name in DepartmentChoices.choices:
         users = CustomUser.objects.filter(
             profile__department=dept_code,
             is_active=True

@@ -1,5 +1,6 @@
 from django.db import models
 from django.contrib.auth import get_user_model
+from utils.enums import QualityResultChoices
 
 User = get_user_model()
 
@@ -26,18 +27,12 @@ class QualityCheck(models.Model):
     """
     Actual quality check results
     """
-    RESULT_CHOICES = [
-        ('pass', 'Pass'),
-        ('fail', 'Fail'),
-        ('rework', 'Rework')
-    ]
-    
     manufacturing_order = models.ForeignKey('manufacturing.ManufacturingOrder', on_delete=models.CASCADE, related_name='quality_checks', null=True, blank=True)
     template = models.ForeignKey(QualityCheckTemplate, on_delete=models.PROTECT)
     
     # Results
     measured_values = models.JSONField()
-    overall_result = models.CharField(max_length=10, choices=RESULT_CHOICES)
+    overall_result = models.CharField(max_length=10, choices=QualityResultChoices.choices)
     
     # Inspector
     inspector = models.ForeignKey(User, on_delete=models.PROTECT, related_name='quality_inspections')

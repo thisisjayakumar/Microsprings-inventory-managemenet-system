@@ -1,5 +1,6 @@
 from django.db import models
 from django.contrib.auth import get_user_model
+from utils.enums import PackedItemStatusChoices
 
 User = get_user_model()
 
@@ -25,12 +26,6 @@ class PackedItem(models.Model):
     """
     Individual packed items with QR codes
     """
-    STATUS_CHOICES = [
-        ('packed', 'Packed'),
-        ('in_fg_store', 'In FG Store'),
-        ('dispatched', 'Dispatched')
-    ]
-    
     package_id = models.CharField(max_length=30, unique=True)  # For QR code
     manufacturing_order = models.ForeignKey('manufacturing.ManufacturingOrder', on_delete=models.CASCADE, related_name='packed_items', null=True, blank=True)
     packaging_type = models.ForeignKey(PackagingType, on_delete=models.PROTECT)
@@ -40,7 +35,7 @@ class PackedItem(models.Model):
     packed_by = models.ForeignKey(User, on_delete=models.PROTECT, related_name='packed_items')
     
     # Status
-    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='packed')
+    status = models.CharField(max_length=20, choices=PackedItemStatusChoices.choices, default='packed')
     
     # QR Code data
     qr_code_data = models.TextField()  # JSON string with all traceability info

@@ -1,5 +1,6 @@
 # processes/management/commands/import_stamp_processes.py
 import csv
+from decimal import Decimal, InvalidOperation
 from django.core.management.base import BaseCommand
 from django.db import transaction
 from processes.models import Process, SubProcess, ProcessStep, BOM
@@ -9,7 +10,7 @@ from third_party.models import Customer
 
 
 class Command(BaseCommand):
-    help = "Import stamp products and processes from updated CSV format"
+    help = "Import stamp products and processes from updated CSV format with sheet/strip dimensions"
 
     def add_arguments(self, parser):
         parser.add_argument("csv_file", type=str, help="Path to Stamp processes CSV")
@@ -19,6 +20,34 @@ class Command(BaseCommand):
             help="Preview changes without saving to the database",
         )
 
+    def safe_decimal(self, value, row_num, field_name):
+        """Safely convert a value to Decimal, returning None if invalid"""
+        if not value or not str(value).strip():
+            return None
+        try:
+            return Decimal(str(value).strip())
+        except (InvalidOperation, ValueError):
+            self.stdout.write(
+                self.style.WARNING(
+                    f"Row {row_num}: Invalid {field_name} value '{value}'. Setting to None."
+                )
+            )
+            return None
+
+    def safe_int(self, value, row_num, field_name):
+        """Safely convert a value to int, returning None if invalid"""
+        if not value or not str(value).strip():
+            return None
+        try:
+            return int(float(str(value).strip()))
+        except (ValueError, TypeError):
+            self.stdout.write(
+                self.style.WARNING(
+                    f"Row {row_num}: Invalid {field_name} value '{value}'. Setting to None."
+                )
+            )
+            return None
+
     def handle(self, *args, **options):
         csv_file = options["csv_file"]
         dry_run = options["dry_run"]
@@ -26,10 +55,21 @@ class Command(BaseCommand):
         created_products = 0
         updated_products = 0
         created_boms = 0
+        updated_boms = 0
         skipped_rows = 0
 
         with open(csv_file, newline="", encoding="utf-8") as f:
             reader = csv.DictReader(f)
+            
+            # Verify required columns exist
+            required_cols = ["Product_Code", "Material_Code"]
+            if not all(col in reader.fieldnames for col in required_cols):
+                self.stdout.write(
+                    self.style.ERROR(
+                        f"CSV missing required columns. Found: {reader.fieldnames}"
+                    )
+                )
+                return
             
             with transaction.atomic():
                 for row_num, row in enumerate(reader, start=2):  # Start from 2 since row 1 is header
@@ -48,12 +88,47 @@ class Command(BaseCommand):
                         cust_id = row.get("Cust_ID", "").strip()
                         grams_per_product = row.get("gram/product", "").strip()
                         
+                        # Extract sheet dimensions (first occurrence)
+                        sheet_length = row.get("Length (L)", "").strip()
+                        sheet_breadth = row.get("Breadth (B)", "").strip()
+                        
+                        # Extract strip dimensions (second occurrence)
+                        strip_length = None
+                        strip_breadth = None
+                        
+                        # Handle duplicate column names by checking for the second occurrence
+                        length_count = 0
+                        breadth_count = 0
+                        
+                        for i, key in enumerate(reader.fieldnames):
+                            if key == "Length (L)":
+                                length_count += 1
+                                if length_count == 2:  # Second occurrence is strip length
+                                    strip_length = row.get(key, "").strip()
+                            elif key == "Breadth (B)":
+                                breadth_count += 1
+                                if breadth_count == 2:  # Second occurrence is strip breadth
+                                    strip_breadth = row.get(key, "").strip()
+                        
+                        # Get other strip-related fields
+                        strip_count = row.get("Strip Count", "").strip()
+                        pcs_per_strip = row.get("Pcs per Strip", "").strip()
+                        pcs_per_sheet = row.get("Pcs per Sheet", "").strip()
+                        
                         # Map product type - stamp products are press components
                         mapped_product_type = "press_component" if product_type.lower() == "press component" else "press_component"
                         
                         self.stdout.write(
-                            f"[{'DRY' if dry_run else 'SAVE'}] Row {row_num}: Processing Product={product_code}, "
-                            f"Type={mapped_product_type}, Material={material_code}, Customer={cust_id}"
+                            f"\n[{'DRY' if dry_run else 'SAVE'}] Row {row_num}: Processing Product={product_code}"
+                        )
+                        self.stdout.write(
+                            f"    Type={mapped_product_type}, Material={material_code}, Customer={cust_id}"
+                        )
+                        self.stdout.write(
+                            f"    Sheet: {sheet_length}x{sheet_breadth}, Strip: {strip_length}x{strip_breadth}"
+                        )
+                        self.stdout.write(
+                            f"    Strips/Sheet: {strip_count}, Pcs/Strip: {pcs_per_strip}, Pcs/Sheet: {pcs_per_sheet}"
                         )
 
                         if not dry_run:
@@ -65,7 +140,7 @@ class Command(BaseCommand):
                                 except RawMaterial.DoesNotExist:
                                     self.stdout.write(
                                         self.style.WARNING(
-                                            f"Row {row_num}: Material with code '{material_code}' not found. "
+                                            f"    Material with code '{material_code}' not found. "
                                             f"Skipping product creation for {product_code}"
                                         )
                                     )
@@ -74,7 +149,7 @@ class Command(BaseCommand):
                             else:
                                 self.stdout.write(
                                     self.style.WARNING(
-                                        f"Row {row_num}: No material code provided for {product_code}. Skipping."
+                                        f"    No material code provided for {product_code}. Skipping."
                                     )
                                 )
                                 skipped_rows += 1
@@ -88,7 +163,7 @@ class Command(BaseCommand):
                                 except Customer.DoesNotExist:
                                     self.stdout.write(
                                         self.style.WARNING(
-                                            f"Row {row_num}: Customer with c_id '{cust_id}' not found. "
+                                            f"    Customer with c_id '{cust_id}' not found. "
                                             f"Product will be created without customer link."
                                         )
                                     )
@@ -101,30 +176,46 @@ class Command(BaseCommand):
                                 except (ValueError, TypeError):
                                     self.stdout.write(
                                         self.style.WARNING(
-                                            f"Row {row_num}: Invalid gram/product value '{grams_per_product}'. "
+                                            f"    Invalid gram/product value '{grams_per_product}'. "
                                             f"Setting to None."
                                         )
                                     )
                             
-                            # Create or update product
-                            product, product_created = Product.objects.update_or_create(
+                            # Create or update product with dimensions
+                            product, created = Product.objects.update_or_create(
                                 product_code=product_code,
                                 defaults={
-                                    "product_type": mapped_product_type,
-                                    "spring_type": "tension",  # Default for press components
-                                    "material": material,
-                                    "customer_c_id": customer,
-                                    "internal_product_code": row.get("IPC_Code", "").strip() or None,
-                                    "grams_per_product": grams_value,
+                                    'product_type': mapped_product_type,
+                                    'material': material,
+                                    'customer': customer,
+                                    'weight_per_piece': grams_value,
+                                    'is_active': True,
+                                    # Store dimensions in a JSON field or use appropriate fields
+                                    'sheet_length': self.safe_decimal(sheet_length, row_num, 'sheet_length'),
+                                    'sheet_breadth': self.safe_decimal(sheet_breadth, row_num, 'sheet_breadth'),
+                                    'strip_length': self.safe_decimal(strip_length, row_num, 'strip_length'),
+                                    'strip_breadth': self.safe_decimal(strip_breadth, row_num, 'strip_breadth'),
+                                    'strip_count': self.safe_int(strip_count, row_num, 'strip_count'),
+                                    'pcs_per_strip': self.safe_int(pcs_per_strip, row_num, 'pcs_per_strip'),
+                                    'pcs_per_sheet': self.safe_int(pcs_per_sheet, row_num, 'pcs_per_sheet'),
                                 }
                             )
                             
-                            if product_created:
+                            if created:
                                 created_products += 1
-                                self.stdout.write(f"    Created product: {product_code}")
+                                self.stdout.write(f"    ✓ Created product: {product_code}")
                             else:
                                 updated_products += 1
-                                self.stdout.write(f"    Updated product: {product_code}")
+                                self.stdout.write(f"    ✓ Updated product: {product_code}")
+
+                            # Convert dimensions to proper types
+                            sheet_length_decimal = self.safe_decimal(sheet_length, row_num, "Sheet Length")
+                            sheet_breadth_decimal = self.safe_decimal(sheet_breadth, row_num, "Sheet Breadth")
+                            strip_length_decimal = self.safe_decimal(strip_length, row_num, "Strip Length")
+                            strip_breadth_decimal = self.safe_decimal(strip_breadth, row_num, "Strip Breadth")
+                            strip_count_int = self.safe_int(strip_count, row_num, "Strip Count")
+                            pcs_per_strip_int = self.safe_int(pcs_per_strip, row_num, "Pcs per Strip")
+                            pcs_per_sheet_int = self.safe_int(pcs_per_sheet, row_num, "Pcs per Sheet")
 
                             # Process the manufacturing steps
                             process_columns = [
@@ -162,24 +253,34 @@ class Command(BaseCommand):
                                     }
                                 )
 
-                                # Create BOM entry
+                                # Create BOM entry with sheet/strip dimensions
                                 bom, bom_created = BOM.objects.update_or_create(
                                     product_code=product_code,
                                     process_step=step,
+                                    material=material,
                                     defaults={
                                         "type": "stamp",
-                                        "material": material,
+                                        "sheet_length": sheet_length_decimal,
+                                        "sheet_breadth": sheet_breadth_decimal,
+                                        "strip_length": strip_length_decimal,
+                                        "strip_breadth": strip_breadth_decimal,
+                                        "strip_count": strip_count_int,
+                                        "pcs_per_strip": pcs_per_strip_int,
+                                        "pcs_per_sheet": pcs_per_sheet_int,
                                         "is_active": True,
                                     }
                                 )
                                 
                                 if bom_created:
                                     created_boms += 1
-                                
-                                self.stdout.write(
-                                    f"    {'Created' if step_created else 'Updated'} process step: "
-                                    f"{process_col} -> {subprocess_name} (seq: {sequence})"
-                                )
+                                    self.stdout.write(
+                                        f"    ✓ Created BOM for step: {process_col} -> {subprocess_name} (seq: {sequence})"
+                                    )
+                                else:
+                                    updated_boms += 1
+                                    self.stdout.write(
+                                        f"    ✓ Updated BOM for step: {process_col} -> {subprocess_name} (seq: {sequence})"
+                                    )
 
                                 sequence += 1
 
@@ -187,19 +288,26 @@ class Command(BaseCommand):
                         self.stdout.write(
                             self.style.ERROR(f"Row {row_num}: Error processing row - {str(e)}")
                         )
+                        import traceback
+                        self.stdout.write(traceback.format_exc())
                         skipped_rows += 1
                         continue
 
         # Summary
         if dry_run:
+            self.stdout.write(self.style.WARNING("\n" + "="*50))
             self.stdout.write(self.style.WARNING("DRY RUN - No changes were made"))
+            self.stdout.write(self.style.WARNING("="*50))
         else:
+            self.stdout.write(self.style.SUCCESS("\n" + "="*50))
             self.stdout.write(
                 self.style.SUCCESS(
                     f"Import completed successfully!\n"
                     f"Products created: {created_products}\n"
                     f"Products updated: {updated_products}\n"
                     f"BOM entries created: {created_boms}\n"
+                    f"BOM entries updated: {updated_boms}\n"
                     f"Rows skipped: {skipped_rows}"
                 )
             )
+            self.stdout.write(self.style.SUCCESS("="*50))

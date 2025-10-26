@@ -30,7 +30,7 @@ class IsFGStoreUser(permissions.BasePermission):
         
         # Check if user has FG Store role
         user_roles = request.user.user_roles.filter(is_active=True).values_list('role__name', flat=True)
-        return any(role in ['fg_store', 'admin', 'manager'] for role in user_roles)
+        return any(role in ['fg_store', 'admin', 'manager', 'production_head'] for role in user_roles)
 
 
 class DispatchBatchViewSet(viewsets.ModelViewSet):
@@ -434,4 +434,60 @@ class FGStoreDashboardViewSet(viewsets.ViewSet):
             return Response(
                 {'error': 'Invalid quantity format'},
                 status=status.HTTP_400_BAD_REQUEST
+            )
+    
+    @action(detail=False, methods=['get'])
+    def loose_fg_stock(self, request):
+        """Get loose FG stock for a specific product"""
+        product_code = request.query_params.get('product_code')
+        
+        if not product_code:
+            return Response(
+                {'error': 'product_code is required'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        try:
+            # Get product
+            product = Product.objects.get(product_code=product_code)
+            
+            # Calculate total loose stock for this product
+            loose_stock_data = DispatchBatch.objects.filter(
+                product_code=product,
+                status__in=['pending_dispatch', 'partially_dispatched']
+            ).aggregate(
+                total_loose_stock=Sum('loose_stock'),
+                total_quantity_available=Sum(F('quantity_packed') - F('quantity_dispatched'))
+            )
+            
+            total_loose = loose_stock_data['total_loose_stock'] or 0
+            total_available = loose_stock_data['total_quantity_available'] or 0
+            
+            # Get batches with loose stock
+            batches_with_loose_stock = DispatchBatch.objects.filter(
+                product_code=product,
+                loose_stock__gt=0,
+                status__in=['pending_dispatch', 'partially_dispatched']
+            ).select_related('mo', 'mo__customer_c_id').values(
+                'batch_id',
+                'loose_stock',
+                'location_in_store',
+                'packing_date',
+                'mo__mo_id',
+                'mo__customer_c_id__name'
+            )[:10]  # Limit to 10 most recent
+            
+            data = {
+                'product_code': product_code,
+                'total_loose_stock': total_loose,
+                'total_available_stock': total_available,
+                'batches': list(batches_with_loose_stock)
+            }
+            
+            return Response(data)
+            
+        except Product.DoesNotExist:
+            return Response(
+                {'error': 'Product not found'},
+                status=status.HTTP_404_NOT_FOUND
             )

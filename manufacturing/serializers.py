@@ -6,7 +6,7 @@ import logging
 from .models import (
     ManufacturingOrder, PurchaseOrder, MOStatusHistory, POStatusHistory,
     MOProcessExecution, MOProcessStepExecution, MOProcessAlert, Batch,
-    OutsourcingRequest, OutsourcedItem
+    OutsourcingRequest, OutsourcedItem, RawMaterialAllocation, RMAllocationHistory
 )
 from products.models import Product
 from inventory.models import RawMaterial
@@ -345,6 +345,16 @@ class ManufacturingOrderDetailSerializer(serializers.ModelSerializer):
         # Calculate RM requirements (including sheet calculations)
         mo.calculate_rm_requirements()
         mo.save()
+        
+        # Automatically allocate (reserve) raw materials for this MO
+        try:
+            from manufacturing.rm_allocation_service import RMAllocationService
+            RMAllocationService.allocate_rm_for_mo(mo, self.context['request'].user)
+            logger.info(f"RM successfully allocated for MO {mo.mo_id}")
+        except Exception as e:
+            logger.warning(f"Failed to auto-allocate RM for MO {mo.mo_id}: {str(e)}")
+            # Don't fail MO creation if RM allocation fails
+            # Manager can manually allocate or swap RM later
         
         return mo
 
@@ -1105,4 +1115,84 @@ class OutsourcingRequestReturnSerializer(serializers.Serializer):
             if 'returned_qty' not in item and 'returned_kg' not in item:
                 raise serializers.ValidationError("Each returned item must have returned_qty or returned_kg")
         
+        return value
+
+
+# Raw Material Allocation Serializers
+
+class RMAllocationHistorySerializer(serializers.ModelSerializer):
+    """Serializer for RM allocation history"""
+    performed_by = UserBasicSerializer(read_only=True)
+    from_mo_id = serializers.CharField(source='from_mo.mo_id', read_only=True)
+    to_mo_id = serializers.CharField(source='to_mo.mo_id', read_only=True)
+    
+    class Meta:
+        model = RMAllocationHistory
+        fields = [
+            'id', 'action', 'from_mo', 'from_mo_id', 'to_mo', 'to_mo_id',
+            'quantity_kg', 'performed_by', 'performed_at', 'reason'
+        ]
+        read_only_fields = fields
+
+
+class RawMaterialAllocationSerializer(serializers.ModelSerializer):
+    """Serializer for raw material allocations"""
+    mo_id = serializers.CharField(source='mo.mo_id', read_only=True)
+    mo_priority = serializers.CharField(source='mo.priority', read_only=True)
+    mo_status = serializers.CharField(source='mo.status', read_only=True)
+    raw_material_code = serializers.CharField(source='raw_material.material_code', read_only=True)
+    raw_material_name = serializers.CharField(source='raw_material.material_name', read_only=True)
+    raw_material_details = RawMaterialBasicSerializer(source='raw_material', read_only=True)
+    allocated_by_name = serializers.CharField(source='allocated_by.get_full_name', read_only=True)
+    locked_by_name = serializers.CharField(source='locked_by.get_full_name', read_only=True)
+    swapped_to_mo_id = serializers.CharField(source='swapped_to_mo.mo_id', read_only=True)
+    history = RMAllocationHistorySerializer(many=True, read_only=True)
+    
+    class Meta:
+        model = RawMaterialAllocation
+        fields = [
+            'id', 'mo', 'mo_id', 'mo_priority', 'mo_status', 
+            'raw_material', 'raw_material_code', 'raw_material_name', 'raw_material_details',
+            'allocated_quantity_kg', 'status', 'can_be_swapped',
+            'swapped_to_mo', 'swapped_to_mo_id', 'swapped_at', 'swapped_by', 'swap_reason',
+            'locked_at', 'locked_by', 'locked_by_name',
+            'allocated_at', 'allocated_by', 'allocated_by_name',
+            'notes', 'history'
+        ]
+        read_only_fields = [
+            'id', 'mo_id', 'mo_priority', 'mo_status', 'raw_material_code', 'raw_material_name',
+            'raw_material_details', 'status', 'swapped_at', 'swapped_by', 'locked_at', 'locked_by',
+            'allocated_at', 'allocated_by', 'allocated_by_name', 'locked_by_name',
+            'swapped_to_mo_id', 'history'
+        ]
+
+
+class RMAllocationSwapSerializer(serializers.Serializer):
+    """Serializer for swapping RM allocation to another MO"""
+    target_mo_id = serializers.IntegerField(help_text="ID of the MO to swap allocation to")
+    reason = serializers.CharField(
+        required=False, 
+        allow_blank=True,
+        help_text="Reason for swapping"
+    )
+    
+    def validate_target_mo_id(self, value):
+        """Validate target MO exists"""
+        try:
+            ManufacturingOrder.objects.get(id=value)
+        except ManufacturingOrder.DoesNotExist:
+            raise serializers.ValidationError("Target MO not found")
+        return value
+
+
+class RMAllocationCheckSerializer(serializers.Serializer):
+    """Serializer for checking RM availability for MO"""
+    mo_id = serializers.IntegerField(help_text="Manufacturing Order ID")
+    
+    def validate_mo_id(self, value):
+        """Validate MO exists"""
+        try:
+            ManufacturingOrder.objects.get(id=value)
+        except ManufacturingOrder.DoesNotExist:
+            raise serializers.ValidationError("Manufacturing Order not found")
         return value

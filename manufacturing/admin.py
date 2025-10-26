@@ -1,5 +1,8 @@
 from django.contrib import admin
-from .models import ManufacturingOrder, PurchaseOrder, MOStatusHistory, POStatusHistory, Batch, OutsourcingRequest, OutsourcedItem
+from .models import (
+    ManufacturingOrder, PurchaseOrder, MOStatusHistory, POStatusHistory, 
+    Batch, OutsourcingRequest, OutsourcedItem, RawMaterialAllocation, RMAllocationHistory
+)
 
 
 # Inline for displaying batches within Manufacturing Order admin
@@ -304,3 +307,77 @@ class OutsourcedItemAdmin(admin.ModelAdmin):
     
     def get_queryset(self, request):
         return super().get_queryset(request).select_related('request', 'request__vendor')
+
+
+# Inline for displaying RM allocation history
+class RMAllocationHistoryInline(admin.TabularInline):
+    model = RMAllocationHistory
+    extra = 0
+    readonly_fields = ('action', 'from_mo', 'to_mo', 'quantity_kg', 'performed_by', 'performed_at', 'reason')
+    can_delete = False
+    
+    def has_add_permission(self, request, obj=None):
+        return False
+
+
+@admin.register(RawMaterialAllocation)
+class RawMaterialAllocationAdmin(admin.ModelAdmin):
+    list_display = ('mo', 'raw_material', 'allocated_quantity_kg', 'status', 'can_be_swapped', 
+                   'allocated_at', 'locked_at')
+    list_filter = ('status', 'can_be_swapped', 'allocated_at', 'locked_at')
+    search_fields = ('mo__mo_id', 'raw_material__material_code', 'raw_material__material_name')
+    readonly_fields = ('allocated_at', 'locked_at', 'swapped_at', 'created_at', 'updated_at')
+    ordering = ('-created_at',)
+    inlines = [RMAllocationHistoryInline]
+    
+    fieldsets = (
+        ('Basic Information', {
+            'fields': ('mo', 'raw_material', 'allocated_quantity_kg', 'status')
+        }),
+        ('Swapping', {
+            'fields': ('can_be_swapped', 'swapped_to_mo', 'swapped_at', 'swapped_by', 'swap_reason'),
+            'classes': ('collapse',)
+        }),
+        ('Locking (MO Approval)', {
+            'fields': ('locked_at', 'locked_by'),
+            'classes': ('collapse',)
+        }),
+        ('Allocation Details', {
+            'fields': ('allocated_at', 'allocated_by', 'notes')
+        }),
+        ('Audit Information', {
+            'fields': ('created_at', 'updated_at'),
+            'classes': ('collapse',)
+        })
+    )
+    
+    def get_queryset(self, request):
+        return super().get_queryset(request).select_related(
+            'mo', 'raw_material', 'swapped_to_mo', 'allocated_by', 'swapped_by', 'locked_by'
+        )
+
+
+@admin.register(RMAllocationHistory)
+class RMAllocationHistoryAdmin(admin.ModelAdmin):
+    list_display = ('allocation', 'action', 'from_mo', 'to_mo', 'quantity_kg', 'performed_by', 'performed_at')
+    list_filter = ('action', 'performed_at')
+    search_fields = ('allocation__mo__mo_id', 'from_mo__mo_id', 'to_mo__mo_id', 'performed_by__email')
+    readonly_fields = ('performed_at',)
+    ordering = ('-performed_at',)
+    
+    fieldsets = (
+        ('Allocation Reference', {
+            'fields': ('allocation',)
+        }),
+        ('Action Details', {
+            'fields': ('action', 'from_mo', 'to_mo', 'quantity_kg')
+        }),
+        ('Performed By', {
+            'fields': ('performed_by', 'performed_at', 'reason')
+        })
+    )
+    
+    def get_queryset(self, request):
+        return super().get_queryset(request).select_related(
+            'allocation', 'allocation__mo', 'from_mo', 'to_mo', 'performed_by'
+        )

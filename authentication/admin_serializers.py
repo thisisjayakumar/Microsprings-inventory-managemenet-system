@@ -6,6 +6,7 @@ from rest_framework import serializers
 from django.db import transaction
 from .models import CustomUser, UserProfile, Role, UserRole
 from .serializers import RoleSerializer
+from utils.enums import DepartmentChoices, ShiftChoices, RoleHierarchyChoices
 
 
 class AdminUserListSerializer(serializers.ModelSerializer):
@@ -74,8 +75,8 @@ class AdminUserCreateUpdateSerializer(serializers.ModelSerializer):
     # Profile fields
     employee_id = serializers.CharField(max_length=20)
     designation = serializers.CharField(max_length=100)
-    department = serializers.ChoiceField(choices=UserProfile.DEPARTMENT_CHOICES)
-    shift = serializers.ChoiceField(choices=UserProfile.SHIFT_CHOICES, required=False, allow_null=True)
+    department = serializers.ChoiceField(choices=DepartmentChoices.choices)
+    shift = serializers.ChoiceField(choices=ShiftChoices.choices, required=False, allow_null=True)
     date_of_joining = serializers.DateField()
     profile_phone_number = serializers.CharField(max_length=15, required=False)
     allowed_ip_ranges = serializers.ListField(child=serializers.CharField(), required=False)
@@ -220,7 +221,7 @@ class RoleCreateUpdateSerializer(serializers.ModelSerializer):
     
     def validate_name(self, value):
         """Validate role name exists in choices"""
-        valid_names = [choice[0] for choice in Role.ROLE_HIERARCHY]
+        valid_names = [choice[0] for choice in RoleHierarchyChoices.choices]
         if value not in valid_names:
             raise serializers.ValidationError(f"Invalid role name. Must be one of: {', '.join(valid_names)}")
         return value
@@ -255,7 +256,7 @@ class BulkUserActionSerializer(serializers.Serializer):
     
     # Optional fields for specific actions
     role_id = serializers.IntegerField(required=False)
-    department = serializers.ChoiceField(choices=UserProfile.DEPARTMENT_CHOICES, required=False)
+    department = serializers.ChoiceField(choices=DepartmentChoices.choices, required=False)
     
     def validate(self, attrs):
         action = attrs['action']

@@ -3,6 +3,7 @@ from django.core.exceptions import ValidationError
 from django.core.management.base import BaseCommand
 from django.contrib.auth import get_user_model
 from django.utils import timezone
+from utils.enums import ProductTypeChoices
 
 from inventory.models import RawMaterial
 
@@ -76,25 +77,72 @@ class ProcessStep(models.Model):
 
 
 class BOM(models.Model):
-    PRODUCT_TYPE_CHOICES = [
-        ('spring', 'Spring'),
-        ('stamp', 'Stamp'),
-    ]
-
     product_code = models.CharField(max_length=100)
-    type = models.CharField(max_length=20, choices=PRODUCT_TYPE_CHOICES)
+    type = models.CharField(max_length=20, choices=ProductTypeChoices.choices)
     process_step = models.ForeignKey(
-        ProcessStep, 
+        'ProcessStep', 
         on_delete=models.CASCADE,
         help_text="Specific process step with ordering"
     )
-    material = models.ForeignKey(RawMaterial, on_delete=models.CASCADE, to_field='material_code', null=True, blank=True)
+    material = models.ForeignKey(
+        RawMaterial, 
+        on_delete=models.CASCADE, 
+        to_field='material_code', 
+        null=True, 
+        blank=True
+    )
+    
+    # Sheet and Strip dimensions
+    sheet_length = models.DecimalField(
+        max_digits=10, 
+        decimal_places=2, 
+        null=True, 
+        blank=True,
+        help_text="Whole sheet length in mm"
+    )
+    sheet_breadth = models.DecimalField(
+        max_digits=10, 
+        decimal_places=2, 
+        null=True, 
+        blank=True,
+        help_text="Whole sheet breadth in mm"
+    )
+    strip_length = models.DecimalField(
+        max_digits=10, 
+        decimal_places=2, 
+        null=True, 
+        blank=True,
+        help_text="Strip length in mm"
+    )
+    strip_breadth = models.DecimalField(
+        max_digits=10, 
+        decimal_places=2, 
+        null=True, 
+        blank=True,
+        help_text="Strip breadth in mm"
+    )
+    strip_count = models.IntegerField(
+        null=True, 
+        blank=True,
+        help_text="Number of strips per sheet"
+    )
+    pcs_per_strip = models.IntegerField(
+        null=True, 
+        blank=True,
+        help_text="Number of pieces per strip"
+    )
+    pcs_per_sheet = models.IntegerField(
+        null=True, 
+        blank=True,
+        help_text="Total pieces per sheet"
+    )
+    
     is_active = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
-        ordering = ['product_code','type']
+        ordering = ['product_code', 'type']
         unique_together = [['product_code', 'process_step', 'material']]
 
     def __str__(self):
@@ -107,9 +155,39 @@ class BOM(models.Model):
     @property
     def subprocess(self):
         return self.process_step.subprocess
+    
+    @property
+    def sheet_area(self):
+        """Calculate sheet area in square mm"""
+        if self.sheet_length and self.sheet_breadth:
+            return float(self.sheet_length) * float(self.sheet_breadth)
+        return None
+    
+    @property
+    def strip_area(self):
+        """Calculate strip area in square mm"""
+        if self.strip_length and self.strip_breadth:
+            return float(self.strip_length) * float(self.strip_breadth)
+        return None
+    
+    @property
+    def utilization_percentage(self):
+        """Calculate material utilization percentage"""
+        if self.pcs_per_sheet and self.sheet_area and self.strip_area:
+            used_area = self.strip_area * self.strip_count if self.strip_count else 0
+            if self.sheet_area > 0:
+                return (used_area / self.sheet_area) * 100
+        return None
 
     def clean(self):
-        # Add any BOM-specific validation here if needed
+        # Validate that pcs_per_sheet matches calculated value
+        if all([self.strip_count, self.pcs_per_strip, self.pcs_per_sheet]):
+            calculated_pcs = self.strip_count * self.pcs_per_strip
+            if calculated_pcs != self.pcs_per_sheet:
+                raise ValidationError(
+                    f"pcs_per_sheet ({self.pcs_per_sheet}) should equal "
+                    f"strip_count × pcs_per_strip ({calculated_pcs})"
+                )
         super().clean()
 
 

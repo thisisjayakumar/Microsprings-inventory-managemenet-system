@@ -1,5 +1,6 @@
 from django.contrib.auth.models import AbstractUser
 from django.db import models
+from utils.enums import DepartmentChoices, ShiftChoices, RoleHierarchyChoices
 
 
 class CustomUser(AbstractUser):
@@ -34,29 +35,11 @@ class UserProfile(models.Model):
     """
     Extended user profile information for MSP-ERP
     """
-    DEPARTMENT_CHOICES = [
-        ('rm_store', 'RM Store'),
-        ('coiling', 'Coiling'),
-        ('tempering', 'Tempering'),
-        ('plating', 'Plating'),
-        ('packing', 'Packing'),
-        ('fg_store', 'FG Store'),
-        ('quality', 'Quality Control'),
-        ('maintenance', 'Maintenance'),
-        ('admin', 'Administration')
-    ]
-    
-    SHIFT_CHOICES = [
-        ('I', '9AM-5PM (Shift I)'),
-        ('II', '5PM-2AM (Shift II)'),
-        ('III', '2AM-9AM (Shift III)')
-    ]
-    
     user = models.OneToOneField(CustomUser, on_delete=models.CASCADE, related_name='profile')
     employee_id = models.CharField(max_length=20, unique=True)
     designation = models.CharField(max_length=100)
-    department = models.CharField(max_length=20, choices=DEPARTMENT_CHOICES)
-    shift = models.CharField(max_length=10, choices=SHIFT_CHOICES, null=True, blank=True)
+    department = models.CharField(max_length=20, choices=DepartmentChoices.choices)
+    shift = models.CharField(max_length=10, choices=ShiftChoices.choices, null=True, blank=True)
     date_of_joining = models.DateField()
     phone_number = models.CharField(max_length=15)
     is_active = models.BooleanField(default=True)
@@ -81,16 +64,7 @@ class Role(models.Model):
     """
     Hierarchical role-based access control for MSP-ERP
     """
-    ROLE_HIERARCHY = [
-        ('admin', 'Admin'),
-        ('manager', 'Manager'),
-        ('production_head', 'Production Head'),
-        ('supervisor', 'Supervisor'),
-        ('rm_store', 'RM Store'),
-        ('fg_store', 'FG Store'),
-    ]
-    
-    name = models.CharField(max_length=50, choices=ROLE_HIERARCHY, unique=True)
+    name = models.CharField(max_length=50, choices=RoleHierarchyChoices.choices, unique=True)
     description = models.TextField()
     hierarchy_level = models.IntegerField(default=5, help_text="Lower number = higher authority")
     permissions = models.JSONField(default=dict, null=True, blank=True)  # Module-specific permissions
@@ -138,7 +112,7 @@ class ProcessSupervisor(models.Model):
     """
     supervisor = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name='process_supervisor_assignments')
     process_names = models.JSONField(default=list, help_text="List of process names this supervisor handles")
-    department = models.CharField(max_length=20, choices=UserProfile.DEPARTMENT_CHOICES)
+    department = models.CharField(max_length=20, choices=DepartmentChoices.choices)
     is_active = models.BooleanField(default=True)
     
     class Meta:

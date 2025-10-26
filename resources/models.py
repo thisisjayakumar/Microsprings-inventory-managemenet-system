@@ -1,17 +1,11 @@
 from django.db import models
 from django.contrib.auth import get_user_model
+from utils.enums import MachineStatusChoices, MachineScheduleStatusChoices
 
 User = get_user_model()
 
 
 class Machine(models.Model):
-    STATUS_CHOICES = [
-        ('available', 'Available'),
-        ('occupied', 'Occupied'),
-        ('maintenance', 'Under Maintenance'),
-        ('breakdown', 'Breakdown')
-    ]
-    
     machine_id = models.CharField(max_length=20, unique=True)
     name = models.CharField(max_length=100)
     machine_type = models.CharField(max_length=50)
@@ -21,7 +15,7 @@ class Machine(models.Model):
     capacity_per_hour = models.PositiveIntegerField(null=True, blank=True)
     
     # Status
-    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='available')
+    status = models.CharField(max_length=20, choices=MachineStatusChoices.choices, default='available')
     
     # Location
     location = models.CharField(max_length=100)
@@ -44,13 +38,6 @@ class MachineSchedule(models.Model):
     """
     Track machine utilization
     """
-    STATUS_CHOICES = [
-        ('scheduled', 'Scheduled'),
-        ('in_progress', 'In Progress'),
-        ('completed', 'Completed'),
-        ('cancelled', 'Cancelled')
-    ]
-    
     machine = models.ForeignKey(Machine, on_delete=models.CASCADE, related_name='schedule')
     manufacturing_order = models.ForeignKey('manufacturing.ManufacturingOrder', on_delete=models.CASCADE, null=True, blank=True)
     scheduled_start = models.DateTimeField()
@@ -58,7 +45,7 @@ class MachineSchedule(models.Model):
     actual_start = models.DateTimeField(null=True, blank=True)
     actual_end = models.DateTimeField(null=True, blank=True)
     
-    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='scheduled')
+    status = models.CharField(max_length=20, choices=MachineScheduleStatusChoices.choices, default='scheduled')
 
     class Meta:
         verbose_name = 'Machine Schedule'

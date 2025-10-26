@@ -7,6 +7,7 @@ from .models import (
     CustomUser, UserProfile, Role, UserRole, 
     ProcessSupervisor, OperatorEngagement, LoginSession
 )
+from utils.enums import DepartmentChoices, ShiftChoices, RoleHierarchyChoices
 
 
 class RoleSerializer(serializers.ModelSerializer):
@@ -136,12 +137,12 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
     # Profile fields
     employee_id = serializers.CharField(max_length=20)
     designation = serializers.CharField(max_length=100)
-    department = serializers.ChoiceField(choices=UserProfile.DEPARTMENT_CHOICES)
-    shift = serializers.ChoiceField(choices=UserProfile.SHIFT_CHOICES, required=False)
+    department = serializers.ChoiceField(choices=DepartmentChoices.choices)
+    shift = serializers.ChoiceField(choices=ShiftChoices.choices, required=False)
     date_of_joining = serializers.DateField()
     
     # Role assignment
-    role_name = serializers.ChoiceField(choices=Role.ROLE_HIERARCHY)
+    role_name = serializers.ChoiceField(choices=RoleHierarchyChoices.choices)
     
     class Meta:
         model = CustomUser

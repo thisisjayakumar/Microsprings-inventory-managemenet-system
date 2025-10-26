@@ -87,7 +87,7 @@ class SubProcessAdmin(admin.ModelAdmin):
 class BOMInline(admin.TabularInline):
     model = BOM
     extra = 0
-    fields = ('product_code', 'type', 'material', 'is_active')
+    fields = ('product_code', 'type', 'material', 'pcs_per_sheet', 'is_active')
     show_change_link = True
 
 
@@ -143,10 +143,10 @@ class ProcessStepAdmin(admin.ModelAdmin):
 
 @admin.register(BOM)
 class BOMAdmin(admin.ModelAdmin):
-    list_display = ('product_code', 'type', 'process_display', 'subprocess_display', 'step_display', 'material', 'is_active', 'created_at')
+    list_display = ('product_code', 'type', 'process_display', 'subprocess_display', 'step_display', 'material', 'pcs_per_sheet', 'utilization_display', 'is_active', 'created_at')
     list_filter = ('type', 'is_active', 'process_step__process', 'created_at')
     search_fields = ('product_code', 'process_step__step_name', 'process_step__process__name', 'material__material_code', 'material__grade')
-    readonly_fields = ('created_at', 'updated_at', 'main_process', 'subprocess')
+    readonly_fields = ('created_at', 'updated_at', 'main_process', 'subprocess', 'sheet_area_display', 'strip_area_display', 'utilization_percentage_display')
     
     fieldsets = (
         ('Product Information', {
@@ -154,6 +154,18 @@ class BOMAdmin(admin.ModelAdmin):
         }),
         ('Process & Materials', {
             'fields': ('process_step', 'material')
+        }),
+        ('Sheet Dimensions', {
+            'fields': ('sheet_length', 'sheet_breadth', 'sheet_area_display'),
+            'description': 'Dimensions of the whole sheet in mm'
+        }),
+        ('Strip Information', {
+            'fields': ('strip_length', 'strip_breadth', 'strip_area_display', 'strip_count'),
+            'description': 'Dimensions and count of strips cut from sheet'
+        }),
+        ('Production Quantities', {
+            'fields': ('pcs_per_strip', 'pcs_per_sheet', 'utilization_percentage_display'),
+            'description': 'Piece counts and material utilization'
         }),
         ('Process Hierarchy (Read-only)', {
             'fields': ('main_process', 'subprocess'),
@@ -176,6 +188,39 @@ class BOMAdmin(admin.ModelAdmin):
     def step_display(self, obj):
         return f"{obj.process_step.step_name} (#{obj.process_step.sequence_order})"
     step_display.short_description = 'Step'
+    
+    def sheet_area_display(self, obj):
+        """Display calculated sheet area"""
+        area = obj.sheet_area
+        if area:
+            return format_html('<strong>{:,.2f} mm²</strong>', area)
+        return '-'
+    sheet_area_display.short_description = 'Sheet Area'
+    
+    def strip_area_display(self, obj):
+        """Display calculated strip area"""
+        area = obj.strip_area
+        if area:
+            return format_html('<strong>{:,.2f} mm²</strong>', area)
+        return '-'
+    strip_area_display.short_description = 'Strip Area'
+    
+    def utilization_percentage_display(self, obj):
+        """Display material utilization percentage"""
+        percentage = obj.utilization_percentage
+        if percentage:
+            color = 'green' if percentage >= 80 else 'orange' if percentage >= 60 else 'red'
+            return format_html('<span style="color: {}; font-weight: bold;">{:.2f}%</span>', color, percentage)
+        return '-'
+    utilization_percentage_display.short_description = 'Utilization'
+    
+    def utilization_display(self, obj):
+        """Display utilization in list view"""
+        percentage = obj.utilization_percentage
+        if percentage:
+            return f"{percentage:.1f}%"
+        return '-'
+    utilization_display.short_description = 'Util %'
     
     def formfield_for_foreignkey(self, db_field, request, **kwargs):
         if db_field.name == "process_step":

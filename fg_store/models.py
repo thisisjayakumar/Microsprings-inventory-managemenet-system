@@ -3,6 +3,10 @@ from django.contrib.auth import get_user_model
 from django.utils import timezone
 from django.core.exceptions import ValidationError
 import uuid
+from utils.enums import (
+    DispatchBatchStatusChoices, DispatchTransactionStatusChoices,
+    FGStockAlertTypeChoices, SeverityChoices, DispatchOrderStatusChoices
+)
 
 User = get_user_model()
 
@@ -12,12 +16,6 @@ class DispatchBatch(models.Model):
     Dispatch Batch - Represents finished goods batches ready for dispatch
     Links to manufacturing batches and tracks dispatch quantities
     """
-    STATUS_CHOICES = [
-        ('pending_dispatch', 'Pending Dispatch'),
-        ('partially_dispatched', 'Partially Dispatched'),
-        ('fully_dispatched', 'Fully Dispatched'),
-        ('cancelled', 'Cancelled')
-    ]
     
     # Auto-generated unique identifier
     batch_id = models.CharField(max_length=30, unique=True, editable=False)
@@ -66,7 +64,7 @@ class DispatchBatch(models.Model):
     # Status and tracking
     status = models.CharField(
         max_length=20, 
-        choices=STATUS_CHOICES, 
+        choices=DispatchBatchStatusChoices.choices, 
         default='pending_dispatch'
     )
     
@@ -165,13 +163,6 @@ class DispatchTransaction(models.Model):
     Dispatch Transaction - Records all dispatch operations
     Provides complete audit trail for FG dispatch operations
     """
-    STATUS_CHOICES = [
-        ('pending_confirmation', 'Pending Confirmation'),
-        ('confirmed', 'Confirmed'),
-        ('received', 'Received by Customer'),
-        ('cancelled', 'Cancelled')
-    ]
-    
     # Auto-generated transaction ID
     transaction_id = models.CharField(max_length=30, unique=True, editable=False)
     
@@ -214,7 +205,7 @@ class DispatchTransaction(models.Model):
     # Status and tracking
     status = models.CharField(
         max_length=20,
-        choices=STATUS_CHOICES,
+        choices=DispatchTransactionStatusChoices.choices,
         default='pending_confirmation'
     )
     
@@ -322,20 +313,6 @@ class FGStockAlert(models.Model):
     """
     FG Stock Alert - Proactive notifications for stock levels
     """
-    ALERT_TYPE_CHOICES = [
-        ('low_stock', 'Low Stock'),
-        ('expiring', 'Expiring Batch'),
-        ('overstock', 'Overstock'),
-        ('custom', 'Custom Alert')
-    ]
-    
-    SEVERITY_CHOICES = [
-        ('low', 'Low'),
-        ('medium', 'Medium'),
-        ('high', 'High'),
-        ('critical', 'Critical')
-    ]
-    
     # Alert details
     product_code = models.ForeignKey(
         'products.Product',
@@ -345,12 +322,12 @@ class FGStockAlert(models.Model):
     )
     alert_type = models.CharField(
         max_length=20,
-        choices=ALERT_TYPE_CHOICES,
+        choices=FGStockAlertTypeChoices.choices,
         help_text="Type of alert"
     )
     severity = models.CharField(
         max_length=10,
-        choices=SEVERITY_CHOICES,
+        choices=SeverityChoices.choices,
         default='medium'
     )
     
@@ -466,15 +443,6 @@ class DispatchOrder(models.Model):
     Dispatch Order - Groups multiple dispatch transactions for a single MO
     Provides a higher-level view of dispatch operations
     """
-    STATUS_CHOICES = [
-        ('draft', 'Draft'),
-        ('pending_confirmation', 'Pending Confirmation'),
-        ('confirmed', 'Confirmed'),
-        ('partially_dispatched', 'Partially Dispatched'),
-        ('fully_dispatched', 'Fully Dispatched'),
-        ('cancelled', 'Cancelled')
-    ]
-    
     # Auto-generated order ID
     order_id = models.CharField(max_length=30, unique=True, editable=False)
     
@@ -509,7 +477,7 @@ class DispatchOrder(models.Model):
     # Status and tracking
     status = models.CharField(
         max_length=20,
-        choices=STATUS_CHOICES,
+        choices=DispatchOrderStatusChoices.choices,
         default='draft'
     )
     

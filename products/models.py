@@ -1,35 +1,14 @@
 from django.db import models
 from django.contrib.auth import get_user_model
+from utils.enums import ProductTypeChoices, SpringTypeChoices
 
 User = get_user_model()
 
 
 class Product(models.Model):
-    PRODUCT_TYPE_CHOICES = [
-        ('spring', 'Spring'),
-        ('press_component', 'PRESS COMPONENT')
-    ]
-    
-    SPRING_TYPE_CHOICES = [
-        ('tension', 'TENSION SPRING'),
-        ('wire_form', 'WIRE FORM SPRING'),
-        ('compression', 'COMPRESSION SPRING'),
-        ('torsion', 'TORSION SPRING'),
-        ('clip', 'CLIP'),
-        ('rivet', 'RIVET'),
-        ('helical', 'HELICAL SPRING'),
-        ('length_pin', 'LENGTH PIN'),
-        ('length_rod', 'LENGTH ROD'),
-        ('double_torsion', 'DOUBLE TORSION SPRING'),
-        ('cotter_pin', 'COTTER PIN'),
-        ('conical', 'CONICAL SPRING'),
-        ('ring', 'RING'),
-        ('s-spring', 'S-SPRING'),
-    ]
-
     product_code = models.CharField(max_length=120, unique=True)
-    product_type = models.CharField(max_length=20, choices=PRODUCT_TYPE_CHOICES, default='spring')
-    spring_type = models.CharField(max_length=20, choices=SPRING_TYPE_CHOICES, default='tension')
+    product_type = models.CharField(max_length=20, choices=ProductTypeChoices.choices, default='spring')
+    spring_type = models.CharField(max_length=20, choices=SpringTypeChoices.choices, default='tension')
     
     # Foreign key to RawMaterial for material details
     material = models.ForeignKey(
@@ -179,9 +158,6 @@ class Product(models.Model):
     @property
     def customer_industry(self):
         return self.customer_c_id.get_industry_type_display() if self.customer_c_id else None
-    
-    def get_product_type_display(self):
-        return dict(self.PRODUCT_TYPE_CHOICES).get(self.product_type, self.product_type)
     
     def save(self, *args, **kwargs):
         """No auto-calculation needed for strips_per_sheet or pcs_per_strip"""

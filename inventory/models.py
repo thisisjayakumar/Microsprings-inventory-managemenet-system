@@ -1,26 +1,22 @@
 from django.db import models
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
+from utils.enums import (
+    MaterialTypeChoices, FinishingChoices, LocationTypeChoices,
+    TransactionTypeChoices, ReferenceTypeChoices, GRMStatusChoices,
+    HandoverStatusChoices, HandoverIssueTypeChoices
+)
 
 User = get_user_model()
 
 class RawMaterial(models.Model):
-    MATERIAL_TYPE_CHOICES = [
-        ('coil', 'Coil'),
-        ('sheet', 'Sheet'),
-    ]
-
-    FINISHING_CHOICES = [
-        ('soap_coated', 'Soap Coated'),
-        ('bright','BRIGHT'),
-    ]
     
     
     material_code = models.CharField(max_length=50, unique=True, help_text="Unique identifier for the raw material")
     material_name = models.CharField(max_length=100, help_text="Complete material name from CSV")
-    material_type = models.CharField(max_length=20, choices=MATERIAL_TYPE_CHOICES)
+    material_type = models.CharField(max_length=20, choices=MaterialTypeChoices.choices)
     grade = models.CharField(max_length=50)
-    finishing = models.CharField(max_length=20, choices=FINISHING_CHOICES, null=True, blank=True)
+    finishing = models.CharField(max_length=20, choices=FinishingChoices.choices, null=True, blank=True)
     
     # Conditional fields based on material type
     wire_diameter_mm = models.DecimalField(
@@ -125,35 +121,8 @@ class RawMaterial(models.Model):
 
 
 class Location(models.Model):
-    LOCATION_TYPE_CHOICES = [
-        ('rm_store', 'Raw Material Store'),
-        ('coiling', 'Coiling'),
-        ('forming', 'Forming'),
-        ('tempering', 'Tempering'),
-        ('coating', 'Coating'),
-        ('blanking', 'Blanking'),
-        ('piercing', 'Piercing'),
-        ('deburring', 'Deburring'),
-        ('ironing', 'Ironing'),
-        ('champering', 'Champering'),
-        ('bending', 'Bending'),
-        ('plating', 'Plating'),
-        ('blue_coating', 'Blue Coating'),
-        ('bush_assembly', 'Bush Assembly'),
-        ('riveting', 'Riveting'),
-        ('remar', 'Remar'),
-        ('brass_welding', 'Brass Welding'),
-        ('grinding_buffing', 'Grinding & Buffing'),
-        ('blacking', 'Blacking'),
-        ('phosphating', 'Phosphating'),
-        ('final_inspection', 'Final Inspection'),
-        ('packing_zone', 'Packing Zone'),
-        ('fg', 'FG Store'),
-        ('dispatched', 'Dispatched')
-    ]
-    
     code = models.CharField(max_length=20, unique=True)
-    location_name = models.CharField(max_length=20, choices=LOCATION_TYPE_CHOICES, default='rm_store')
+    location_name = models.CharField(max_length=20, choices=LocationTypeChoices.choices, default='rm_store')
     parent_location = models.ForeignKey('self', on_delete=models.CASCADE, null=True, blank=True, related_name='sub_locations')
 
     class Meta:
@@ -165,27 +134,8 @@ class Location(models.Model):
 
 
 class InventoryTransaction(models.Model):
-
-    TRANSACTION_TYPES = [
-        ('inward', 'Inward Receipt'),
-        ('outward', 'Outward Issue'),
-        ('transfer', 'Location Transfer'),
-        ('adjustment', 'Stock Adjustment'),
-        ('consumption', 'Process Consumption'),
-        ('production', 'Process Output'),
-        ('scrap', 'Scrap Generation'),
-        ('return', 'Return to Stock')
-    ]
-    
-    REFERENCE_TYPES = [
-        ('mo', 'Manufacturing Order'),
-        ('po', 'Purchase Order'),
-        ('process', 'Process Execution'),
-        ('adjustment', 'Stock Adjustment')
-    ]
-    
     transaction_id = models.CharField(max_length=50, unique=True)
-    transaction_type = models.CharField(max_length=20, choices=TRANSACTION_TYPES)
+    transaction_type = models.CharField(max_length=20, choices=TransactionTypeChoices.choices)
     
     # What
     product = models.ForeignKey('products.Product', on_delete=models.PROTECT, related_name='inventory_transactions')
@@ -213,7 +163,7 @@ class InventoryTransaction(models.Model):
     created_by = models.ForeignKey(User, on_delete=models.PROTECT, related_name='created_transactions')
     
     # Reference
-    reference_type = models.CharField(max_length=20, choices=REFERENCE_TYPES, null=True, blank=True)
+    reference_type = models.CharField(max_length=20, choices=ReferenceTypeChoices.choices, null=True, blank=True)
     reference_id = models.CharField(max_length=50, null=True, blank=True)
     
     # Additional Info
@@ -317,13 +267,6 @@ class GRMReceipt(models.Model):
     Goods Receipt Material (GRM) - Represents a truck delivery/consignment
     Each GRM can contain multiple raw materials with different heat numbers
     """
-    STATUS_CHOICES = [
-        ('pending', 'Pending Receipt'),
-        ('partial', 'Partially Received'),
-        ('completed', 'Completed'),
-        ('cancelled', 'Cancelled')
-    ]
-    
     # Auto-generated GRM number
     grm_number = models.CharField(max_length=20, unique=True, editable=False)
     
@@ -344,7 +287,7 @@ class GRMReceipt(models.Model):
     received_by = models.ForeignKey(User, on_delete=models.PROTECT, related_name='grm_receipts')
     
     # Status and Tracking
-    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
+    status = models.CharField(max_length=20, choices=GRMStatusChoices.choices, default='pending')
     total_items_received = models.DecimalField(
         max_digits=10, decimal_places=2, default=0,
         help_text="Total items/weight received (in kg for weight-based, count for count-based)"
@@ -470,14 +413,9 @@ class HeatNumber(models.Model):
     )
     
     # Handover Verification Status
-    HANDOVER_STATUS_CHOICES = [
-        ('pending_handover', 'Pending Handover'),
-        ('verified', 'Verified'),
-        ('issue_reported', 'Issue Reported'),
-    ]
     handover_status = models.CharField(
         max_length=20,
-        choices=HANDOVER_STATUS_CHOICES,
+        choices=HandoverStatusChoices.choices,
         default='pending_handover',
         help_text="Status of handover verification to Coiling department"
     )
@@ -700,12 +638,6 @@ class HandoverIssue(models.Model):
     """
     Track issues reported during raw material handover verification
     """
-    ISSUE_TYPE_CHOICES = [
-        ('incorrect_weight', 'Incorrect Weight'),
-        ('damaged_material', 'Damaged Material'),
-        ('wrong_material', 'Wrong Material'),
-    ]
-    
     # Related heat number (equivalent to ChildBatch)
     heat_number = models.ForeignKey(
         HeatNumber,
@@ -717,7 +649,7 @@ class HandoverIssue(models.Model):
     # Issue details
     issue_type = models.CharField(
         max_length=20,
-        choices=ISSUE_TYPE_CHOICES,
+        choices=HandoverIssueTypeChoices.choices,
         help_text="Type of issue reported"
     )
     actual_weight = models.DecimalField(

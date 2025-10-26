@@ -1,6 +1,7 @@
 from django.db import models
 from django.contrib.auth import get_user_model
 from django.core.validators import RegexValidator
+from utils.enums import VendorTypeChoices, IndustryTypeChoices
 
 User = get_user_model()
 
@@ -42,15 +43,10 @@ class Brand(models.Model):
 
 
 class Vendor(models.Model):
-    VENDOR_TYPE_CHOICES = [
-        ('rm_vendor', 'RM Vendor'),
-        ('outsource_vendor', 'Outsource Vendor'),
-    ]
-    
     name = models.CharField(max_length=200, help_text="Vendor company name")
     vendor_type = models.CharField(
         max_length=20, 
-        choices=VENDOR_TYPE_CHOICES,
+        choices=VendorTypeChoices.choices,
         help_text="Type of vendor - Raw Material or Outsource"
     )
     
@@ -148,22 +144,6 @@ class Customer(models.Model):
     """
     Customer model to store customer information with contact details
     """
-    INDUSTRY_TYPE_CHOICES = [
-        ('brake_industry', 'Brake Industry'),
-        ('automotive', 'Automotive'),
-        ('temperature_sensor', 'Temperature Sensor'),
-        ('instruments', 'Instruments'),
-        ('thermal_ceramics', 'Thermal Ceramics'),
-        ('electric_loco_shed', 'Electric Loco Shed'),
-        ('seating_system', 'Seating System'),
-        ('harness', 'Harness'),
-        ('technology_services', 'Technology & Services'),
-        ('technology', 'Technology'),
-        ('motor_electronics', 'Motor Electronics'),
-        ('springs', 'Springs'),
-        ('other', 'Other'),
-    ]
-    
     # Auto-generated customer ID
     c_id = models.CharField(
         max_length=10, 
@@ -182,7 +162,7 @@ class Customer(models.Model):
     
     industry_type = models.CharField(
         max_length=50,
-        choices=INDUSTRY_TYPE_CHOICES,
+        choices=IndustryTypeChoices.choices,
         help_text="Type of industry the customer operates in"
     )
     

@@ -26,6 +26,7 @@ from .serializers import (
     LoginSessionSerializer, BulkUserRoleAssignmentSerializer, AvailableOperatorsSerializer
 )
 from .permissions import IsAdminOrManager, IsManagerOrAbove, IsSupervisorOrAbove
+from utils.enums import DepartmentChoices
 
 
 class CustomTokenObtainPairView(TokenObtainPairView):
@@ -475,7 +476,7 @@ def dashboard_stats(request):
                 is_active=True
             ).count(),
             'active_sessions': LoginSession.objects.filter(is_active=True).count(),
-            'departments': dict(UserProfile.DEPARTMENT_CHOICES)
+            'departments': dict(DepartmentChoices.choices)
         }
     elif user_role.role.name == 'supervisor':
         # Supervisor-specific stats

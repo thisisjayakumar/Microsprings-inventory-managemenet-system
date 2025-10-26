@@ -13,7 +13,8 @@ from .models import (
     ManufacturingOrder, PurchaseOrder, MOStatusHistory, POStatusHistory,
     MOProcessExecution, MOProcessStepExecution, MOProcessAlert, Batch,
     OutsourcingRequest, OutsourcedItem, MOApprovalWorkflow, ProcessAssignment,
-    BatchAllocation, ProcessExecutionLog, FinishedGoodsVerification
+    BatchAllocation, ProcessExecutionLog, FinishedGoodsVerification,
+    RawMaterialAllocation, RMAllocationHistory
 )
 from .serializers import (
     ManufacturingOrderListSerializer, ManufacturingOrderDetailSerializer,
@@ -25,7 +26,9 @@ from .serializers import (
     MOProcessExecutionDetailSerializer, MOProcessStepExecutionSerializer,
     MOProcessAlertSerializer, BatchListSerializer, BatchDetailSerializer,
     OutsourcingRequestListSerializer, OutsourcingRequestDetailSerializer,
-    OutsourcingRequestSendSerializer, OutsourcingRequestReturnSerializer
+    OutsourcingRequestSendSerializer, OutsourcingRequestReturnSerializer,
+    RawMaterialAllocationSerializer, RMAllocationHistorySerializer,
+    RMAllocationSwapSerializer, RMAllocationCheckSerializer
 )
 from products.models import Product
 from inventory.models import RawMaterial, RMStockBalance, GRMReceipt, HeatNumber
@@ -46,7 +49,7 @@ class ManufacturingOrderViewSet(viewsets.ModelViewSet):
     permission_classes = [IsManagerOrSupervisor]
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     filterset_fields = ['status', 'priority', 'shift', 'material_type']
-    search_fields = ['mo_id', 'product_code__product_code', 'product_code__part_number', 'customer_order_reference']
+    search_fields = ['mo_id', 'product_code__product_code', 'product_code__spring_type', 'material_name', 'grade', 'customer_name', 'special_instructions']
     ordering_fields = ['created_at', 'planned_start_date', 'delivery_date', 'mo_id']
     ordering = ['-created_at']
 
@@ -438,8 +441,21 @@ class ManufacturingOrderViewSet(viewsets.ModelViewSet):
             process_steps = []
             process_ids = set()
             material_ids = set()
+            bom_dimensions = None  # Store BOM dimensions from first item
             
             for bom_item in bom_items:
+                # Collect BOM dimensions from first item (they should be same for all)
+                if not bom_dimensions:
+                    bom_dimensions = {
+                        'sheet_length': float(bom_item.sheet_length) if bom_item.sheet_length else None,
+                        'sheet_breadth': float(bom_item.sheet_breadth) if bom_item.sheet_breadth else None,
+                        'strip_length': float(bom_item.strip_length) if bom_item.strip_length else None,
+                        'strip_breadth': float(bom_item.strip_breadth) if bom_item.strip_breadth else None,
+                        'strip_count': bom_item.strip_count,
+                        'pcs_per_strip': bom_item.pcs_per_strip,
+                        'pcs_per_sheet': bom_item.pcs_per_sheet
+                    }
+                
                 # Collect unique processes
                 if bom_item.process_step.process.id not in process_ids:
                     processes.append({
@@ -468,7 +484,8 @@ class ManufacturingOrderViewSet(viewsets.ModelViewSet):
                 'product': product_data,
                 'process_steps': sorted(process_steps, key=lambda x: x['sequence_order']),
                 'processes': processes,
-                'materials': materials
+                'materials': materials,
+                'bom_dimensions': bom_dimensions  # Add BOM dimensions to response
             }
             
             return Response(response_data)
@@ -750,6 +767,13 @@ class ManufacturingOrderViewSet(viewsets.ModelViewSet):
         mo.gm_approved_by = request.user
         mo.save()
         
+        # Lock RM allocations (deduct from available stock)
+        from manufacturing.rm_allocation_service import RMAllocationService
+        import logging
+        logger = logging.getLogger(__name__)
+        lock_result = RMAllocationService.lock_allocations_for_mo(mo, request.user)
+        logger.info(f"RM allocation lock result for MO {mo.mo_id}: {lock_result}")
+        
         # Create status history
         MOStatusHistory.objects.create(
             mo=mo,
@@ -762,7 +786,9 @@ class ManufacturingOrderViewSet(viewsets.ModelViewSet):
         serializer = ManufacturingOrderWithProcessesSerializer(mo)
         return Response({
             'message': 'MO approved successfully!',
-            'mo': serializer.data
+            'mo': serializer.data,
+            'rm_allocation_locked': lock_result.get('success', False),
+            'locked_allocations_count': lock_result.get('locked_count', 0)
         })
     
     def _handle_start_production(self, mo, request):
@@ -1356,6 +1382,30 @@ class PurchaseOrderViewSet(viewsets.ModelViewSet):
         
         serializer = self.get_serializer(po)
         return Response(serializer.data)
+
+    @action(detail=False, methods=['get'])
+    def dashboard_stats(self, request):
+        """Get dashboard statistics for Purchase Orders"""
+        queryset = self.get_queryset()
+        
+        stats = {
+            'total': queryset.count(),
+            'draft': queryset.filter(status='draft').count(),
+            'po_approved': queryset.filter(status='po_approved').count(),
+            'rm_completed': queryset.filter(status='rm_completed').count(),
+            'po_cancelled': queryset.filter(status='po_cancelled').count(),
+            'pending_approval': queryset.filter(status__in=['draft', 'po_submitted']).count(),
+            'by_material_type': {
+                'coil': queryset.filter(material_type='coil').count(),
+                'sheet': queryset.filter(material_type='sheet').count(),
+            },
+            'overdue': queryset.filter(
+                expected_date__lt=timezone.now(),
+                status__in=['draft', 'po_approved', 'po_submitted']
+            ).count(),
+        }
+        
+        return Response(stats)
 
 
 class MOProcessExecutionViewSet(viewsets.ModelViewSet):
@@ -3126,3 +3176,232 @@ def verify_finished_goods(request):
             'success': False,
             'error': str(e)
         }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+# Raw Material Allocation API Views
+
+class RawMaterialAllocationViewSet(viewsets.ReadOnlyModelViewSet):
+    """
+    ViewSet for managing raw material allocations
+    
+    Provides endpoints for:
+    - Viewing RM allocations
+    - Checking RM availability
+    - Swapping RM allocations between MOs
+    - Getting allocation history
+    """
+    queryset = RawMaterialAllocation.objects.all().select_related(
+        'mo', 'raw_material', 'swapped_to_mo', 'allocated_by', 'locked_by', 'swapped_by'
+    ).prefetch_related('history')
+    serializer_class = RawMaterialAllocationSerializer
+    permission_classes = [IsAuthenticated]
+    filterset_fields = ['mo', 'raw_material', 'status', 'can_be_swapped']
+    search_fields = ['mo__mo_id', 'raw_material__material_code', 'raw_material__material_name']
+    ordering_fields = ['allocated_at', 'locked_at', 'swapped_at']
+    ordering = ['-allocated_at']
+    
+    @action(detail=False, methods=['get'])
+    def by_mo(self, request):
+        """Get all RM allocations for a specific MO"""
+        mo_id = request.query_params.get('mo_id')
+        if not mo_id:
+            return Response(
+                {'error': 'mo_id query parameter is required'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        try:
+            mo = ManufacturingOrder.objects.get(id=mo_id)
+        except ManufacturingOrder.DoesNotExist:
+            return Response(
+                {'error': 'Manufacturing Order not found'},
+                status=status.HTTP_404_NOT_FOUND
+            )
+        
+        allocations = self.queryset.filter(mo=mo)
+        serializer = self.get_serializer(allocations, many=True)
+        
+        # Get allocation summary
+        from manufacturing.rm_allocation_service import RMAllocationService
+        summary = RMAllocationService.get_allocation_summary_for_mo(mo)
+        
+        return Response({
+            'mo_id': mo.mo_id,
+            'mo_priority': mo.priority,
+            'mo_status': mo.status,
+            'allocations': serializer.data,
+            'summary': summary
+        })
+    
+    @action(detail=False, methods=['post'])
+    def check_availability(self, request):
+        """Check RM availability for an MO"""
+        serializer = RMAllocationCheckSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        
+        mo_id = serializer.validated_data['mo_id']
+        mo = ManufacturingOrder.objects.get(id=mo_id)
+        
+        from manufacturing.rm_allocation_service import RMAllocationService
+        availability = RMAllocationService.check_rm_availability_for_mo(mo)
+        
+        return Response(availability)
+    
+    @action(detail=False, methods=['get'])
+    def swappable_allocations(self, request):
+        """Find RM allocations that can be swapped to a target MO"""
+        target_mo_id = request.query_params.get('target_mo_id')
+        if not target_mo_id:
+            return Response(
+                {'error': 'target_mo_id query parameter is required'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        try:
+            target_mo = ManufacturingOrder.objects.get(id=target_mo_id)
+        except ManufacturingOrder.DoesNotExist:
+            return Response(
+                {'error': 'Target Manufacturing Order not found'},
+                status=status.HTTP_404_NOT_FOUND
+            )
+        
+        from manufacturing.rm_allocation_service import RMAllocationService
+        swappable = RMAllocationService.find_swappable_allocations(target_mo)
+        serializer = self.get_serializer(swappable, many=True)
+        
+        return Response({
+            'target_mo_id': target_mo.mo_id,
+            'target_mo_priority': target_mo.priority,
+            'swappable_allocations': serializer.data,
+            'total_swappable_quantity_kg': sum(alloc.allocated_quantity_kg for alloc in swappable)
+        })
+    
+    @action(detail=True, methods=['post'])
+    def swap(self, request, pk=None):
+        """Swap this allocation to another MO"""
+        allocation = self.get_object()
+        serializer = RMAllocationSwapSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        
+        target_mo_id = serializer.validated_data['target_mo_id']
+        reason = serializer.validated_data.get('reason', '')
+        
+        try:
+            target_mo = ManufacturingOrder.objects.get(id=target_mo_id)
+        except ManufacturingOrder.DoesNotExist:
+            return Response(
+                {'error': 'Target Manufacturing Order not found'},
+                status=status.HTTP_404_NOT_FOUND
+            )
+        
+        success, message = allocation.swap_to_mo(target_mo, request.user, reason)
+        
+        if success:
+            # Create history record
+            RMAllocationHistory.objects.create(
+                allocation=allocation,
+                action='swapped',
+                from_mo=allocation.mo,
+                to_mo=target_mo,
+                quantity_kg=allocation.allocated_quantity_kg,
+                performed_by=request.user,
+                reason=reason or f"Manual swap to {target_mo.mo_id}"
+            )
+            
+            return Response({
+                'success': True,
+                'message': message,
+                'allocation': self.get_serializer(allocation).data
+            })
+        else:
+            return Response(
+                {'error': message},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+    
+    @action(detail=False, methods=['post'])
+    def auto_swap(self, request):
+        """Automatically swap RM allocations from lower priority MOs to target MO"""
+        target_mo_id = request.data.get('target_mo_id')
+        if not target_mo_id:
+            return Response(
+                {'error': 'target_mo_id is required'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        try:
+            target_mo = ManufacturingOrder.objects.get(id=target_mo_id)
+        except ManufacturingOrder.DoesNotExist:
+            return Response(
+                {'error': 'Target Manufacturing Order not found'},
+                status=status.HTTP_404_NOT_FOUND
+            )
+        
+        from manufacturing.rm_allocation_service import RMAllocationService
+        result = RMAllocationService.auto_swap_allocations(target_mo, request.user)
+        
+        if result['success']:
+            return Response(result)
+        else:
+            return Response(result, status=status.HTTP_400_BAD_REQUEST)
+    
+    @action(detail=True, methods=['post'])
+    def lock(self, request, pk=None):
+        """Lock an allocation (when MO is approved)"""
+        allocation = self.get_object()
+        
+        success = allocation.lock_allocation(request.user)
+        
+        if success:
+            # Create history record
+            RMAllocationHistory.objects.create(
+                allocation=allocation,
+                action='locked',
+                from_mo=None,
+                to_mo=allocation.mo,
+                quantity_kg=allocation.allocated_quantity_kg,
+                performed_by=request.user,
+                reason=f"MO {allocation.mo.mo_id} approved"
+            )
+            
+            return Response({
+                'success': True,
+                'message': f'Allocation locked for MO {allocation.mo.mo_id}',
+                'allocation': self.get_serializer(allocation).data
+            })
+        else:
+            return Response(
+                {'error': 'Allocation is already locked'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+    
+    @action(detail=True, methods=['post'])
+    def release(self, request, pk=None):
+        """Release an allocation back to stock"""
+        allocation = self.get_object()
+        reason = request.data.get('reason', '')
+        
+        success = allocation.release_allocation()
+        
+        if success:
+            # Create history record
+            RMAllocationHistory.objects.create(
+                allocation=allocation,
+                action='released',
+                from_mo=allocation.mo,
+                to_mo=None,
+                quantity_kg=allocation.allocated_quantity_kg,
+                performed_by=request.user,
+                reason=reason or f"MO {allocation.mo.mo_id} cancelled"
+            )
+            
+            return Response({
+                'success': True,
+                'message': f'Allocation released for MO {allocation.mo.mo_id}',
+                'allocation': self.get_serializer(allocation).data
+            })
+        else:
+            return Response(
+                {'error': 'Failed to release allocation'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
