@@ -148,12 +148,18 @@ class BatchProcessExecutionViewSet(viewsets.ViewSet):
                 status=status.HTTP_400_BAD_REQUEST
             )
         
-        # Check if process is in progress
+        # Check if process is in progress OR if MO is stopped but batch has started
+        # When MO is stopped, in-progress batches should be allowed to complete
+        mo_is_stopped = batch.mo.status == 'stopped'
+        batch_has_started = batch.status in ['in_process', 'in_progress']
+        
         if process_execution.status != 'in_progress':
-            return Response(
-                {'error': 'Process must be in progress to complete batch'}, 
-                status=status.HTTP_400_BAD_REQUEST
-            )
+            # If process is not in progress, check if this is an allowed exception
+            if not (mo_is_stopped and batch_has_started):
+                return Response(
+                    {'error': 'Process must be in progress to complete batch'}, 
+                    status=status.HTTP_400_BAD_REQUEST
+                )
         
         # Update batch-process execution state
         batch_process_key = f"PROCESS_{process_execution.id}_STATUS"

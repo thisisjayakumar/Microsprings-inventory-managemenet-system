@@ -122,6 +122,8 @@ class MOStatusChoices(models.TextChoices):
     IN_PROGRESS = 'in_progress', _('In Progress')
     COMPLETED = 'completed', _('Completed')
     CANCELLED = 'cancelled', _('Cancelled')
+    STOPPED = 'stopped', _('Stopped')
+    REJECTED = 'rejected', _('Rejected')
     ON_HOLD = 'on_hold', _('On Hold')
 
 
@@ -252,6 +254,12 @@ class RMAllocationStatusChoices(models.TextChoices):
     RELEASED = 'released', _('Released Back to Stock')
 
 
+class FGReservationTypeChoices(models.TextChoices):
+    BATCH_RESERVE = 'batch_reserve', _('Batch Reserve')
+    CUSTOMER_RESERVE = 'customer_reserve', _('Customer Reserve')
+    MO_RESERVE = 'mo_reserve', _('MO Reserve')
+
+
 # ============================================================================
 # DISPATCH & FG STORE CHOICES
 # ============================================================================
@@ -330,6 +338,7 @@ class WorkflowNotificationTypeChoices(models.TextChoices):
     RM_ALLOCATED = 'rm_allocated', _('RM Allocated')
     PROCESS_ASSIGNED = 'process_assigned', _('Process Assigned')
     PROCESS_REASSIGNED = 'process_reassigned', _('Process Reassigned')
+    SUPERVISOR_ASSIGNED = 'supervisor_assigned', _('Supervisor Assigned')
     BATCH_ALLOCATED = 'batch_allocated', _('Batch Allocated')
     BATCH_RECEIVED = 'batch_received', _('Batch Received')
     PROCESS_STARTED = 'process_started', _('Process Started')

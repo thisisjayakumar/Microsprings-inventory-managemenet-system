@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import DispatchBatch, DispatchTransaction, FGStockAlert, DispatchOrder
+from .models import DispatchBatch, DispatchTransaction, FGStockAlert, DispatchOrder, FGStockReservation
 
 
 @admin.register(DispatchBatch)
@@ -134,6 +134,41 @@ class DispatchOrderAdmin(admin.ModelAdmin):
         }),
         ('Audit', {
             'fields': ('created_at', 'created_by', 'updated_at'),
+            'classes': ('collapse',)
+        })
+    )
+
+
+@admin.register(FGStockReservation)
+class FGStockReservationAdmin(admin.ModelAdmin):
+    list_display = [
+        'reservation_id', 'mo', 'product_code', 'quantity',
+        'reservation_type', 'status', 'reserved_at', 'allocated_at'
+    ]
+    list_filter = [
+        'status', 'reservation_type', 'reserved_at', 'mo__product_code'
+    ]
+    search_fields = [
+        'reservation_id', 'mo__mo_id', 'product_code__product_code', 'notes'
+    ]
+    readonly_fields = ['reservation_id', 'reserved_at', 'allocated_at', 'released_at']
+    ordering = ['-created_at']
+    
+    fieldsets = (
+        ('Reservation Details', {
+            'fields': ('reservation_id', 'mo', 'product_code')
+        }),
+        ('Quantity & Type', {
+            'fields': ('quantity', 'reservation_type', 'status')
+        }),
+        ('Timestamps', {
+            'fields': ('reserved_at', 'allocated_at', 'released_at', 'reserved_by')
+        }),
+        ('Additional Information', {
+            'fields': ('notes',)
+        }),
+        ('Audit', {
+            'fields': ('created_at', 'updated_at'),
             'classes': ('collapse',)
         })
     )

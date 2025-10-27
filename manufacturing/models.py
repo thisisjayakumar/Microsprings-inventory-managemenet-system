@@ -1,6 +1,10 @@
 from django.db import models
 from django.contrib.auth import get_user_model
+from django.core.exceptions import ValidationError
 from django.utils import timezone
+import logging
+
+logger = logging.getLogger(__name__)
 from decimal import Decimal
 import uuid
 from utils.enums import (
@@ -107,14 +111,29 @@ class ManufacturingOrder(models.Model):
     shift = models.CharField(max_length=10, choices=ShiftChoices.choices, null=True, blank=True)
     
     # Planning dates
-    planned_start_date = models.DateTimeField()
-    planned_end_date = models.DateTimeField()
+    planned_start_date = models.DateTimeField(null=True, blank=True)
+    planned_end_date = models.DateTimeField(null=True, blank=True)
     actual_start_date = models.DateTimeField(null=True, blank=True)
     actual_end_date = models.DateTimeField(null=True, blank=True)
     
     # Status & Priority
     status = models.CharField(max_length=20, choices=MOStatusChoices.choices, default='on_hold')
     priority = models.CharField(max_length=10, choices=PriorityChoices.choices, default='medium')
+    priority_level = models.IntegerField(
+        default=0,
+        help_text="Numeric priority level for ordering (higher = more priority). 0=default"
+    )
+    
+    # Stop/Hold tracking
+    stopped_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        help_text="When this MO was stopped (for resource reallocation)"
+    )
+    stop_reason = models.TextField(
+        blank=True,
+        help_text="Reason for stopping this MO"
+    )
     
     # Business details - customer field that references c_id
     customer_c_id = models.ForeignKey(
@@ -142,6 +161,14 @@ class ManufacturingOrder(models.Model):
         User, on_delete=models.SET_NULL, null=True, blank=True,
         related_name='rm_allocated_mo_orders'
     )
+    
+    # Rejection tracking
+    rejected_at = models.DateTimeField(null=True, blank=True)
+    rejected_by = models.ForeignKey(
+        User, on_delete=models.SET_NULL, null=True, blank=True,
+        related_name='rejected_mo_orders'
+    )
+    rejection_reason = models.TextField(blank=True, help_text="Reason for rejecting this MO")
     
     # Audit
     created_at = models.DateTimeField(auto_now_add=True)
@@ -203,6 +230,148 @@ class ManufacturingOrder(models.Model):
             if self.tolerance_percentage:
                 tolerance_factor = Decimal('1') + (Decimal(str(self.tolerance_percentage)) / Decimal('100'))
                 self.rm_required_kg = self.rm_required_kg * tolerance_factor
+    
+    def stop_mo(self, stop_reason, stopped_by_user):
+        """
+        Stop this MO and release all reserved resources
+        Returns dict with released resources information
+        """
+        from django.db import transaction
+        
+        if self.status in ['completed', 'cancelled', 'stopped']:
+            raise ValidationError(f"Cannot stop MO with status: {self.status}")
+        
+        with transaction.atomic():
+            # Track what we're releasing
+            released_resources = {
+                'rm_allocations': [],
+                'fg_reservations': [],
+                'blocked_batches': []
+            }
+            
+            # 1. Release reserved RM allocations (not locked ones) and return to stock
+            from inventory.models import RMStockBalance
+            
+            reserved_allocations = self.rm_allocations.filter(status='reserved')
+            for allocation in reserved_allocations:
+                released_resources['rm_allocations'].append({
+                    'material': str(allocation.raw_material),
+                    'quantity_kg': float(allocation.allocated_quantity_kg),
+                    'allocation_id': allocation.id
+                })
+                
+                # Return quantity to stock balance
+                stock_balance, created = RMStockBalance.objects.get_or_create(
+                    raw_material=allocation.raw_material,
+                    defaults={'available_quantity': Decimal('0')}
+                )
+                stock_balance.available_quantity += allocation.allocated_quantity_kg
+                stock_balance.save()
+                
+                # Create allocation history entry for audit trail
+                RMAllocationHistory.objects.create(
+                    allocation=allocation,
+                    action='released',
+                    from_mo=self,
+                    to_mo=None,
+                    quantity_kg=allocation.allocated_quantity_kg,
+                    performed_by=stopped_by_user,
+                    reason=f'RM released from stopped MO {self.mo_id}. Returned to stock.'
+                )
+                
+                # Create comprehensive transaction history for RM release
+                try:
+                    from inventory.utils import generate_transaction_id
+                    transaction_id = generate_transaction_id('RM_RELEASED')
+                    
+                    MOTransactionHistory.objects.create(
+                        mo=self,
+                        transaction_type='rm_released',
+                        transaction_id=transaction_id,
+                        description=f'RM released from stopped MO {self.mo_id}',
+                        details={
+                            'material_name': allocation.raw_material.material_name,
+                            'released_quantity_kg': float(allocation.allocated_quantity_kg),
+                            'reason': f'MO {self.mo_id} stopped - RM returned to stock',
+                            'stopped_by': stopped_by_user.get_full_name() or stopped_by_user.email,
+                            'stock_returned_to': 'RM Store'
+                        },
+                        created_by=stopped_by_user
+                    )
+                except Exception as e:
+                    logger.warning(f"Failed to create RM release transaction history: {str(e)}")
+                
+                # Update allocation status
+                allocation.status = 'released'
+                allocation.save()
+            
+            # 2. Release FG reservations
+            from fg_store.models import FGStockReservation
+            fg_reservations = FGStockReservation.objects.filter(
+                mo=self,
+                status='reserved'
+            )
+            for reservation in fg_reservations:
+                released_resources['fg_reservations'].append({
+                    'product': str(reservation.product_code),
+                    'quantity': reservation.quantity,
+                    'reservation_id': reservation.id
+                })
+                reservation.release_reservation()
+            
+            # 3. Block new batch releases (batches in 'created' status)
+            created_batches = self.batches.filter(status='created')
+            for batch in created_batches:
+                batch.can_release = False
+                batch.save(update_fields=['can_release'])
+                released_resources['blocked_batches'].append({
+                    'batch_id': batch.batch_id,
+                    'quantity': batch.planned_quantity
+                })
+            
+            # 4. Update MO status
+            self.status = 'stopped'
+            self.stopped_at = timezone.now()
+            self.stop_reason = stop_reason
+            self.save(update_fields=['status', 'stopped_at', 'stop_reason', 'updated_at'])
+            
+            # Create comprehensive transaction history for MO stop
+            try:
+                from inventory.utils import generate_transaction_id
+                transaction_id = generate_transaction_id('MO_STOPPED')
+                
+                MOTransactionHistory.objects.create(
+                    mo=self,
+                    transaction_type='mo_stopped',
+                    transaction_id=transaction_id,
+                    description=f'MO {self.mo_id} stopped',
+                    details={
+                        'stop_reason': stop_reason,
+                        'stopped_by': stopped_by_user.get_full_name() or stopped_by_user.email,
+                        'stopped_at': self.stopped_at.isoformat(),
+                        'released_resources': released_resources,
+                        'total_rm_released_kg': sum([r['quantity_kg'] for r in released_resources['rm_allocations']]),
+                        'total_fg_released': len(released_resources['fg_reservations']),
+                        'blocked_batches_count': len(released_resources['blocked_batches'])
+                    },
+                    created_by=stopped_by_user
+                )
+            except Exception as e:
+                logger.warning(f"Failed to create MO stop transaction history: {str(e)}")
+            
+            # 5. Create audit log entry
+            from notifications.models import WorkflowNotification
+            WorkflowNotification.objects.create(
+                title=f"MO {self.mo_id} Stopped",
+                message=f"MO stopped by {stopped_by_user.get_full_name() or stopped_by_user.username}. Reason: {stop_reason}",
+                notification_type='mo_status_changed',
+                priority='medium',
+                recipient=stopped_by_user,
+                related_mo=self,
+                created_by=stopped_by_user
+            )
+            
+            return released_resources
 
 
 class PurchaseOrder(models.Model):
@@ -342,6 +511,58 @@ class PurchaseOrder(models.Model):
 
     def __str__(self):
         return f"{self.po_id} - {self.vendor_name.name} (Qty: {self.quantity_ordered})"
+
+
+class MOTransactionHistory(models.Model):
+    """
+    Comprehensive transaction history for Manufacturing Orders
+    Tracks all MO-related events including creation, RM allocation, status changes, etc.
+    """
+    mo = models.ForeignKey(ManufacturingOrder, on_delete=models.CASCADE, related_name='transaction_history')
+    transaction_type = models.CharField(max_length=50, help_text="Type of transaction (mo_created, rm_allocated, status_changed, etc.)")
+    transaction_id = models.CharField(max_length=50, unique=True, help_text="Unique transaction identifier")
+    description = models.TextField(help_text="Human-readable description of the transaction")
+    details = models.JSONField(default=dict, help_text="Detailed transaction data (stock levels, quantities, etc.)")
+    created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='mo_transactions')
+    created_at = models.DateTimeField(auto_now_add=True)
+    
+    class Meta:
+        verbose_name = 'MO Transaction History'
+        verbose_name_plural = 'MO Transaction Histories'
+        ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['mo', 'transaction_type']),
+            models.Index(fields=['created_at']),
+        ]
+
+    def __str__(self):
+        return f"{self.mo.mo_id} - {self.transaction_type} - {self.created_at.strftime('%Y-%m-%d %H:%M')}"
+
+
+class POTransactionHistory(models.Model):
+    """
+    Comprehensive transaction history for Purchase Orders
+    Tracks all PO-related events including creation, approval, receipt, etc.
+    """
+    po = models.ForeignKey(PurchaseOrder, on_delete=models.CASCADE, related_name='transaction_history')
+    transaction_type = models.CharField(max_length=50, help_text="Type of transaction (po_created, po_approved, grm_received, etc.)")
+    transaction_id = models.CharField(max_length=50, unique=True, help_text="Unique transaction identifier")
+    description = models.TextField(help_text="Human-readable description of the transaction")
+    details = models.JSONField(default=dict, help_text="Detailed transaction data (quantities, amounts, etc.)")
+    created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='po_transactions')
+    created_at = models.DateTimeField(auto_now_add=True)
+    
+    class Meta:
+        verbose_name = 'PO Transaction History'
+        verbose_name_plural = 'PO Transaction Histories'
+        ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['po', 'transaction_type']),
+            models.Index(fields=['created_at']),
+        ]
+
+    def __str__(self):
+        return f"{self.po.po_id} - {self.transaction_type} - {self.created_at.strftime('%Y-%m-%d %H:%M')}"
 
 
 class MOStatusHistory(models.Model):
@@ -883,6 +1104,12 @@ class Batch(models.Model):
     notes = models.TextField(
         blank=True,
         help_text="Any special notes or instructions for this batch"
+    )
+    
+    # MO Stop/Release control
+    can_release = models.BooleanField(
+        default=True,
+        help_text="Whether this batch can be released for production. Set to False when MO is stopped."
     )
     
     # Audit fields

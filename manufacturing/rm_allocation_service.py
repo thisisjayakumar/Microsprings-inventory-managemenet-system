@@ -21,17 +21,6 @@ class RMAllocationService:
     
     @staticmethod
     def allocate_rm_for_mo(mo, allocated_by_user):
-        """
-        Allocate (reserve) raw materials for a Manufacturing Order
-        Called when MO is created
-        
-        Args:
-            mo: ManufacturingOrder instance
-            allocated_by_user: User who is allocating the RM
-            
-        Returns:
-            List of RawMaterialAllocation instances created
-        """
         with transaction.atomic():
             allocations = []
             

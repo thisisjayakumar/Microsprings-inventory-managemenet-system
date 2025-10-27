@@ -5,7 +5,8 @@ from django.core.exceptions import ValidationError
 import uuid
 from utils.enums import (
     DispatchBatchStatusChoices, DispatchTransactionStatusChoices,
-    FGStockAlertTypeChoices, SeverityChoices, DispatchOrderStatusChoices
+    FGStockAlertTypeChoices, SeverityChoices, DispatchOrderStatusChoices,
+    FGReservationTypeChoices
 )
 
 User = get_user_model()
@@ -555,3 +556,114 @@ class DispatchOrder(models.Model):
             self.status = 'partially_dispatched'
         
         self.save(update_fields=['status', 'updated_at'])
+
+
+class FGStockReservation(models.Model):
+    """
+    FG Stock Reservation - Track reservations of finished goods for MOs
+    Used for priority-based resource allocation
+    """
+    # Auto-generated reservation ID
+    reservation_id = models.CharField(max_length=30, unique=True, editable=False)
+    
+    # Relationships
+    mo = models.ForeignKey(
+        'manufacturing.ManufacturingOrder',
+        on_delete=models.CASCADE,
+        related_name='fg_reservations',
+        help_text="Manufacturing Order this reservation is for"
+    )
+    product_code = models.ForeignKey(
+        'products.Product',
+        on_delete=models.PROTECT,
+        related_name='fg_reservations',
+        help_text="Product being reserved"
+    )
+    
+    # Reservation details
+    quantity = models.PositiveIntegerField(
+        help_text="Quantity of FG reserved"
+    )
+    reservation_type = models.CharField(
+        max_length=20,
+        choices=FGReservationTypeChoices.choices,
+        default='mo_reserve',
+        help_text="Type of reservation"
+    )
+    
+    # Status tracking
+    status = models.CharField(
+        max_length=20,
+        choices=[('reserved', 'Reserved'), ('allocated', 'Allocated'), ('released', 'Released')],
+        default='reserved',
+        help_text="Reservation status"
+    )
+    
+    # Timestamps
+    reserved_at = models.DateTimeField(auto_now_add=True)
+    reserved_by = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='fg_reservations_created'
+    )
+    allocated_at = models.DateTimeField(null=True, blank=True)
+    released_at = models.DateTimeField(null=True, blank=True)
+    
+    # Additional information
+    notes = models.TextField(blank=True)
+    
+    # Audit fields
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        verbose_name = 'FG Stock Reservation'
+        verbose_name_plural = 'FG Stock Reservations'
+        ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['mo', 'status']),
+            models.Index(fields=['product_code', 'status']),
+            models.Index(fields=['reservation_id']),
+        ]
+    
+    def save(self, *args, **kwargs):
+        # Auto-generate reservation_id if not set
+        if not self.reservation_id:
+            # Format: FG-RES-YYYYMMDD-XXXX
+            today = timezone.now().strftime('%Y%m%d')
+            last_res = FGStockReservation.objects.filter(
+                reservation_id__startswith=f'FG-RES-{today}'
+            ).order_by('reservation_id').last()
+            
+            if last_res:
+                last_sequence = int(last_res.reservation_id.split('-')[-1])
+                sequence = last_sequence + 1
+            else:
+                sequence = 1
+            
+            self.reservation_id = f'FG-RES-{today}-{sequence:04d}'
+        
+        super().save(*args, **kwargs)
+    
+    def __str__(self):
+        return f"{self.reservation_id} - {self.mo.mo_id} ({self.quantity} units)"
+    
+    def release_reservation(self):
+        """Release this reservation back to available stock"""
+        if self.status == 'released':
+            raise ValidationError("Reservation already released")
+        
+        self.status = 'released'
+        self.released_at = timezone.now()
+        self.save(update_fields=['status', 'released_at', 'updated_at'])
+    
+    def allocate_reservation(self):
+        """Mark this reservation as allocated (actually used)"""
+        if self.status != 'reserved':
+            raise ValidationError("Can only allocate reserved reservations")
+        
+        self.status = 'allocated'
+        self.allocated_at = timezone.now()
+        self.save(update_fields=['status', 'allocated_at', 'updated_at'])

@@ -5,6 +5,7 @@ from decimal import Decimal
 import logging
 from .models import (
     ManufacturingOrder, PurchaseOrder, MOStatusHistory, POStatusHistory,
+    MOTransactionHistory, POTransactionHistory,
     MOProcessExecution, MOProcessStepExecution, MOProcessAlert, Batch,
     OutsourcingRequest, OutsourcedItem, RawMaterialAllocation, RMAllocationHistory
 )
@@ -88,6 +89,32 @@ class VendorBasicSerializer(serializers.ModelSerializer):
             'address', 'contact_no', 'email', 'contact_person', 'is_active'
         ]
         read_only_fields = fields
+
+
+class MOTransactionHistorySerializer(serializers.ModelSerializer):
+    """Serializer for MO transaction history"""
+    created_by_name = serializers.CharField(source='created_by.get_full_name', read_only=True)
+    
+    class Meta:
+        model = MOTransactionHistory
+        fields = [
+            'id', 'transaction_type', 'transaction_id', 'description', 
+            'details', 'created_by_name', 'created_at'
+        ]
+        read_only_fields = ['id', 'created_at']
+
+
+class POTransactionHistorySerializer(serializers.ModelSerializer):
+    """Serializer for PO transaction history"""
+    created_by_name = serializers.CharField(source='created_by.get_full_name', read_only=True)
+    
+    class Meta:
+        model = POTransactionHistory
+        fields = [
+            'id', 'transaction_type', 'transaction_id', 'description', 
+            'details', 'created_by_name', 'created_at'
+        ]
+        read_only_fields = ['id', 'created_at']
 
 
 class MOStatusHistorySerializer(serializers.ModelSerializer):
@@ -236,6 +263,7 @@ class ManufacturingOrderDetailSerializer(serializers.ModelSerializer):
     gm_approved_by = UserBasicSerializer(read_only=True)
     rm_allocated_by = UserBasicSerializer(read_only=True)
     status_history = MOStatusHistorySerializer(many=True, read_only=True)
+    transaction_history = MOTransactionHistorySerializer(many=True, read_only=True)
     
     # Customer fields
     from third_party.serializers import CustomerListSerializer
@@ -252,6 +280,23 @@ class ManufacturingOrderDetailSerializer(serializers.ModelSerializer):
     # NOTE: assigned_supervisor_id removed - supervisor tracking moved to work center level
     customer_id = serializers.IntegerField(write_only=True, required=False)
     
+    # Explicitly define date fields to handle empty strings
+    planned_start_date = serializers.DateTimeField(required=False, allow_null=True)
+    planned_end_date = serializers.DateTimeField(required=False, allow_null=True)
+    
+    def to_internal_value(self, data):
+        """Convert empty strings to None for datetime fields before validation"""
+        # Make a mutable copy of the data
+        data = data.copy() if hasattr(data, 'copy') else dict(data)
+        
+        # Convert empty strings to None for datetime fields
+        if 'planned_start_date' in data and data['planned_start_date'] == '':
+            data['planned_start_date'] = None
+        if 'planned_end_date' in data and data['planned_end_date'] == '':
+            data['planned_end_date'] = None
+        
+        return super().to_internal_value(data)
+    
     class Meta:
         model = ManufacturingOrder
         fields = [
@@ -265,7 +310,7 @@ class ManufacturingOrderDetailSerializer(serializers.ModelSerializer):
             'priority', 'priority_display', 'customer', 'customer_id', 'customer_name', 
             'delivery_date', 'special_instructions', 'submitted_at', 'gm_approved_at', 
             'gm_approved_by', 'rm_allocated_at', 'rm_allocated_by', 'created_at', 
-            'created_by', 'updated_at', 'status_history'
+            'created_by', 'updated_at', 'status_history', 'transaction_history'
         ]
         read_only_fields = [
             'mo_id', 'date_time', 'product_type', 'material_name', 'material_type',
@@ -346,11 +391,81 @@ class ManufacturingOrderDetailSerializer(serializers.ModelSerializer):
         mo.calculate_rm_requirements()
         mo.save()
         
+        # Create MO creation transaction history
+        try:
+            from inventory.transaction_manager import InventoryTransactionManager
+            from inventory.models import RMStockBalanceHeat
+            from inventory.utils import generate_transaction_id
+            from django.utils import timezone
+            
+            # Get RM stock levels before allocation
+            raw_material = mo.product_code.material
+            stock_before = RMStockBalanceHeat.objects.filter(
+                raw_material=raw_material
+            ).first()
+            
+            stock_before_quantity = stock_before.total_available_quantity_kg if stock_before else Decimal('0')
+            
+            # Create MO creation transaction history
+            transaction_id = generate_transaction_id('MO_CREATED')
+            
+            # Create a comprehensive transaction history entry
+            from manufacturing.models import MOTransactionHistory
+            MOTransactionHistory.objects.create(
+                mo=mo,
+                transaction_type='mo_created',
+                transaction_id=transaction_id,
+                description=f'MO {mo.mo_id} created for {mo.product_code.product_code}',
+                details={
+                    'quantity': mo.quantity,
+                    'rm_required_kg': float(mo.rm_required_kg),
+                    'stock_before_allocation': float(stock_before_quantity),
+                    'product_code': mo.product_code.product_code,
+                    'material_name': raw_material.material_name,
+                    'created_by': self.context['request'].user.get_full_name() or self.context['request'].user.email
+                },
+                created_by=self.context['request'].user
+            )
+            
+        except Exception as e:
+            logger.warning(f"Failed to create MO creation transaction history: {str(e)}")
+        
         # Automatically allocate (reserve) raw materials for this MO
         try:
             from manufacturing.rm_allocation_service import RMAllocationService
-            RMAllocationService.allocate_rm_for_mo(mo, self.context['request'].user)
+            allocations = RMAllocationService.allocate_rm_for_mo(mo, self.context['request'].user)
             logger.info(f"RM successfully allocated for MO {mo.mo_id}")
+            
+            # Create RM allocation transaction history
+            try:
+                stock_after = RMStockBalanceHeat.objects.filter(
+                    raw_material=raw_material
+                ).first()
+                
+                stock_after_quantity = stock_after.total_available_quantity_kg if stock_after else Decimal('0')
+                
+                # Create RM allocation transaction history
+                allocation_transaction_id = generate_transaction_id('RM_ALLOCATED')
+                
+                MOTransactionHistory.objects.create(
+                    mo=mo,
+                    transaction_type='rm_allocated',
+                    transaction_id=allocation_transaction_id,
+                    description=f'RM allocated for MO {mo.mo_id}',
+                    details={
+                        'allocated_quantity_kg': float(mo.rm_required_kg),
+                        'stock_before_allocation': float(stock_before_quantity),
+                        'stock_after_allocation': float(stock_after_quantity),
+                        'reserved_quantity': float(stock_before_quantity - stock_after_quantity),
+                        'material_name': raw_material.material_name,
+                        'allocated_by': self.context['request'].user.get_full_name() or self.context['request'].user.email
+                    },
+                    created_by=self.context['request'].user
+                )
+                
+            except Exception as e:
+                logger.warning(f"Failed to create RM allocation transaction history: {str(e)}")
+                
         except Exception as e:
             logger.warning(f"Failed to auto-allocate RM for MO {mo.mo_id}: {str(e)}")
             # Don't fail MO creation if RM allocation fails
@@ -403,6 +518,29 @@ class ManufacturingOrderDetailSerializer(serializers.ModelSerializer):
                 changed_by=self.context['request'].user,
                 notes=f"Status changed via API"
             )
+            
+            # Create comprehensive transaction history for status changes
+            try:
+                from inventory.utils import generate_transaction_id
+                transaction_id = generate_transaction_id('MO_STATUS_CHANGED')
+                
+                MOTransactionHistory.objects.create(
+                    mo=instance,
+                    transaction_type='status_changed',
+                    transaction_id=transaction_id,
+                    description=f'MO {instance.mo_id} status changed from {old_status} to {new_status}',
+                    details={
+                        'from_status': old_status,
+                        'to_status': new_status,
+                        'changed_by': self.context['request'].user.get_full_name() or self.context['request'].user.email,
+                        'changed_at': timezone.now().isoformat(),
+                        'mo_id': instance.mo_id,
+                        'product_code': instance.product_code.product_code if instance.product_code else None
+                    },
+                    created_by=self.context['request'].user
+                )
+            except Exception as e:
+                logger.warning(f"Failed to create status change transaction history: {str(e)}")
         
         return instance
 
@@ -568,6 +706,7 @@ class ManufacturingOrderWithProcessesSerializer(serializers.ModelSerializer):
     priority_display = serializers.CharField(source='get_priority_display', read_only=True)
     shift_display = serializers.CharField(source='get_shift_display', read_only=True)
     created_by_name = serializers.CharField(source='created_by.get_full_name', read_only=True)
+    rejected_by_name = serializers.CharField(source='rejected_by.get_full_name', read_only=True)
     process_executions = MOProcessExecutionListSerializer(many=True, read_only=True)
     overall_progress = serializers.SerializerMethodField()
     active_process = serializers.SerializerMethodField()
@@ -584,7 +723,7 @@ class ManufacturingOrderWithProcessesSerializer(serializers.ModelSerializer):
             'status_display', 'priority', 'priority_display', 'customer_name',
             'delivery_date', 'special_instructions', 'created_at', 'created_by',
             'created_by_name', 'updated_at', 'process_executions', 'overall_progress',
-            'active_process'
+            'active_process', 'rejected_at', 'rejected_by', 'rejected_by_name', 'rejection_reason'
         ]
         read_only_fields = ['mo_id', 'date_time', 'created_at', 'updated_at']
     
@@ -634,6 +773,7 @@ class PurchaseOrderDetailSerializer(serializers.ModelSerializer):
     approved_by = UserBasicSerializer(read_only=True)
     cancelled_by = UserBasicSerializer(read_only=True)
     status_history = POStatusHistorySerializer(many=True, read_only=True)
+    transaction_history = POTransactionHistorySerializer(many=True, read_only=True)
     
     # Display fields
     status_display = serializers.CharField(source='get_status_display', read_only=True)
@@ -655,7 +795,7 @@ class PurchaseOrderDetailSerializer(serializers.ModelSerializer):
             'submitted_at', 'approved_at', 'approved_by', 'cancelled_at',
             'cancelled_by', 'cancellation_reason',
             'terms_conditions', 'notes', 'created_at', 'created_by', 'updated_at',
-            'status_history'
+            'status_history', 'transaction_history'
         ]
         read_only_fields = [
             'po_id', 'date_time', 'material_type', 'material_auto', 'grade_auto', 'finishing_auto',
@@ -697,7 +837,39 @@ class PurchaseOrderDetailSerializer(serializers.ModelSerializer):
             'created_by': self.context['request'].user
         })
         
-        return super().create(validated_data)
+        # Create the PO instance
+        po = super().create(validated_data)
+        
+        # Create PO creation transaction history
+        try:
+            from inventory.utils import generate_transaction_id
+            
+            # Create PO creation transaction history
+            transaction_id = generate_transaction_id('PO_CREATED')
+            
+            POTransactionHistory.objects.create(
+                po=po,
+                transaction_type='po_created',
+                transaction_id=transaction_id,
+                description=f'PO {po.po_id} created for {po.rm_code.material_name}',
+                details={
+                    'quantity_ordered': po.quantity_ordered,
+                    'unit_price': float(po.unit_price),
+                    'total_amount': float(po.total_amount),
+                    'material_name': po.rm_code.material_name,
+                    'material_code': po.rm_code.material_code,
+                    'vendor_name': po.vendor_name.name,
+                    'vendor_address': po.vendor_address_auto,
+                    'expected_date': po.expected_date.isoformat() if po.expected_date else None,
+                    'created_by': self.context['request'].user.get_full_name() or self.context['request'].user.email
+                },
+                created_by=self.context['request'].user
+            )
+            
+        except Exception as e:
+            logger.warning(f"Failed to create PO creation transaction history: {str(e)}")
+        
+        return po
 
     def update(self, instance, validated_data):
         """Update PO with status change tracking"""
@@ -1196,3 +1368,134 @@ class RMAllocationCheckSerializer(serializers.Serializer):
         except ManufacturingOrder.DoesNotExist:
             raise serializers.ValidationError("Manufacturing Order not found")
         return value
+
+
+class FGReservationSerializer(serializers.Serializer):
+    """Serializer for FG Stock Reservations"""
+    reservation_id = serializers.CharField(read_only=True)
+    product = serializers.SerializerMethodField()
+    quantity = serializers.IntegerField()
+    reservation_type = serializers.CharField()
+    status = serializers.CharField()
+    reserved_at = serializers.DateTimeField(read_only=True)
+    
+    def get_product(self, obj):
+        return {
+            'product_code': obj.product_code.product_code,
+            'product_name': str(obj.product_code)
+        }
+
+
+class MOResourceStatusSerializer(serializers.Serializer):
+    """Serializer for MO resource status summary"""
+    reserved_rm = serializers.SerializerMethodField()
+    allocated_rm = serializers.SerializerMethodField()
+    reserved_fg = serializers.SerializerMethodField()
+    in_progress_batches = serializers.SerializerMethodField()
+    pending_batches = serializers.SerializerMethodField()
+    
+    def get_reserved_rm(self, mo):
+        """Get reserved RM allocations"""
+        allocations = mo.rm_allocations.filter(status='reserved')
+        return [{
+            'material': str(allocation.raw_material),
+            'material_code': allocation.raw_material.material_code,
+            'quantity_kg': float(allocation.allocated_quantity_kg),
+            'status': allocation.status,
+            'allocation_id': allocation.id
+        } for allocation in allocations]
+    
+    def get_allocated_rm(self, mo):
+        """Get locked/allocated RM"""
+        allocations = mo.rm_allocations.filter(status='locked')
+        return [{
+            'material': str(allocation.raw_material),
+            'material_code': allocation.raw_material.material_code,
+            'quantity_kg': float(allocation.allocated_quantity_kg),
+            'status': allocation.status,
+            'allocation_id': allocation.id
+        } for allocation in allocations]
+    
+    def get_reserved_fg(self, mo):
+        """Get reserved FG stock"""
+        from fg_store.models import FGStockReservation
+        reservations = FGStockReservation.objects.filter(mo=mo, status='reserved')
+        return [{
+            'product': str(reservation.product_code),
+            'product_code': reservation.product_code.product_code,
+            'quantity': reservation.quantity,
+            'reservation_type': reservation.reservation_type,
+            'reservation_id': reservation.reservation_id
+        } for reservation in reservations]
+    
+    def get_in_progress_batches(self, mo):
+        """Get batches currently in production"""
+        batches = mo.batches.filter(status__in=['in_process', 'quality_check'])
+        return [{
+            'batch_id': batch.batch_id,
+            'status': batch.status,
+            'planned_quantity': batch.planned_quantity,
+            'actual_quantity_completed': batch.actual_quantity_completed
+        } for batch in batches]
+    
+    def get_pending_batches(self, mo):
+        """Get batches not yet started"""
+        batches = mo.batches.filter(status='created')
+        return [{
+            'batch_id': batch.batch_id,
+            'status': batch.status,
+            'planned_quantity': batch.planned_quantity,
+            'can_release': batch.can_release
+        } for batch in batches]
+
+
+class MOStopSerializer(serializers.Serializer):
+    """Serializer for stopping an MO"""
+    stop_reason = serializers.CharField(
+        required=True,
+        help_text="Reason for stopping this MO"
+    )
+    
+    def validate_stop_reason(self, value):
+        if not value or len(value.strip()) < 10:
+            raise serializers.ValidationError(
+                "Stop reason must be at least 10 characters long"
+            )
+        return value.strip()
+
+
+class MOPriorityQueueSerializer(serializers.ModelSerializer):
+    """Serializer for MO priority queue"""
+    product_code_display = serializers.CharField(source='product_code.product_code', read_only=True)
+    customer_name = serializers.CharField(source='customer_c_id.name', read_only=True)
+    status_display = serializers.CharField(source='get_status_display', read_only=True)
+    priority_display = serializers.CharField(source='get_priority_display', read_only=True)
+    
+    reserved_rm_count = serializers.SerializerMethodField()
+    allocated_rm_count = serializers.SerializerMethodField()
+    reserved_fg_count = serializers.SerializerMethodField()
+    can_be_stopped = serializers.SerializerMethodField()
+    
+    class Meta:
+        model = ManufacturingOrder
+        fields = [
+            'id', 'mo_id', 'product_code_display', 'customer_name',
+            'quantity', 'status', 'status_display', 'priority', 'priority_display',
+            'priority_level', 'planned_start_date', 'planned_end_date',
+            'reserved_rm_count', 'allocated_rm_count', 'reserved_fg_count',
+            'can_be_stopped', 'created_at'
+        ]
+        read_only_fields = fields
+    
+    def get_reserved_rm_count(self, obj):
+        return obj.rm_allocations.filter(status='reserved').count()
+    
+    def get_allocated_rm_count(self, obj):
+        return obj.rm_allocations.filter(status='locked').count()
+    
+    def get_reserved_fg_count(self, obj):
+        from fg_store.models import FGStockReservation
+        return FGStockReservation.objects.filter(mo=obj, status='reserved').count()
+    
+    def get_can_be_stopped(self, obj):
+        return obj.status in ['on_hold', 'rm_allocated', 'in_progress']

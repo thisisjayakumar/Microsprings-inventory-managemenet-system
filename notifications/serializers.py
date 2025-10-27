@@ -1,49 +1,38 @@
 from rest_framework import serializers
 from django.contrib.auth import get_user_model
 
-from .models import Alert, AlertRule, NotificationLog
+from .models import WorkflowNotification
 
 User = get_user_model()
 
 
-class AlertRuleSerializer(serializers.ModelSerializer):
-    """Serializer for AlertRule model"""
+class WorkflowNotificationSerializer(serializers.ModelSerializer):
+    """Serializer for WorkflowNotification model"""
+    notification_type_display = serializers.CharField(source='get_notification_type_display', read_only=True)
+    priority_display = serializers.CharField(source='get_priority_display', read_only=True)
+    recipient_name = serializers.CharField(source='recipient.get_full_name', read_only=True)
+    created_by_name = serializers.CharField(source='created_by.get_full_name', read_only=True)
+    time_ago = serializers.SerializerMethodField()
+    mo_id = serializers.CharField(source='related_mo.mo_id', read_only=True)
     
     class Meta:
-        model = AlertRule
+        model = WorkflowNotification
         fields = [
-            'id', 'name', 'trigger_condition', 'alert_type', 
-            'notification_methods', 'is_active', 'recipient_roles', 
-            'recipient_users'
+            'id', 'notification_type', 'notification_type_display', 'title', 'message',
+            'priority', 'priority_display', 'recipient', 'recipient_name',
+            'related_mo', 'mo_id', 'related_batch', 'related_process_assignment',
+            'is_read', 'read_at', 'action_required', 'action_taken', 'action_taken_at',
+            'created_at', 'created_by', 'created_by_name', 'time_ago'
         ]
-
-
-class AlertSerializer(serializers.ModelSerializer):
-    """Serializer for Alert model"""
-    alert_rule_name = serializers.CharField(source='alert_rule.name', read_only=True)
-    severity_display = serializers.CharField(source='get_severity_display', read_only=True)
-    status_display = serializers.CharField(source='get_status_display', read_only=True)
-    acknowledged_by_name = serializers.CharField(source='acknowledged_by.get_full_name', read_only=True)
-    time_since_triggered = serializers.SerializerMethodField()
+        read_only_fields = ['created_at', 'read_at', 'action_taken_at']
     
-    class Meta:
-        model = Alert
-        fields = [
-            'id', 'alert_rule', 'alert_rule_name', 'title', 'message', 
-            'severity', 'severity_display', 'related_object_type', 
-            'related_object_id', 'status', 'status_display', 
-            'triggered_at', 'acknowledged_at', 'acknowledged_by', 
-            'acknowledged_by_name', 'time_since_triggered'
-        ]
-        read_only_fields = ['triggered_at', 'acknowledged_at', 'acknowledged_by']
-    
-    def get_time_since_triggered(self, obj):
-        """Get human-readable time since alert was triggered"""
+    def get_time_ago(self, obj):
+        """Get human-readable time since notification was created"""
         from django.utils import timezone
         import datetime
         
         now = timezone.now()
-        diff = now - obj.triggered_at
+        diff = now - obj.created_at
         
         if diff.days > 0:
             return f"{diff.days} day{'s' if diff.days > 1 else ''} ago"
@@ -55,17 +44,3 @@ class AlertSerializer(serializers.ModelSerializer):
             return f"{minutes} minute{'s' if minutes > 1 else ''} ago"
         else:
             return "Just now"
-
-
-class NotificationLogSerializer(serializers.ModelSerializer):
-    """Serializer for NotificationLog model"""
-    alert_title = serializers.CharField(source='alert.title', read_only=True)
-    delivery_status_display = serializers.CharField(source='get_delivery_status_display', read_only=True)
-    
-    class Meta:
-        model = NotificationLog
-        fields = [
-            'id', 'alert', 'alert_title', 'recipient', 'method', 
-            'sent_at', 'delivery_status', 'delivery_status_display'
-        ]
-        read_only_fields = ['sent_at']

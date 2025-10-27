@@ -295,12 +295,14 @@ class LocationBasicSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Location
-        fields = ['id', 'location_name', 'location_type', 'parent_location']
+        fields = ['id', 'location_name', 'parent_location']
 
 
 class InventoryTransactionSerializer(serializers.ModelSerializer):
     """Serializer for inventory transactions"""
     product_display = serializers.SerializerMethodField()
+    raw_material_display = serializers.SerializerMethodField()
+    mo_display = serializers.CharField(source='manufacturing_order.mo_id', read_only=True)
     location_from_details = LocationBasicSerializer(source='location_from', read_only=True)
     location_to_details = LocationBasicSerializer(source='location_to', read_only=True)
     created_by_name = serializers.CharField(source='created_by.get_full_name', read_only=True)
@@ -309,10 +311,11 @@ class InventoryTransactionSerializer(serializers.ModelSerializer):
         model = InventoryTransaction
         fields = [
             'id', 'transaction_id', 'transaction_type', 'product', 'product_display',
-            'manufacturing_order', 'location_from', 'location_from_details',
+            'raw_material_display', 'manufacturing_order', 'mo_display',
+            'location_from', 'location_from_details',
             'location_to', 'location_to_details', 'quantity', 'unit_cost',
             'total_value', 'transaction_datetime', 'created_at', 'created_by', 'created_by_name',
-            'reference_type', 'reference_id',
+            'reference_type', 'reference_id', 'notes',
         ]
         read_only_fields = fields
 
@@ -321,6 +324,11 @@ class InventoryTransactionSerializer(serializers.ModelSerializer):
             if hasattr(obj.product, 'internal_product_code') and obj.product.internal_product_code:
                 return f"{obj.product.internal_product_code} - {obj.product.product_code}"
             return getattr(obj.product, 'product_code', None)
+        return None
+    
+    def get_raw_material_display(self, obj):
+        if obj.product and hasattr(obj.product, 'material') and obj.product.material:
+            return f"{obj.product.material.material_code} - {obj.product.material.material_name}"
         return None
 
 

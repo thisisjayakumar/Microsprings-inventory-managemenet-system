@@ -6,11 +6,15 @@ from django_filters.rest_framework import DjangoFilterBackend
 from django.db.models import Q, Prefetch, Sum
 from django.contrib.auth import get_user_model
 from django.utils import timezone
+import logging
 
 from .permissions import IsManager, IsManagerOrSupervisor, IsManagerOrRMStore
 
+logger = logging.getLogger(__name__)
+
 from .models import (
     ManufacturingOrder, PurchaseOrder, MOStatusHistory, POStatusHistory,
+    MOTransactionHistory, POTransactionHistory,
     MOProcessExecution, MOProcessStepExecution, MOProcessAlert, Batch,
     OutsourcingRequest, OutsourcedItem, MOApprovalWorkflow, ProcessAssignment,
     BatchAllocation, ProcessExecutionLog, FinishedGoodsVerification,
@@ -132,7 +136,8 @@ class ManufacturingOrderViewSet(viewsets.ModelViewSet):
             return Response({'error': 'Status is required'}, status=status.HTTP_400_BAD_REQUEST)
         
         # Validate status transition
-        valid_statuses = dict(ManufacturingOrder.STATUS_CHOICES).keys()
+        from utils.enums import MOStatusChoices
+        valid_statuses = [choice[0] for choice in MOStatusChoices.choices]
         if new_status not in valid_statuses:
             return Response({'error': 'Invalid status'}, status=status.HTTP_400_BAD_REQUEST)
         
@@ -674,10 +679,10 @@ class ManufacturingOrderViewSet(viewsets.ModelViewSet):
         """Initialize process executions for an MO based on product BOM"""
         mo = self.get_object()
         
-        # Allow initialization when status is rm_allocated or in_progress
-        if mo.status not in ['rm_allocated', 'in_progress']:
+        # Allow initialization when status is mo_approved, rm_allocated, or in_progress
+        if mo.status not in ['mo_approved', 'rm_allocated', 'in_progress']:
             return Response(
-                {'error': f'MO must be in rm_allocated or in_progress status to initialize processes. Current status: {mo.status}'}, 
+                {'error': f'MO must be in mo_approved, rm_allocated, or in_progress status to initialize processes. Current status: {mo.status}'}, 
                 status=status.HTTP_400_BAD_REQUEST
             )
         
@@ -718,8 +723,8 @@ class ManufacturingOrderViewSet(viewsets.ModelViewSet):
             if created:
                 sequence += 1
         
-        # Update MO status and actual start date only if not already in_progress
-        if mo.status == 'rm_allocated':
+        # Update MO status and actual start date if not already in_progress
+        if mo.status in ['mo_approved', 'rm_allocated']:
             mo.status = 'in_progress'
             mo.actual_start_date = timezone.now()
             mo.save()
@@ -740,6 +745,8 @@ class ManufacturingOrderViewSet(viewsets.ModelViewSet):
             return self._handle_approve_mo(mo, request)
         elif action == 'start_production':
             return self._handle_start_production(mo, request)
+        elif action == 'reject':
+            return self._handle_reject_mo(mo, request)
         else:
             return self._handle_update_details(mo, request)
     
@@ -767,10 +774,24 @@ class ManufacturingOrderViewSet(viewsets.ModelViewSet):
         mo.gm_approved_by = request.user
         mo.save()
         
-        # Lock RM allocations (deduct from available stock)
+        # Create RM allocations if they don't exist
         from manufacturing.rm_allocation_service import RMAllocationService
+        from manufacturing.models import RawMaterialAllocation
         import logging
         logger = logging.getLogger(__name__)
+        
+        # Check if allocations already exist
+        existing_allocations = RawMaterialAllocation.objects.filter(mo=mo)
+        if not existing_allocations.exists():
+            # Create allocations
+            try:
+                allocations = RMAllocationService.allocate_rm_for_mo(mo, request.user)
+                logger.info(f"Created RM allocation for MO {mo.mo_id}")
+            except Exception as e:
+                logger.error(f"Failed to create RM allocations for MO {mo.mo_id}: {str(e)}")
+                # Continue even if allocation creation fails
+        
+        # Lock RM allocations (deduct from available stock)
         lock_result = RMAllocationService.lock_allocations_for_mo(mo, request.user)
         logger.info(f"RM allocation lock result for MO {mo.mo_id}: {lock_result}")
         
@@ -814,52 +835,6 @@ class ManufacturingOrderViewSet(viewsets.ModelViewSet):
         mo.actual_start_date = timezone.now()
         mo.save()
         
-        # Reduce RM quantities based on mo.rm_required_kg
-        if mo.rm_required_kg > 0:
-            try:
-                from inventory.models import RawMaterial, RMStockBalance, InventoryTransaction
-                from inventory.utils import generate_transaction_id
-                
-                # Find the raw material associated with this MO's product
-                raw_material = mo.product_code.material
-                if raw_material and raw_material.quantity_on_hand >= mo.rm_required_kg:
-                    # Update raw material quantity
-                    raw_material.quantity_on_hand -= mo.rm_required_kg
-                    raw_material.save()
-                    
-                    # Update RM stock balance
-                    stock_balance, created = RMStockBalance.objects.get_or_create(
-                        raw_material=raw_material,
-                        defaults={'available_quantity': 0}
-                    )
-                    stock_balance.available_quantity -= mo.rm_required_kg
-                    stock_balance.save()
-                    
-                    # Create inventory transaction for MO allocation
-                    transaction_id = generate_transaction_id('MO')
-                    InventoryTransaction.objects.create(
-                        transaction_id=transaction_id,
-                        transaction_type='consumption',
-                        product=mo.product_code,
-                        manufacturing_order=mo,
-                        quantity=mo.rm_required_kg,
-                        transaction_datetime=timezone.now(),
-                        created_by=request.user,
-                        reference_type='mo',
-                        reference_id=str(mo.id),
-                        notes=f'RM allocation for MO {mo.mo_id} - Production start'
-                    )
-                else:
-                    return Response(
-                        {'error': 'Insufficient raw material quantity available'}, 
-                        status=status.HTTP_400_BAD_REQUEST
-                    )
-            except Exception as e:
-                return Response(
-                    {'error': f'Error reducing RM quantity: {str(e)}'}, 
-                    status=status.HTTP_400_BAD_REQUEST
-                )
-        
         # Create status history
         MOStatusHistory.objects.create(
             mo=mo,
@@ -871,21 +846,23 @@ class ManufacturingOrderViewSet(viewsets.ModelViewSet):
         
         # Create notification for RM Store users
         try:
-            from notifications.models import Alert, AlertRule
+            # Create workflow notifications for RM Store users
+            from notifications.models import WorkflowNotification
             from django.contrib.auth.models import Group
             
             # Get all RM Store users
             rm_store_users = User.objects.filter(user_roles__role__name='rm_store', user_roles__is_active=True)
             
-            # Create alerts for each RM Store user
+            # Create notifications for each RM Store user
             for rm_user in rm_store_users:
-                Alert.objects.create(
-                    user=rm_user,
-                    alert_type='info',
-                    title='New MO Started Production',
+                WorkflowNotification.objects.create(
+                    notification_type='rm_allocation_required',
+                    title=f'RM Allocation Required: {mo.mo_id}',
                     message=f'MO {mo.mo_id} has started production and requires RM allocation.',
-                    reference_type='mo',
-                    reference_id=str(mo.id),
+                    recipient=rm_user,
+                    related_mo=mo,
+                    action_required=True,
+                    priority='high',
                     created_by=request.user
                 )
         except Exception as e:
@@ -898,13 +875,71 @@ class ManufacturingOrderViewSet(viewsets.ModelViewSet):
             'mo': serializer.data
         })
     
-    def _handle_update_details(self, mo, request):
-        """Handle regular field updates (shift, etc.) - Manager only"""
-        # Check if user is manager
+    def _handle_reject_mo(self, mo, request):
+        """Handle MO rejection by manager (any status → rejected)"""
+        # Check if user is manager or production_head
         user_roles = request.user.user_roles.values_list('role__name', flat=True)
-        if 'manager' not in user_roles:
+        if not any(role in ['manager', 'production_head'] for role in user_roles):
             return Response(
-                {'error': 'Only managers can update MO details'}, 
+                {'error': 'Only managers or production heads can reject MOs'}, 
+                status=status.HTTP_403_FORBIDDEN
+            )
+        
+        # Check if MO is already rejected
+        if mo.status == 'rejected':
+            return Response(
+                {'error': 'MO is already rejected'}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        # Get rejection reason
+        rejection_reason = request.data.get('notes', 'MO rejected by manager')
+        
+        # Update status
+        old_status = mo.status
+        mo.status = 'rejected'
+        mo.rejected_at = timezone.now()
+        mo.rejected_by = request.user
+        mo.rejection_reason = rejection_reason
+        mo.save()
+        
+        # Create status history
+        MOStatusHistory.objects.create(
+            mo=mo,
+            from_status=old_status,
+            to_status='rejected',
+            changed_by=request.user,
+            notes=f'MO rejected: {rejection_reason}'
+        )
+        
+        # Release any reserved RM allocations if they exist
+        try:
+            from manufacturing.rm_allocation_service import RMAllocationService
+            release_result = RMAllocationService.release_allocations_for_mo(mo, request.user)
+            print(f"RM allocation release result for rejected MO {mo.mo_id}: {release_result}")
+        except Exception as e:
+            print(f"Failed to release RM allocations for rejected MO {mo.mo_id}: {e}")
+        
+        serializer = ManufacturingOrderWithProcessesSerializer(mo)
+        return Response({
+            'message': 'MO rejected successfully!',
+            'mo': serializer.data
+        })
+    
+    def _handle_update_details(self, mo, request):
+        """Handle regular field updates (shift, quantity, etc.) - Manager and Production Head"""
+        # Check if user is manager or production_head
+        user_roles = request.user.user_roles.values_list('role__name', flat=True)
+        if not any(role in ['manager', 'production_head'] for role in user_roles):
+            return Response(
+                {'error': 'Only managers and production heads can update MO details'}, 
+                status=status.HTTP_403_FORBIDDEN
+            )
+        
+        # Check status-based permissions
+        if 'production_head' in user_roles and mo.status != 'on_hold':
+            return Response(
+                {'error': 'Production heads can only update MO details when status is On Hold'}, 
                 status=status.HTTP_403_FORBIDDEN
             )
         
@@ -915,8 +950,12 @@ class ManufacturingOrderViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST
             )
         
-        # Update allowed fields
-        allowed_fields = ['shift']
+        # Update allowed fields - production heads can edit more fields when status is on_hold
+        if 'production_head' in user_roles and mo.status == 'on_hold':
+            allowed_fields = ['shift', 'quantity']
+        else:
+            allowed_fields = ['shift']
+        
         updated_fields = []
         
         for field in allowed_fields:
@@ -932,6 +971,18 @@ class ManufacturingOrderViewSet(viewsets.ModelViewSet):
                     else:
                         return Response(
                             {'error': 'Invalid shift value'}, 
+                            status=status.HTTP_400_BAD_REQUEST
+                        )
+                elif field == 'quantity':
+                    quantity_value = request.data[field]
+                    if quantity_value is not None and quantity_value > 0:
+                        mo.quantity = int(quantity_value)
+                        updated_fields.append(field)
+                        # Recalculate RM requirements when quantity changes
+                        mo.calculate_rm_requirements()
+                    else:
+                        return Response(
+                            {'error': 'Quantity must be a positive number'}, 
                             status=status.HTTP_400_BAD_REQUEST
                         )
         
@@ -1273,6 +1324,138 @@ class ManufacturingOrderViewSet(viewsets.ModelViewSet):
                 {'error': f'Failed to get location tracking: {str(e)}'}, 
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
+    
+    @action(detail=True, methods=['post'], url_path='stop')
+    def stop_mo(self, request, pk=None):
+        """
+        Stop an MO and release all reserved resources
+        
+        POST /api/manufacturing/manufacturing-orders/{id}/stop/
+        Body: {"stop_reason": "High priority MO_002 needs this material"}
+        """
+        from .serializers import MOStopSerializer
+        
+        mo = self.get_object()
+        
+        # Validate input
+        serializer = MOStopSerializer(data=request.data)
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        
+        stop_reason = serializer.validated_data['stop_reason']
+        
+        try:
+            # Call the model method to stop the MO
+            released_resources = mo.stop_mo(stop_reason, request.user)
+            
+            # Return summary of what was released
+            return Response({
+                'success': True,
+                'message': f'MO {mo.mo_id} stopped successfully',
+                'mo_id': mo.mo_id,
+                'status': mo.status,
+                'stopped_at': mo.stopped_at,
+                'stop_reason': mo.stop_reason,
+                'released_resources': released_resources
+            }, status=status.HTTP_200_OK)
+            
+        except ValidationError as e:
+            return Response(
+                {'error': str(e)},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        except Exception as e:
+            logger.error(f"Failed to stop MO {mo.mo_id}: {str(e)}")
+            return Response(
+                {'error': f'Failed to stop MO: {str(e)}'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+    
+    @action(detail=True, methods=['get'], url_path='resource-status')
+    def resource_status(self, request, pk=None):
+        """
+        Get detailed resource status for an MO
+        
+        GET /api/manufacturing/manufacturing-orders/{id}/resource-status/
+        
+        Returns:
+        - Reserved RM allocations
+        - Allocated (locked) RM
+        - Reserved FG stock
+        - In-progress batches
+        - Pending batches
+        """
+        from .serializers import MOResourceStatusSerializer
+        
+        mo = self.get_object()
+        
+        try:
+            serializer = MOResourceStatusSerializer(mo)
+            return Response({
+                'mo_id': mo.mo_id,
+                'status': mo.status,
+                'priority_level': mo.priority_level,
+                'resources': serializer.data
+            }, status=status.HTTP_200_OK)
+        except Exception as e:
+            logger.error(f"Failed to get resource status for MO {mo.mo_id}: {str(e)}")
+            return Response(
+                {'error': f'Failed to get resource status: {str(e)}'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+    
+    @action(detail=False, methods=['get'], url_path='priority-queue')
+    def priority_queue(self, request):
+        """
+        Get list of MOs in priority order with resource information
+        
+        GET /api/manufacturing/manufacturing-orders/priority-queue/
+        
+        Query params:
+        - status: Filter by status (comma-separated)
+        - has_reserved_rm: true/false - filter by whether MO has reserved RM
+        """
+        from .serializers import MOPriorityQueueSerializer
+        
+        try:
+            # Base queryset - active MOs only
+            queryset = ManufacturingOrder.objects.filter(
+                status__in=['on_hold', 'rm_allocated', 'in_progress', 'submitted']
+            ).select_related(
+                'product_code', 'customer_c_id'
+            ).prefetch_related(
+                'rm_allocations', 'fg_reservations', 'batches'
+            )
+            
+            # Filter by status if provided
+            status_filter = request.query_params.get('status')
+            if status_filter:
+                statuses = [s.strip() for s in status_filter.split(',')]
+                queryset = queryset.filter(status__in=statuses)
+            
+            # Filter by has_reserved_rm if provided
+            has_reserved_rm = request.query_params.get('has_reserved_rm')
+            if has_reserved_rm == 'true':
+                queryset = queryset.filter(rm_allocations__status='reserved').distinct()
+            elif has_reserved_rm == 'false':
+                queryset = queryset.exclude(rm_allocations__status='reserved')
+            
+            # Order by priority_level (desc), then created_at (desc)
+            queryset = queryset.order_by('-priority_level', '-created_at')
+            
+            serializer = MOPriorityQueueSerializer(queryset, many=True)
+            
+            return Response({
+                'count': queryset.count(),
+                'results': serializer.data
+            }, status=status.HTTP_200_OK)
+            
+        except Exception as e:
+            logger.error(f"Failed to get priority queue: {str(e)}")
+            return Response(
+                {'error': f'Failed to get priority queue: {str(e)}'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
 
 
 class PurchaseOrderViewSet(viewsets.ModelViewSet):
@@ -1336,7 +1519,8 @@ class PurchaseOrderViewSet(viewsets.ModelViewSet):
             return Response({'error': 'Status is required'}, status=status.HTTP_400_BAD_REQUEST)
         
         # Validate status transition
-        valid_statuses = dict(PurchaseOrder.STATUS_CHOICES).keys()
+        from utils.enums import POStatusChoices
+        valid_statuses = [choice[0] for choice in POStatusChoices.choices]
         if new_status not in valid_statuses:
             return Response({'error': 'Invalid status'}, status=status.HTTP_400_BAD_REQUEST)
         
@@ -1524,6 +1708,18 @@ class MOProcessExecutionViewSet(viewsets.ModelViewSet):
                 process_execution.notes = f"{process_execution.notes}\n[Supervisor reassigned by {request.user.get_full_name()}]: {notes}"
                 process_execution.save(update_fields=['notes'])
             
+            # Send notification to the newly assigned supervisor
+            from notifications.models import WorkflowNotification
+            WorkflowNotification.objects.create(
+                notification_type='supervisor_assigned',
+                title=f'Process Assigned: {process_execution.process.name}',
+                message=f'You have been assigned as supervisor for process "{process_execution.process.name}" for MO {process_execution.mo.mo_id}.',
+                recipient=supervisor,
+                related_mo=process_execution.mo,
+                action_required=True,
+                created_by=request.user
+            )
+            
             # Serialize and return updated process execution
             serializer = MOProcessExecutionDetailSerializer(process_execution)
             
@@ -1595,7 +1791,9 @@ class MOProcessExecutionViewSet(viewsets.ModelViewSet):
         """Complete a process execution and move to next process or FG store"""
         execution = self.get_object()
         
-        if execution.status != 'in_progress':
+        # Allow completion if process is in progress OR if MO is stopped (for in-progress batches to complete)
+        mo_is_stopped = execution.mo.status == 'stopped'
+        if execution.status != 'in_progress' and not mo_is_stopped:
             return Response(
                 {'error': 'Process must be in progress to complete'}, 
                 status=status.HTTP_400_BAD_REQUEST
@@ -1737,7 +1935,9 @@ class MOProcessExecutionViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_403_FORBIDDEN
             )
         
-        if execution.status != 'in_progress':
+        # Allow completion if process is in progress OR if MO is stopped (for in-progress batches to complete)
+        mo_is_stopped = execution.mo.status == 'stopped'
+        if execution.status != 'in_progress' and not mo_is_stopped:
             return Response(
                 {
                     'error': 'Process must be in progress to complete',
