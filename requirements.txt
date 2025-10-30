@@ -13,6 +13,7 @@ mysqlclient==2.2.4  # MySQL support
 psycopg2-binary==2.9.10  # PostgreSQL support
 dj-database-url==2.1.0  # Database URL parsing
 cryptography==43.0.0  # Cryptography support
+pymysql==1.1.0
 
 # Production server
 gunicorn==21.2.0

@@ -153,8 +153,34 @@ class ManufacturingOrderViewSet(viewsets.ModelViewSet):
         elif new_status == 'rm_allocated':
             mo.rm_allocated_at = timezone.now()
             mo.rm_allocated_by = request.user
-        elif new_status == 'in_progress' and not mo.actual_start_date:
-            mo.actual_start_date = timezone.now()
+        elif new_status == 'in_progress':
+            if not mo.actual_start_date:
+                mo.actual_start_date = timezone.now()
+            # Ensure RM is reserved when status changes to in_progress (no locking)
+            try:
+                from manufacturing.rm_allocation_service import RMAllocationService
+                from manufacturing.models import RawMaterialAllocation
+                
+                existing_allocations = RawMaterialAllocation.objects.filter(mo=mo)
+                logger.info(f"[DEBUG] change_status to in_progress - MO {mo.mo_id} - Existing allocations: {existing_allocations.count()}")
+                for alloc in existing_allocations:
+                    logger.info(f"[DEBUG]   - Allocation ID: {alloc.id}, Status: {alloc.status}, Qty: {alloc.allocated_quantity_kg}kg")
+                
+                if not existing_allocations.exists():
+                    logger.info(f"[DEBUG] change_status to in_progress - MO {mo.mo_id} - Creating RM reservations...")
+                    try:
+                        result = RMAllocationService.allocate_rm_for_mo(mo, request.user)
+                        logger.info(f"[DEBUG] change_status to in_progress - MO {mo.mo_id} - Reservations created: {len(result) if result else 0}")
+                        if result:
+                            for alloc in result:
+                                logger.info(f"[DEBUG]   - Created Allocation ID: {alloc.id}, Status: {alloc.status}, Qty: {alloc.allocated_quantity_kg}kg")
+                    except Exception as alloc_error:
+                        logger.error(f"[DEBUG] change_status to in_progress - MO {mo.mo_id} - Failed to create RM reservations: {str(alloc_error)}")
+                        logger.exception(alloc_error)
+                        
+            except Exception as e:
+                logger.error(f"[DEBUG] change_status to in_progress - Failed to ensure RM reservation for MO {mo.mo_id}: {str(e)}")
+                logger.exception(e)
         elif new_status == 'completed' and not mo.actual_end_date:
             mo.actual_end_date = timezone.now()
         
@@ -329,12 +355,13 @@ class ManufacturingOrderViewSet(viewsets.ModelViewSet):
 
     @action(detail=False, methods=['get'])
     def dashboard_stats(self, request):
-        """Get dashboard statistics for MOs"""
+        """Get dashboard statistics for MOs - optimized to only return fields used in frontend"""
         queryset = self.get_queryset()
         
+        # Optimized: Use single queryset evaluation with aggregations where possible
+        # Only calculate what's actually displayed in the frontend DashboardStats component
         stats = {
             'total': queryset.count(),
-            'draft': queryset.filter(status='draft').count(),
             'in_progress': queryset.filter(status='in_progress').count(),
             'completed': queryset.filter(status='completed').count(),
             'overdue': queryset.filter(
@@ -724,13 +751,17 @@ class ManufacturingOrderViewSet(viewsets.ModelViewSet):
                 sequence += 1
         
         # Update MO status and actual start date if not already in_progress
+        # NOTE: Do NOT allocate RM here - RM will be reserved when production actually starts
+        # via the start_production action (for production heads) or change_status to in_progress
         if mo.status in ['mo_approved', 'rm_allocated']:
+            logger.info(f"[DEBUG] initialize_processes - MO {mo.mo_id} - Initializing processes. RM will be reserved when production starts.")
             mo.status = 'in_progress'
             mo.actual_start_date = timezone.now()
             mo.save()
         
         serializer = ManufacturingOrderWithProcessesSerializer(mo)
-        return Response(serializer.data)
+        response_data = serializer.data
+        return Response(response_data)
 
     @action(detail=True, methods=['patch'])
     def update_mo_details(self, request, pk=None):
@@ -751,7 +782,7 @@ class ManufacturingOrderViewSet(viewsets.ModelViewSet):
             return self._handle_update_details(mo, request)
     
     def _handle_approve_mo(self, mo, request):
-        """Handle MO approval by manager (on_hold → mo_approved)"""
+        """Handle MO approval by manager (on_hold → mo_approved) - ONLY STATUS CHANGE, NO RM OPERATIONS"""
         # Check if user is manager or production_head
         user_roles = request.user.user_roles.values_list('role__name', flat=True)
         if not any(role in ['manager', 'production_head'] for role in user_roles):
@@ -767,33 +798,13 @@ class ManufacturingOrderViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST
             )
         
-        # Update status
+        # Update status ONLY - NO RM operations
         old_status = mo.status
         mo.status = 'mo_approved'
         mo.gm_approved_at = timezone.now()
         mo.gm_approved_by = request.user
         mo.save()
-        
-        # Create RM allocations if they don't exist
-        from manufacturing.rm_allocation_service import RMAllocationService
-        from manufacturing.models import RawMaterialAllocation
-        import logging
-        logger = logging.getLogger(__name__)
-        
-        # Check if allocations already exist
-        existing_allocations = RawMaterialAllocation.objects.filter(mo=mo)
-        if not existing_allocations.exists():
-            # Create allocations
-            try:
-                allocations = RMAllocationService.allocate_rm_for_mo(mo, request.user)
-                logger.info(f"Created RM allocation for MO {mo.mo_id}")
-            except Exception as e:
-                logger.error(f"Failed to create RM allocations for MO {mo.mo_id}: {str(e)}")
-                # Continue even if allocation creation fails
-        
-        # Lock RM allocations (deduct from available stock)
-        lock_result = RMAllocationService.lock_allocations_for_mo(mo, request.user)
-        logger.info(f"RM allocation lock result for MO {mo.mo_id}: {lock_result}")
+        logger.info(f"[DEBUG] MO {mo.mo_id} approved. Status: {old_status} → mo_approved. RM will be reserved when production starts.")
         
         # Create status history
         MOStatusHistory.objects.create(
@@ -806,10 +817,8 @@ class ManufacturingOrderViewSet(viewsets.ModelViewSet):
         
         serializer = ManufacturingOrderWithProcessesSerializer(mo)
         return Response({
-            'message': 'MO approved successfully!',
-            'mo': serializer.data,
-            'rm_allocation_locked': lock_result.get('success', False),
-            'locked_allocations_count': lock_result.get('locked_count', 0)
+            'message': 'MO approved successfully! RM will be reserved when production starts.',
+            'mo': serializer.data
         })
     
     def _handle_start_production(self, mo, request):
@@ -828,6 +837,62 @@ class ManufacturingOrderViewSet(viewsets.ModelViewSet):
                 {'error': f'Cannot start production for MO in {mo.status} status. MO must be approved first.'}, 
                 status=status.HTTP_400_BAD_REQUEST
             )
+        
+        # DEBUG: Check existing RM allocations
+        from manufacturing.models import RawMaterialAllocation
+        existing_allocations = RawMaterialAllocation.objects.filter(mo=mo)
+        logger.info(f"[DEBUG] MO {mo.mo_id} - Existing RM allocations before production start: {existing_allocations.count()}")
+        for alloc in existing_allocations:
+            logger.info(f"[DEBUG]   - Allocation ID: {alloc.id}, Status: {alloc.status}, Qty: {alloc.allocated_quantity_kg}kg, Material: {alloc.raw_material.material_code}")
+        
+        # Ensure RM is reserved (allocate if not exists or if needed)
+        reservation_result = None
+        try:
+            from manufacturing.rm_allocation_service import RMAllocationService
+            
+            # Check if allocations exist
+            if not existing_allocations.exists():
+                logger.info(f"[DEBUG] MO {mo.mo_id} - No RM allocations found, creating new RESERVED allocations...")
+                try:
+                    reservation_result = RMAllocationService.allocate_rm_for_mo(mo, request.user)
+                    logger.info(f"[DEBUG] MO {mo.mo_id} - RM allocated as RESERVED: {len(reservation_result) if reservation_result else 0}")
+                    if reservation_result:
+                        for alloc in reservation_result:
+                            logger.info(f"[DEBUG]   - Allocation ID: {alloc.id}, Status: {alloc.status}, Qty: {alloc.allocated_quantity_kg}kg")
+                except Exception as alloc_error:
+                    logger.error(f"[DEBUG] MO {mo.mo_id} - Failed to create RM allocations: {str(alloc_error)}")
+                    logger.exception(alloc_error)
+            else:
+                # Check if we need to reserve additional RM
+                total_reserved = sum(float(a.allocated_quantity_kg) for a in existing_allocations.filter(status='reserved'))
+                total_locked = sum(float(a.allocated_quantity_kg) for a in existing_allocations.filter(status='locked'))
+                required_qty = float(mo.rm_required_kg) if mo.rm_required_kg else 0
+                logger.info(f"[DEBUG] MO {mo.mo_id} - Existing: Reserved {total_reserved}kg, Locked {total_locked}kg, Required {required_qty}kg")
+                
+                if (total_reserved + total_locked) < required_qty:
+                    logger.info(f"[DEBUG] MO {mo.mo_id} - Partial allocation detected, creating additional RESERVED allocations...")
+                    try:
+                        reservation_result = RMAllocationService.allocate_rm_for_mo(mo, request.user)
+                        if reservation_result:
+                            logger.info(f"[DEBUG] MO {mo.mo_id} - Additional RESERVED allocations created: {len(reservation_result)}")
+                    except Exception as alloc_error:
+                        logger.warning(f"[DEBUG] MO {mo.mo_id} - Could not allocate additional RM: {str(alloc_error)}")
+                        logger.exception(alloc_error)
+                else:
+                    logger.info(f"[DEBUG] MO {mo.mo_id} - RM fully allocated. Batch starts will lock per-batch quantities.")
+            
+            # Final check after reservation
+            final_allocations = RawMaterialAllocation.objects.filter(mo=mo, status='reserved')
+            total_final_reserved = sum(float(a.allocated_quantity_kg) for a in final_allocations)
+            logger.info(f"[DEBUG] MO {mo.mo_id} - Final RESERVED RM: {total_final_reserved}kg (Locking will happen per batch)")
+            
+            # If still no allocations, this is a problem
+            if total_final_reserved == 0 and mo.rm_required_kg and mo.rm_required_kg > 0:
+                logger.error(f"[DEBUG] MO {mo.mo_id} - WARNING: No RM reserved but required {mo.rm_required_kg}kg!")
+            
+        except Exception as e:
+            logger.error(f"[DEBUG] Failed to ensure RM reservation for MO {mo.mo_id}: {str(e)}")
+            logger.exception(e)
         
         # Update status
         old_status = mo.status
@@ -867,13 +932,26 @@ class ManufacturingOrderViewSet(viewsets.ModelViewSet):
                 )
         except Exception as e:
             # Don't fail the main operation if notification fails
-            print(f"Failed to create RM Store notifications: {e}")
+            logger.warning(f"Failed to create RM Store notifications: {e}")
+        
+        # Get final allocation status
+        final_check = RawMaterialAllocation.objects.filter(mo=mo)
+        reserved_count = final_check.filter(status='reserved').count()
+        reserved_total_kg = sum(float(a.allocated_quantity_kg) for a in final_check.filter(status='reserved'))
         
         serializer = ManufacturingOrderWithProcessesSerializer(mo)
-        return Response({
-            'message': 'Production started successfully! RM Store has been notified.',
-            'mo': serializer.data
-        })
+        response_data = {
+            'message': 'Production started successfully! RM is reserved.',
+            'mo': serializer.data,
+            'rm_reservation_status': {
+                'reserved_count': reserved_count,
+                'reserved_kg': reserved_total_kg,
+                'required_kg': float(mo.rm_required_kg) if mo.rm_required_kg else 0,
+                'is_fully_reserved': reserved_total_kg >= (float(mo.rm_required_kg) if mo.rm_required_kg else 0)
+            }
+        }
+        
+        return Response(response_data)
     
     def _handle_reject_mo(self, mo, request):
         """Handle MO rejection by manager (any status → rejected)"""
@@ -1129,6 +1207,22 @@ class ManufacturingOrderViewSet(viewsets.ModelViewSet):
                 {'error': f'Cannot start MO in {mo.status} status'}, 
                 status=status.HTTP_400_BAD_REQUEST
             )
+        
+        # Ensure RM is reserved when supervisor starts production (no locking)
+        try:
+            from manufacturing.rm_allocation_service import RMAllocationService
+            from manufacturing.models import RawMaterialAllocation
+            
+            existing_allocations = RawMaterialAllocation.objects.filter(mo=mo)
+            logger.info(f"[DEBUG] supervisor start_mo - MO {mo.mo_id} - Existing allocations: {existing_allocations.count()}")
+            
+            if not existing_allocations.exists():
+                logger.info(f"[DEBUG] supervisor start_mo - MO {mo.mo_id} - Creating RM reservations...")
+                RMAllocationService.allocate_rm_for_mo(mo, request.user)
+                logger.info(f"[DEBUG] supervisor start_mo - MO {mo.mo_id} - Reservations created")
+        except Exception as e:
+            logger.error(f"[DEBUG] Failed to ensure RM reservation when supervisor starts MO {mo.mo_id}: {str(e)}")
+            logger.exception(e)
         
         # Update MO status
         old_status = mo.status
@@ -2413,7 +2507,7 @@ class BatchViewSet(viewsets.ModelViewSet):
 
     @action(detail=True, methods=['post'])
     def start_batch(self, request, pk=None):
-        """Start a batch - updates status to in_process"""
+        """Start a batch - updates status to in_process and locks RM allocations"""
         batch = self.get_object()
         
         if batch.status != 'created':
@@ -2422,12 +2516,35 @@ class BatchViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST
             )
         
+        # Lock RM allocations for this batch
+        from manufacturing.rm_allocation_service import RMAllocationService
+        lock_result = RMAllocationService.lock_allocations_for_batch(
+            batch=batch,
+            locked_by_user=request.user
+        )
+        
+        # Log the result but don't fail if locking fails (log for debugging)
+        if not lock_result.get('success'):
+            logger.warning(
+                f"Failed to lock RM allocations for batch {batch.batch_id}: {lock_result.get('message')}"
+            )
+        else:
+            logger.info(
+                f"Locked {lock_result.get('locked_count', 0)} RM allocations "
+                f"({lock_result.get('locked_quantity_kg', 0)}kg) for batch {batch.batch_id}"
+            )
+        
         batch.status = 'in_process'
         batch.actual_start_date = timezone.now()
         batch.save()
         
         serializer = self.get_serializer(batch)
-        return Response(serializer.data)
+        response_data = serializer.data
+        
+        # Include RM locking info in response
+        response_data['rm_locking'] = lock_result
+        
+        return Response(response_data)
 
     @action(detail=True, methods=['post'])
     def complete_batch(self, request, pk=None):
@@ -3418,18 +3535,54 @@ class RawMaterialAllocationViewSet(viewsets.ReadOnlyModelViewSet):
                 status=status.HTTP_404_NOT_FOUND
             )
         
+        # Get all allocations for this MO (including reserved, locked, swapped, released)
         allocations = self.queryset.filter(mo=mo)
         serializer = self.get_serializer(allocations, many=True)
+        
+        # DEBUG: Log allocation details
+        logger.info(f"[DEBUG] by_mo API - MO {mo.mo_id} - Total allocations: {allocations.count()}")
+        for alloc in allocations:
+            logger.info(f"[DEBUG]   - Allocation ID: {alloc.id}, Status: {alloc.status}, Qty: {alloc.allocated_quantity_kg}kg, Material: {alloc.raw_material.material_code}")
         
         # Get allocation summary
         from manufacturing.rm_allocation_service import RMAllocationService
         summary = RMAllocationService.get_allocation_summary_for_mo(mo)
         
+        # Calculate allocation status breakdown
+        allocation_statuses = {
+            'reserved': allocations.filter(status='reserved').count(),
+            'locked': allocations.filter(status='locked').count(),
+            'swapped': allocations.filter(status='swapped').count(),
+            'released': allocations.filter(status='released').count(),
+        }
+        
+        # Check if all required RM is fully reserved (production ready)
+        total_reserved = sum(
+            float(alloc.allocated_quantity_kg) 
+            for alloc in allocations.filter(status='reserved')
+        )
+        total_locked = sum(
+            float(alloc.allocated_quantity_kg) 
+            for alloc in allocations.filter(status='locked')
+        )
+        total_reserved_locked = total_reserved + total_locked
+        required_kg = float(mo.rm_required_kg) if mo.rm_required_kg else 0
+        is_fully_reserved = total_reserved >= required_kg if required_kg > 0 else False
+        
+        logger.info(f"[DEBUG] by_mo API - MO {mo.mo_id} - Reserved: {total_reserved}kg, Locked: {total_locked}kg, Required: {required_kg}kg, Fully Reserved: {is_fully_reserved}")
+        
         return Response({
             'mo_id': mo.mo_id,
             'mo_priority': mo.priority,
             'mo_status': mo.status,
+            'required_rm_kg': required_kg,
             'allocations': serializer.data,
+            'allocation_count': len(serializer.data),
+            'allocation_statuses': allocation_statuses,
+            'is_fully_reserved': is_fully_reserved,
+            'total_reserved_kg': total_reserved,
+            'total_locked_kg': total_locked,
+            'total_reserved_locked_kg': total_reserved_locked,
             'summary': summary
         })
     

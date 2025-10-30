@@ -430,46 +430,18 @@ class ManufacturingOrderDetailSerializer(serializers.ModelSerializer):
         except Exception as e:
             logger.warning(f"Failed to create MO creation transaction history: {str(e)}")
         
-        # Automatically allocate (reserve) raw materials for this MO
+        # NOTE: RM allocation is NOT done during MO creation
+        # RM will be reserved when production starts (via start_production action)
+        logger.info(f"MO {mo.mo_id} created. RM will be reserved when production starts.")
+        
+        # Automatically create MO workflow and send notifications to managers
         try:
-            from manufacturing.rm_allocation_service import RMAllocationService
-            allocations = RMAllocationService.allocate_rm_for_mo(mo, self.context['request'].user)
-            logger.info(f"RM successfully allocated for MO {mo.mo_id}")
-            
-            # Create RM allocation transaction history
-            try:
-                stock_after = RMStockBalanceHeat.objects.filter(
-                    raw_material=raw_material
-                ).first()
-                
-                stock_after_quantity = stock_after.total_available_quantity_kg if stock_after else Decimal('0')
-                
-                # Create RM allocation transaction history
-                allocation_transaction_id = generate_transaction_id('RM_ALLOCATED')
-                
-                MOTransactionHistory.objects.create(
-                    mo=mo,
-                    transaction_type='rm_allocated',
-                    transaction_id=allocation_transaction_id,
-                    description=f'RM allocated for MO {mo.mo_id}',
-                    details={
-                        'allocated_quantity_kg': float(mo.rm_required_kg),
-                        'stock_before_allocation': float(stock_before_quantity),
-                        'stock_after_allocation': float(stock_after_quantity),
-                        'reserved_quantity': float(stock_before_quantity - stock_after_quantity),
-                        'material_name': raw_material.material_name,
-                        'allocated_by': self.context['request'].user.get_full_name() or self.context['request'].user.email
-                    },
-                    created_by=self.context['request'].user
-                )
-                
-            except Exception as e:
-                logger.warning(f"Failed to create RM allocation transaction history: {str(e)}")
-                
+            from manufacturing.workflow_service import ManufacturingWorkflowService
+            workflow = ManufacturingWorkflowService.create_mo_workflow(mo.id, self.context['request'].user)
+            logger.info(f"MO workflow created for MO {mo.mo_id}")
         except Exception as e:
-            logger.warning(f"Failed to auto-allocate RM for MO {mo.mo_id}: {str(e)}")
-            # Don't fail MO creation if RM allocation fails
-            # Manager can manually allocate or swap RM later
+            logger.error(f"Failed to create MO workflow for MO {mo.mo_id}: {str(e)}")
+            # Don't fail MO creation if workflow creation fails
         
         return mo
 
@@ -589,13 +561,63 @@ class MOProcessStepExecutionSerializer(serializers.ModelSerializer):
         read_only_fields = ['created_at', 'updated_at']
 
 
+# Shared batch counts calculation method
+def _get_batch_counts_for_process(obj):
+    """Calculate batch counts by status for a specific process execution (shared logic)"""
+    batches = Batch.objects.filter(
+        mo=obj.mo
+    ).exclude(status='cancelled')
+    
+    # Check each batch's status for this specific process
+    process_key = f"PROCESS_{obj.id}_STATUS"
+    pending_count = 0
+    in_progress_count = 0
+    completed_count = 0
+    failed_count = 0
+    
+    for batch in batches:
+        batch_notes = batch.notes or ""
+        
+        # Check if this batch has a status for this process
+        if f"{process_key}:" in batch_notes:
+            # Extract status from notes: PROCESS_{id}_STATUS:status;
+            import re
+            pattern = f"{re.escape(process_key)}:([^;]+);"
+            match = re.search(pattern, batch_notes)
+            if match:
+                batch_process_status = match.group(1).strip()
+                if batch_process_status == 'in_progress':
+                    in_progress_count += 1
+                elif batch_process_status == 'completed':
+                    completed_count += 1
+                elif batch_process_status == 'failed':
+                    failed_count += 1
+                else:
+                    pending_count += 1
+            else:
+                # Has the key but no valid status, treat as pending
+                pending_count += 1
+        else:
+            # No process-specific status in notes - batch hasn't explicitly started this process
+            pending_count += 1
+    
+    return {
+        'pending': pending_count,
+        'in_progress': in_progress_count,
+        'completed': completed_count,
+        'failed': failed_count,
+        'total': batches.count()
+    }
+
+
 class MOProcessExecutionListSerializer(serializers.ModelSerializer):
-    """Optimized serializer for process execution list view"""
+    """Serializer for process execution list view - extends minimal with additional fields"""
+    # Inherit base fields from minimal serializer pattern
     process_name = serializers.CharField(source='process.name', read_only=True)
     process_code = serializers.IntegerField(source='process.code', read_only=True)
     status_display = serializers.CharField(source='get_status_display', read_only=True)
-    assigned_operator_name = serializers.CharField(source='assigned_operator.get_full_name', read_only=True)
-    assigned_supervisor_name = serializers.CharField(source='assigned_supervisor.get_full_name', read_only=True)
+    assigned_operator_name = serializers.SerializerMethodField()
+    assigned_supervisor_name = serializers.SerializerMethodField()
     duration_minutes = serializers.ReadOnlyField()
     is_overdue = serializers.ReadOnlyField()
     step_count = serializers.SerializerMethodField()
@@ -614,6 +636,12 @@ class MOProcessExecutionListSerializer(serializers.ModelSerializer):
         ]
         read_only_fields = ['created_at', 'updated_at']
     
+    def get_assigned_operator_name(self, obj):
+        return obj.assigned_operator.get_full_name() if obj.assigned_operator else None
+    
+    def get_assigned_supervisor_name(self, obj):
+        return obj.assigned_supervisor.get_full_name() if obj.assigned_supervisor else None
+    
     def get_step_count(self, obj):
         return obj.step_executions.count()
     
@@ -621,18 +649,8 @@ class MOProcessExecutionListSerializer(serializers.ModelSerializer):
         return obj.step_executions.filter(status='completed').count()
     
     def get_batch_counts(self, obj):
-        """Get batch counts by status for this process"""
-        from django.db.models import Q
-        batches = Batch.objects.filter(
-            mo=obj.mo
-        )
-        return {
-            'pending': batches.filter(status='created').count(),
-            'in_progress': batches.filter(status__in=['in_process', 'quality_check']).count(),
-            'completed': batches.filter(status='completed').count(),
-            'failed': batches.filter(status='cancelled').count(),
-            'total': batches.count()
-        }
+        """Get batch counts by status for this specific process execution"""
+        return _get_batch_counts_for_process(obj)
 
 
 class MOProcessExecutionDetailSerializer(serializers.ModelSerializer):
@@ -667,17 +685,8 @@ class MOProcessExecutionDetailSerializer(serializers.ModelSerializer):
         ).data
     
     def get_batch_counts(self, obj):
-        """Get batch counts by status for this process"""
-        batches = Batch.objects.filter(
-            mo=obj.mo
-        )
-        return {
-            'pending': batches.filter(status='created').count(),
-            'in_progress': batches.filter(status__in=['in_process', 'quality_check']).count(),
-            'completed': batches.filter(status='completed').count(),
-            'failed': batches.filter(status='cancelled').count(),
-            'total': batches.count()
-        }
+        """Get batch counts by status for this specific process execution"""
+        return _get_batch_counts_for_process(obj)
 
 
 class MOProcessAlertSerializer(serializers.ModelSerializer):
@@ -698,32 +707,65 @@ class MOProcessAlertSerializer(serializers.ModelSerializer):
         read_only_fields = ['created_at']
 
 
+class MOProcessExecutionMinimalSerializer(serializers.ModelSerializer):
+    """Minimal serializer for process executions in process_tracking endpoint"""
+    process_name = serializers.CharField(source='process.name', read_only=True)
+    process_code = serializers.IntegerField(source='process.code', read_only=True)
+    status_display = serializers.CharField(source='get_status_display', read_only=True)
+    assigned_operator_name = serializers.SerializerMethodField()
+    assigned_supervisor_name = serializers.SerializerMethodField()
+    batch_counts = serializers.SerializerMethodField()
+    step_count = serializers.SerializerMethodField()
+    duration_minutes = serializers.ReadOnlyField()
+    is_overdue = serializers.ReadOnlyField()
+    
+    class Meta:
+        model = MOProcessExecution
+        fields = [
+            'id', 'process', 'process_name', 'process_code', 'status', 'status_display',
+            'sequence_order', 'actual_start_time', 'actual_end_time',
+            'assigned_operator', 'assigned_operator_name', 'assigned_supervisor', 
+            'assigned_supervisor_name', 'progress_percentage', 'duration_minutes',
+            'is_overdue', 'step_count', 'batch_counts', 'created_at', 'updated_at'
+        ]
+        read_only_fields = ['created_at', 'updated_at']
+    
+    def get_assigned_operator_name(self, obj):
+        return obj.assigned_operator.get_full_name() if obj.assigned_operator else None
+    
+    def get_assigned_supervisor_name(self, obj):
+        return obj.assigned_supervisor.get_full_name() if obj.assigned_supervisor else None
+    
+    def get_step_count(self, obj):
+        return obj.step_executions.count()
+    
+    def get_batch_counts(self, obj):
+        """Get batch counts by status for this specific process execution"""
+        return _get_batch_counts_for_process(obj)
+
+
 class ManufacturingOrderWithProcessesSerializer(serializers.ModelSerializer):
-    """Enhanced MO serializer with process execution details"""
+    """Optimized MO serializer for process tracking - only includes fields used in frontend"""
     product_code_display = serializers.CharField(source='product_code.product_code', read_only=True)
     product_code_value = serializers.CharField(source='product_code.product_code', read_only=True)
     status_display = serializers.CharField(source='get_status_display', read_only=True)
     priority_display = serializers.CharField(source='get_priority_display', read_only=True)
     shift_display = serializers.CharField(source='get_shift_display', read_only=True)
-    created_by_name = serializers.CharField(source='created_by.get_full_name', read_only=True)
-    rejected_by_name = serializers.CharField(source='rejected_by.get_full_name', read_only=True)
-    process_executions = MOProcessExecutionListSerializer(many=True, read_only=True)
+    process_executions = MOProcessExecutionMinimalSerializer(many=True, read_only=True)
     overall_progress = serializers.SerializerMethodField()
     active_process = serializers.SerializerMethodField()
     
     class Meta:
         model = ManufacturingOrder
+        # Optimized: Only include fields actually used in frontend process tracking pages
         fields = [
             'id', 'mo_id', 'date_time', 'product_code', 'product_code_display', 'product_code_value',
             'quantity', 'product_type', 'material_name', 'material_type', 'grade',
-            'wire_diameter_mm', 'thickness_mm', 'finishing', 'manufacturer_brand',
-            'weight_kg', 'loose_fg_stock', 'rm_required_kg', 'strips_required', 
-            'total_pieces_from_strips', 'excess_pieces', 'shift', 'shift_display', 'planned_start_date',
-            'planned_end_date', 'actual_start_date', 'actual_end_date', 'status',
-            'status_display', 'priority', 'priority_display', 'customer_name',
-            'delivery_date', 'special_instructions', 'created_at', 'created_by',
-            'created_by_name', 'updated_at', 'process_executions', 'overall_progress',
-            'active_process', 'rejected_at', 'rejected_by', 'rejected_by_name', 'rejection_reason'
+            'wire_diameter_mm', 'thickness_mm', 'shift', 'shift_display', 
+            'planned_start_date', 'planned_end_date', 'actual_start_date', 'actual_end_date', 
+            'status', 'status_display', 'priority', 'priority_display', 
+            'delivery_date', 'special_instructions', 'process_executions', 
+            'overall_progress', 'active_process', 'rejected_at', 'rejected_by', 'rejection_reason'
         ]
         read_only_fields = ['mo_id', 'date_time', 'created_at', 'updated_at']
     
