@@ -324,6 +324,19 @@ class BulkUserRoleAssignmentSerializer(serializers.Serializer):
         return value
 
 
+class UserBasicSerializer(serializers.ModelSerializer):
+    """
+    Basic user serializer with essential information
+    """
+    full_name = serializers.ReadOnlyField()
+    employee_id = serializers.CharField(source='profile.employee_id', read_only=True)
+    department_display = serializers.CharField(source='profile.get_department_display', read_only=True)
+    
+    class Meta:
+        model = CustomUser
+        fields = ['id', 'full_name', 'email', 'employee_id', 'department_display']
+
+
 class AvailableOperatorsSerializer(serializers.ModelSerializer):
     """
     Serializer for available operators (not engaged)

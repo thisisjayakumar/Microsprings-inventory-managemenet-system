@@ -17,6 +17,9 @@ router.register(r'heat-numbers', views.HeatNumberViewSet, basename='heat-number'
 router.register(r'stock-balances-heat', views.RMStockBalanceHeatViewSet, basename='stock-balance-heat')
 router.register(r'transactions-heat', views.InventoryTransactionHeatViewSet, basename='inventory-transaction-heat')
 
+# RM Return endpoints
+router.register(r'rm-returns', views.RMReturnViewSet, basename='rm-return')
+
 urlpatterns = [
     # Health check
     path('health/', views.health_check, name='health_check'),

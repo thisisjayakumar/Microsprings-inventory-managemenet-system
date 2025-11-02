@@ -111,6 +111,12 @@ class HandoverIssueTypeChoices(models.TextChoices):
     WRONG_MATERIAL = 'wrong_material', _('Wrong Material')
 
 
+class RMReturnDispositionChoices(models.TextChoices):
+    PENDING = 'pending', _('Pending Action')
+    RETURN_TO_VENDOR = 'return_to_vendor', _('Return to Vendor')
+    SCRAP = 'scrap', _('Scrap')
+
+
 # ============================================================================
 # MANUFACTURING & PRODUCTION CHOICES
 # ============================================================================
@@ -191,6 +197,7 @@ class BatchStatusChoices(models.TextChoices):
     PACKED = 'packed', _('Packed')
     DISPATCHED = 'dispatched', _('Dispatched')
     CANCELLED = 'cancelled', _('Cancelled')
+    RETURNED_TO_RM = 'returned_to_rm', _('Returned to RM Store')
 
 
 class OutsourcingStatusChoices(models.TextChoices):

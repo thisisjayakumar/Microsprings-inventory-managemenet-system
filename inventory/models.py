@@ -4,7 +4,7 @@ from django.core.exceptions import ValidationError
 from utils.enums import (
     MaterialTypeChoices, FinishingChoices, LocationTypeChoices,
     TransactionTypeChoices, ReferenceTypeChoices, GRMStatusChoices,
-    HandoverStatusChoices, HandoverIssueTypeChoices
+    HandoverStatusChoices, HandoverIssueTypeChoices, RMReturnDispositionChoices
 )
 
 User = get_user_model()
@@ -701,3 +701,136 @@ class HandoverIssue(models.Model):
     
     def __str__(self):
         return f"Issue #{self.id} - {self.heat_number.heat_number} ({self.get_issue_type_display()})"
+
+
+class RMReturn(models.Model):
+    """
+    Track raw materials returned from production processes back to RM Store
+    Supervisors can return faulty batches, and RM Store decides disposition
+    """
+    # Auto-generated return ID
+    return_id = models.CharField(
+        max_length=50,
+        unique=True,
+        editable=False,
+        help_text="Auto-generated return ID"
+    )
+    
+    # What was returned
+    raw_material = models.ForeignKey(
+        RawMaterial,
+        on_delete=models.PROTECT,
+        related_name='returns',
+        help_text="Raw material being returned"
+    )
+    heat_number = models.ForeignKey(
+        HeatNumber,
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+        related_name='returns',
+        help_text="Heat number of the returned material (if tracked)"
+    )
+    
+    # Related batch and MO
+    batch = models.ForeignKey(
+        'manufacturing.Batch',
+        on_delete=models.CASCADE,
+        related_name='rm_returns',
+        help_text="Batch that returned this material"
+    )
+    manufacturing_order = models.ForeignKey(
+        'manufacturing.ManufacturingOrder',
+        on_delete=models.CASCADE,
+        related_name='rm_returns',
+        help_text="Manufacturing Order associated with this return"
+    )
+    
+    # Location/Process where material was returned from
+    returned_from_location = models.ForeignKey(
+        Location,
+        on_delete=models.PROTECT,
+        related_name='rm_returns_from',
+        help_text="Location/process from which material was returned"
+    )
+    
+    # Quantity and details
+    quantity_kg = models.DecimalField(
+        max_digits=10,
+        decimal_places=3,
+        help_text="Quantity returned in KG"
+    )
+    
+    # Return reason
+    return_reason = models.TextField(
+        help_text="Reason for returning the raw material"
+    )
+    
+    # Who returned it (supervisor)
+    returned_by = models.ForeignKey(
+        User,
+        on_delete=models.PROTECT,
+        related_name='rm_returns_created',
+        help_text="Supervisor who returned the material"
+    )
+    returned_at = models.DateTimeField(auto_now_add=True)
+    
+    # Disposition by RM Store
+    disposition = models.CharField(
+        max_length=20,
+        choices=RMReturnDispositionChoices.choices,
+        default='pending',
+        help_text="Action taken by RM Store"
+    )
+    disposition_notes = models.TextField(
+        blank=True,
+        help_text="Notes about the disposition decision"
+    )
+    disposed_by = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='rm_returns_disposed',
+        help_text="RM Store user who processed the return"
+    )
+    disposed_at = models.DateTimeField(null=True, blank=True)
+    
+    # Inventory transaction tracking
+    return_transaction = models.ForeignKey(
+        InventoryTransaction,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='rm_return_records',
+        help_text="Inventory transaction created for this return"
+    )
+    
+    # Audit
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        verbose_name = 'RM Return'
+        verbose_name_plural = 'RM Returns'
+        ordering = ['-returned_at']
+        indexes = [
+            models.Index(fields=['batch']),
+            models.Index(fields=['manufacturing_order']),
+            models.Index(fields=['disposition']),
+            models.Index(fields=['returned_at']),
+            models.Index(fields=['return_id']),
+        ]
+    
+    def save(self, *args, **kwargs):
+        # Auto-generate return_id if not set
+        if not self.return_id:
+            from django.utils import timezone
+            timestamp = timezone.now().strftime('%Y%m%d%H%M%S')
+            # Format: RMR-YYYYMMDDHHMMSS-BATCHID
+            self.return_id = f"RMR-{timestamp}-{self.batch.batch_id}"
+        
+        super().save(*args, **kwargs)
+    
+    def __str__(self):
+        return f"{self.return_id} - {self.raw_material.material_code} ({self.quantity_kg}kg) - {self.get_disposition_display()}"

@@ -12,7 +12,7 @@ from products.models import Product
 from .models import (
     RMStockBalance, RawMaterial, InventoryTransaction,
     GRMReceipt, HeatNumber, RMStockBalanceHeat, InventoryTransactionHeat,
-    HandoverIssue
+    HandoverIssue, RMReturn
 )
 from .serializers import (
     ProductListSerializer, ProductCreateUpdateSerializer,
@@ -21,7 +21,8 @@ from .serializers import (
     InventoryTransactionSerializer, GRMReceiptSerializer, GRMReceiptCreateSerializer,
     GRMReceiptListSerializer, HeatNumberSerializer, RMStockBalanceHeatSerializer,
     InventoryTransactionHeatSerializer, HeatNumberHandoverSerializer,
-    HandoverIssueSerializer, HandoverIssueCreateSerializer, HandoverVerifySerializer
+    HandoverIssueSerializer, HandoverIssueCreateSerializer, HandoverVerifySerializer,
+    RMReturnSerializer, RMReturnCreateSerializer, RMReturnDispositionSerializer
 )
 from .transaction_manager import InventoryTransactionManager
 from authentication.models import UserRole, Role
@@ -742,3 +743,115 @@ def handover_issues_list(request):
             'success': False,
             'error': str(e)
         }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+# RM Return ViewSet
+
+class RMReturnViewSet(viewsets.ModelViewSet):
+    """
+    ViewSet for RM Returns
+    - Supervisors can create returns
+    - RM Store users can view and process returns (set disposition)
+    """
+    queryset = RMReturn.objects.all()
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
+    filterset_fields = ['disposition', 'returned_from_location', 'batch', 'manufacturing_order']
+    search_fields = ['return_id', 'raw_material__material_code', 'batch__batch_id', 
+                     'manufacturing_order__mo_id', 'return_reason']
+    ordering_fields = ['returned_at', 'disposed_at', 'quantity_kg']
+    ordering = ['-returned_at']
+    
+    def get_permissions(self):
+        """
+        - Supervisors can create (POST)
+        - RM Store users can list, retrieve, and update disposition
+        """
+        if self.action == 'create':
+            # Any authenticated supervisor can create returns
+            return [IsAuthenticated()]
+        else:
+            # RM Store users can view and process
+            return [IsAuthenticated(), IsRMStoreUser()]
+    
+    def get_serializer_class(self):
+        """Use different serializers for different actions"""
+        if self.action == 'create':
+            return RMReturnCreateSerializer
+        elif self.action == 'process_disposition':
+            return RMReturnDispositionSerializer
+        return RMReturnSerializer
+    
+    def get_queryset(self):
+        """Optimized queryset with select_related"""
+        return RMReturn.objects.select_related(
+            'raw_material', 'heat_number', 'batch', 'manufacturing_order',
+            'returned_from_location', 'returned_by', 'disposed_by', 'return_transaction'
+        ).order_by('-returned_at')
+    
+    @action(detail=True, methods=['post'], url_path='process-disposition')
+    def process_disposition(self, request, pk=None):
+        """
+        Process RM return disposition (return to vendor or scrap)
+        Only RM Store users can perform this action
+        """
+        rm_return = self.get_object()
+        
+        # Check if already processed
+        if rm_return.disposition != 'pending':
+            return Response({
+                'success': False,
+                'error': f'This return has already been processed with disposition: {rm_return.get_disposition_display()}'
+            }, status=status.HTTP_400_BAD_REQUEST)
+        
+        serializer = self.get_serializer(rm_return, data=request.data, partial=True)
+        
+        if serializer.is_valid():
+            updated_return = serializer.save()
+            
+            return Response({
+                'success': True,
+                'message': f'Return processed successfully as: {updated_return.get_disposition_display()}',
+                'data': RMReturnSerializer(updated_return).data
+            }, status=status.HTTP_200_OK)
+        else:
+            return Response({
+                'success': False,
+                'errors': serializer.errors
+            }, status=status.HTTP_400_BAD_REQUEST)
+    
+    @action(detail=False, methods=['get'], url_path='pending')
+    def pending_returns(self, request):
+        """
+        Get all pending RM returns (disposition = pending)
+        """
+        pending = self.get_queryset().filter(disposition='pending')
+        
+        serializer = self.get_serializer(pending, many=True)
+        
+        return Response({
+            'success': True,
+            'data': serializer.data,
+            'count': pending.count()
+        }, status=status.HTTP_200_OK)
+    
+    @action(detail=False, methods=['get'], url_path='by-batch')
+    def by_batch(self, request):
+        """
+        Get RM returns for a specific batch
+        """
+        batch_id = request.query_params.get('batch_id')
+        
+        if not batch_id:
+            return Response({
+                'success': False,
+                'error': 'batch_id parameter is required'
+            }, status=status.HTTP_400_BAD_REQUEST)
+        
+        returns = self.get_queryset().filter(batch__batch_id=batch_id)
+        serializer = self.get_serializer(returns, many=True)
+        
+        return Response({
+            'success': True,
+            'data': serializer.data,
+            'count': returns.count()
+        }, status=status.HTTP_200_OK)

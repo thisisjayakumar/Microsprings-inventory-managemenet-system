@@ -1,1 +1,0 @@
-default_app_config = 'microsprings_inventory_system.sync_system.apps.SyncSystemConfig'

@@ -81,8 +81,6 @@ INSTALLED_APPS = [
     # Phase 4: Analytics & Integration
     'reporting',           # Reports, analytics, business intelligence
 
-    #DB Sync and Backup
-    'microsprings_inventory_system.sync_system',
 ]
 
 MIDDLEWARE = [
@@ -129,11 +127,11 @@ WSGI_APPLICATION = 'microsprings_inventory_system.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
-# MySQL Database Configuration
+# MySQL Database Configuration - Switch between cloud/local via .env
 DATABASES = {
     'default': {
         'ENGINE': config('DATABASE_ENGINE', default='django.db.backends.mysql'),
-        'NAME': config('DATABASE_NAME', default='microsprings_db'),
+        'NAME': config('DATABASE_NAME', default='msp_erp_db'),
         'USER': config('DATABASE_USER', default='root'),
         'PASSWORD': config('DATABASE_PASSWORD', default=''),
         'HOST': config('DATABASE_HOST', default='localhost'),
@@ -143,27 +141,9 @@ DATABASES = {
             'charset': config('DATABASE_OPTIONS_CHARSET', default='utf8mb4'),
         },
         'CONN_MAX_AGE': config('DATABASE_CONN_MAX_AGE', default=600, cast=int),  # Connection pooling
-    },
-    'remote': {  # Remote cloud database
-        'ENGINE': config('REMOTE_DATABASE_ENGINE', default='django.db.backends.mysql'),
-        'NAME': config('REMOTE_DATABASE_NAME', default='msp_erp_db'),
-        'USER': config('REMOTE_DATABASE_USER', default='root'),
-        'PASSWORD': config('REMOTE_DATABASE_PASSWORD', default=''),
-        'HOST': config('REMOTE_DATABASE_HOST', default='localhost'),
-        'PORT': config('REMOTE_DATABASE_PORT', default='3306', cast=int),
-        'OPTIONS': {
-            'init_command': config('REMOTE_DATABASE_OPTIONS_INIT_COMMAND', default="SET sql_mode='STRICT_TRANS_TABLES'"),
-            'charset': config('REMOTE_DATABASE_OPTIONS_CHARSET', default='utf8mb4'),
-        },
-        'CONN_MAX_AGE': config('REMOTE_DATABASE_CONN_MAX_AGE', default=600, cast=int),  # Connection pooling
     }
 }
 
-# Database Routing
-DATABASE_ROUTERS = ['microsprings_inventory_system.sync_system.routers.SyncRouter']
-
-ENABLE_DB_SYNC = True
-SYNC_BATCH_SIZE = 50
 # Password validation
 # https://docs.djangoproject.com/en/5.2/ref/settings/#auth-password-validators
 

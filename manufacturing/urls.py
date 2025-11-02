@@ -11,7 +11,8 @@ from .views import (
     # Heat number API
     get_available_heat_numbers_for_mo
 )
-from .batch_process_views import BatchProcessExecutionViewSet
+from .views.batch_views import BatchProcessExecutionViewSet
+from .views.additional_rm_views import AdditionalRMRequestViewSet
 
 # Create router and register viewsets
 router = DefaultRouter()
@@ -24,6 +25,7 @@ router.register(r'batches', BatchViewSet, basename='batch')
 router.register(r'batch-process-executions', BatchProcessExecutionViewSet, basename='batchprocessexecution')
 router.register(r'outsourcing', OutsourcingRequestViewSet, basename='outsourcingrequest')
 router.register(r'rm-allocations', RawMaterialAllocationViewSet, basename='rmallocation')
+router.register(r'additional-rm-requests', AdditionalRMRequestViewSet, basename='additionalrmrequest')
 
 app_name = 'manufacturing'
 

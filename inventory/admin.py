@@ -5,7 +5,7 @@ from django.forms import TextInput, Textarea
 from .models import (
     RawMaterial, Location, InventoryTransaction, RMStockBalance,
     GRMReceipt, HeatNumber, RMStockBalanceHeat, InventoryTransactionHeat,
-    HandoverIssue
+    HandoverIssue, RMReturn
 )
 
 
@@ -394,6 +394,54 @@ class HandoverIssueAdmin(admin.ModelAdmin):
     def get_queryset(self, request):
         return super().get_queryset(request).select_related(
             'heat_number', 'heat_number__raw_material', 'reported_by', 'resolved_by'
+        )
+
+
+@admin.register(RMReturn)
+class RMReturnAdmin(admin.ModelAdmin):
+    list_display = (
+        'return_id', 'raw_material', 'batch', 'manufacturing_order', 
+        'quantity_kg', 'disposition', 'returned_by', 'returned_at', 'disposed_by'
+    )
+    list_filter = ('disposition', 'returned_at', 'disposed_at', 'returned_from_location')
+    search_fields = (
+        'return_id', 'raw_material__material_code', 'batch__batch_id', 
+        'manufacturing_order__mo_id', 'return_reason'
+    )
+    ordering = ('-returned_at',)
+    readonly_fields = ('return_id', 'returned_at', 'created_at', 'updated_at')
+    raw_id_fields = ('raw_material', 'heat_number', 'batch', 'manufacturing_order', 
+                     'returned_from_location', 'returned_by', 'disposed_by', 'return_transaction')
+    date_hierarchy = 'returned_at'
+    
+    fieldsets = (
+        ('Return Information', {
+            'fields': ('return_id', 'raw_material', 'heat_number', 'quantity_kg')
+        }),
+        ('Source Details', {
+            'fields': ('batch', 'manufacturing_order', 'returned_from_location')
+        }),
+        ('Return Details', {
+            'fields': ('return_reason', 'returned_by', 'returned_at')
+        }),
+        ('Disposition', {
+            'fields': ('disposition', 'disposition_notes', 'disposed_by', 'disposed_at'),
+            'classes': ('wide',)
+        }),
+        ('Transaction Tracking', {
+            'fields': ('return_transaction',),
+            'classes': ('collapse',)
+        }),
+        ('Timestamps', {
+            'fields': ('created_at', 'updated_at'),
+            'classes': ('collapse',)
+        }),
+    )
+    
+    def get_queryset(self, request):
+        return super().get_queryset(request).select_related(
+            'raw_material', 'heat_number', 'batch', 'manufacturing_order', 
+            'returned_from_location', 'returned_by', 'disposed_by', 'return_transaction'
         )
 
 

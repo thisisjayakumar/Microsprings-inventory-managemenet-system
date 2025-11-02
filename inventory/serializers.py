@@ -6,7 +6,7 @@ from products.models import Product
 from .models import (
     RMStockBalance, RawMaterial, InventoryTransaction, Location,
     GRMReceipt, HeatNumber, RMStockBalanceHeat, InventoryTransactionHeat,
-    HandoverIssue
+    HandoverIssue, RMReturn
 )
 
 
@@ -690,3 +690,169 @@ class HandoverVerifySerializer(serializers.Serializer):
         heat_number.save()
         
         return heat_number
+
+
+# RM Return Serializers
+
+class RMReturnSerializer(serializers.ModelSerializer):
+    """Serializer for RM Return listing and details"""
+    raw_material_details = RawMaterialBasicSerializer(source='raw_material', read_only=True)
+    heat_number_display = serializers.CharField(source='heat_number.heat_number', read_only=True)
+    batch_id = serializers.CharField(source='batch.batch_id', read_only=True)
+    mo_id = serializers.CharField(source='manufacturing_order.mo_id', read_only=True)
+    returned_from_location_display = serializers.CharField(source='returned_from_location.get_location_name_display', read_only=True)
+    disposition_display = serializers.CharField(source='get_disposition_display', read_only=True)
+    returned_by_name = serializers.CharField(source='returned_by.get_full_name', read_only=True)
+    disposed_by_name = serializers.CharField(source='disposed_by.get_full_name', read_only=True, allow_null=True)
+    
+    class Meta:
+        model = RMReturn
+        fields = [
+            'id', 'return_id', 'raw_material', 'raw_material_details', 'heat_number', 'heat_number_display',
+            'batch', 'batch_id', 'manufacturing_order', 'mo_id', 'returned_from_location', 
+            'returned_from_location_display', 'quantity_kg', 'return_reason', 'returned_by', 
+            'returned_by_name', 'returned_at', 'disposition', 'disposition_display', 
+            'disposition_notes', 'disposed_by', 'disposed_by_name', 'disposed_at', 
+            'return_transaction', 'created_at', 'updated_at'
+        ]
+        read_only_fields = [
+            'id', 'return_id', 'returned_at', 'created_at', 'updated_at',
+            'raw_material_details', 'heat_number_display', 'batch_id', 'mo_id',
+            'returned_from_location_display', 'disposition_display', 
+            'returned_by_name', 'disposed_by_name'
+        ]
+
+
+class RMReturnCreateSerializer(serializers.ModelSerializer):
+    """Serializer for creating RM returns by supervisors"""
+    
+    class Meta:
+        model = RMReturn
+        fields = [
+            'raw_material', 'heat_number', 'batch', 'manufacturing_order',
+            'returned_from_location', 'quantity_kg', 'return_reason'
+        ]
+        extra_kwargs = {
+            'raw_material': { 'required': False },
+            'returned_from_location': { 'required': False, 'allow_null': True },
+        }
+    
+    def validate_quantity_kg(self, value):
+        """Validate quantity is positive"""
+        if value <= 0:
+            raise serializers.ValidationError("Quantity must be greater than 0")
+        return value
+    
+    def create(self, validated_data):
+        """Create RM return and create inventory transaction"""
+        # Resolve returned_from_location from code if provided in payload
+        returned_from_location = validated_data.get('returned_from_location')
+        if not returned_from_location:
+            # Accept a helper field from request: returned_from_location_code
+            location_code = None
+            try:
+                # Prefer initial_data to access non-model fields
+                location_code = (self.initial_data.get('returned_from_location_code') or '').strip()
+            except Exception:
+                location_code = None
+            if location_code:
+                # Resolve by code or by location_name (case-insensitive)
+                loc = (
+                    Location.objects.filter(code__iexact=location_code).first()
+                    or Location.objects.filter(location_name__iexact=location_code).first()
+                )
+                if not loc:
+                    raise serializers.ValidationError({
+                        'returned_from_location_code': f"Invalid location code: {location_code}"
+                    })
+                validated_data['returned_from_location'] = loc
+            else:
+                raise serializers.ValidationError({
+                    'returned_from_location': 'This field is required (or provide returned_from_location_code)'
+                })
+
+        # Set the returned_by to the current user
+        validated_data['returned_by'] = self.context['request'].user
+        
+        # Derive raw_material from heat_number if not provided
+        if not validated_data.get('raw_material'):
+            heat = validated_data.get('heat_number')
+            if heat and getattr(heat, 'raw_material_id', None):
+                validated_data['raw_material'] = heat.raw_material
+            else:
+                raise serializers.ValidationError({
+                    'raw_material': 'Unable to derive raw material. Provide heat_number or raw_material.'
+                })
+        
+        # Create the RM return
+        rm_return = RMReturn.objects.create(**validated_data)
+        
+        # Mark the batch as returned to RM store
+        batch = validated_data['batch']
+        batch.status = 'returned_to_rm'
+        batch.save(update_fields=['status'])
+        
+        # Create inventory transaction for the return
+        from .transaction_manager import InventoryTransactionManager
+        transaction_manager = InventoryTransactionManager()
+        
+        # Create return transaction (from process back to RM Store)
+        try:
+            # Get RM Store location
+            rm_store_location = Location.objects.get(location_name='rm_store')
+            
+            # Create transaction ID
+            transaction_id = f"TXN-RETURN-{rm_return.return_id}"
+            
+            # Create the transaction
+            inventory_transaction = transaction_manager.create_transaction(
+                transaction_type='return',
+                product_id=validated_data['raw_material'].id,  # Raw material as product
+                quantity=validated_data['quantity_kg'],
+                transaction_datetime=timezone.now(),
+                created_by=self.context['request'].user,
+                location_from=validated_data['returned_from_location'],
+                location_to=rm_store_location,
+                manufacturing_order=validated_data['manufacturing_order'],
+                reference_type='process',
+                reference_id=validated_data['batch'].batch_id,
+                notes=f"RM Return: {validated_data['return_reason']}",
+                transaction_id=transaction_id
+            )
+            
+            # Link transaction to return
+            rm_return.return_transaction = inventory_transaction
+            rm_return.save()
+            
+        except Exception as e:
+            # If transaction creation fails, we should still keep the return record
+            # but log the error
+            print(f"Warning: Failed to create inventory transaction for return {rm_return.return_id}: {str(e)}")
+        
+        return rm_return
+
+
+class RMReturnDispositionSerializer(serializers.Serializer):
+    """Serializer for processing RM return disposition by RM Store"""
+    disposition = serializers.ChoiceField(choices=['return_to_vendor', 'scrap'])
+    disposition_notes = serializers.CharField(required=False, allow_blank=True)
+    
+    def validate(self, data):
+        """Validate that disposition is not pending"""
+        if data['disposition'] == 'pending':
+            raise serializers.ValidationError("Disposition cannot be set to pending")
+        return data
+    
+    def update(self, instance, validated_data):
+        """Update RM return with disposition"""
+        instance.disposition = validated_data['disposition']
+        instance.disposition_notes = validated_data.get('disposition_notes', '')
+        instance.disposed_by = self.context['request'].user
+        instance.disposed_at = timezone.now()
+        instance.save()
+        
+        # TODO: Create additional inventory transactions if needed
+        # For example, if disposition is 'scrap', we might want to move to scrap location
+        # If disposition is 'return_to_vendor', we might want to create a vendor return record
+        
+        return instance
