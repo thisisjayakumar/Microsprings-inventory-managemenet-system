@@ -791,7 +791,27 @@ class RMReturnViewSet(viewsets.ModelViewSet):
     @action(detail=True, methods=['post'], url_path='process-disposition')
     def process_disposition(self, request, pk=None):
         """
-        Process RM return disposition (return to vendor or scrap)
+        Process RM return disposition by RM Store
+        
+        Business Logic:
+        1. Received Wrong RM (return_reason='received_wrong_rm'):
+           - RM Store selects "Return to RM" (material can be used for another MO)
+           - Enters actual received kg (may differ from supervisor's quantity)
+           - Stock is adjusted by adding received_kg back to RM stock
+        
+        2. Enough Qty Reached (return_reason='enough_qty_reached'):
+           - Supervisor returns excess RM after MO quantity is achieved
+           - RM Store selects "Return to RM"
+           - Enters actual received kg
+           - Stock is adjusted by adding received_kg back to RM stock
+        
+        3. Defect in Quality (return_reason='defect_in_quality'):
+           - RM is defective and cannot be reused
+           - RM Store selects "Return to Vendor"
+           - Enters actual received kg
+           - This quantity is fully subtracted from RM stock (sent back to vendor)
+           - This batch is NOT counted as part of allocated RM for the MO
+        
         Only RM Store users can perform this action
         """
         rm_return = self.get_object()
@@ -808,9 +828,15 @@ class RMReturnViewSet(viewsets.ModelViewSet):
         if serializer.is_valid():
             updated_return = serializer.save()
             
+            # Create a summary message based on return reason and disposition
+            if updated_return.disposition == 'return_to_rm':
+                message = f'{updated_return.received_kg}kg added back to RM stock'
+            else:  # return_to_vendor
+                message = f'{updated_return.received_kg}kg deducted from stock (returning to vendor)'
+            
             return Response({
                 'success': True,
-                'message': f'Return processed successfully as: {updated_return.get_disposition_display()}',
+                'message': f'Return processed successfully. {message}',
                 'data': RMReturnSerializer(updated_return).data
             }, status=status.HTTP_200_OK)
         else:

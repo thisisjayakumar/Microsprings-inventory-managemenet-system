@@ -4,7 +4,8 @@ from django.core.exceptions import ValidationError
 from utils.enums import (
     MaterialTypeChoices, FinishingChoices, LocationTypeChoices,
     TransactionTypeChoices, ReferenceTypeChoices, GRMStatusChoices,
-    HandoverStatusChoices, HandoverIssueTypeChoices, RMReturnDispositionChoices
+    HandoverStatusChoices, HandoverIssueTypeChoices, RMReturnDispositionChoices,
+    RMReturnReasonChoices
 )
 
 User = get_user_model()
@@ -758,12 +759,23 @@ class RMReturn(models.Model):
     quantity_kg = models.DecimalField(
         max_digits=10,
         decimal_places=3,
-        help_text="Quantity returned in KG"
+        help_text="Quantity returned by Supervisor in KG"
     )
     
-    # Return reason
-    return_reason = models.TextField(
+    # Return reason (from Supervisor)
+    return_reason = models.CharField(
+        max_length=30,
+        choices=RMReturnReasonChoices.choices,
         help_text="Reason for returning the raw material"
+    )
+    
+    # Actual quantity received by RM Store (may differ from quantity_kg)
+    received_kg = models.DecimalField(
+        max_digits=10,
+        decimal_places=3,
+        null=True,
+        blank=True,
+        help_text="Actual quantity received by RM Store when processing"
     )
     
     # Who returned it (supervisor)

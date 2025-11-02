@@ -264,6 +264,7 @@ class ManufacturingOrderDetailSerializer(serializers.ModelSerializer):
     rm_allocated_by = UserBasicSerializer(read_only=True)
     status_history = MOStatusHistorySerializer(many=True, read_only=True)
     transaction_history = MOTransactionHistorySerializer(many=True, read_only=True)
+    rm_returns = serializers.SerializerMethodField()
     
     # Customer fields
     from third_party.serializers import CustomerListSerializer
@@ -310,7 +311,7 @@ class ManufacturingOrderDetailSerializer(serializers.ModelSerializer):
             'priority', 'priority_display', 'customer', 'customer_id', 'customer_name', 
             'delivery_date', 'special_instructions', 'submitted_at', 'gm_approved_at', 
             'gm_approved_by', 'rm_allocated_at', 'rm_allocated_by', 'created_at', 
-            'created_by', 'updated_at', 'status_history', 'transaction_history'
+            'created_by', 'updated_at', 'status_history', 'transaction_history', 'rm_returns'
         ]
         read_only_fields = [
             'mo_id', 'date_time', 'product_type', 'material_name', 'material_type',
@@ -515,6 +516,20 @@ class ManufacturingOrderDetailSerializer(serializers.ModelSerializer):
                 logger.warning(f"Failed to create status change transaction history: {str(e)}")
         
         return instance
+    
+    def get_rm_returns(self, obj):
+        """Get all RM returns for this MO"""
+        from inventory.serializers import RMReturnSerializer
+        from inventory.models import RMReturn
+        
+        rm_returns = RMReturn.objects.filter(
+            manufacturing_order=obj
+        ).select_related(
+            'raw_material', 'heat_number', 'batch', 'returned_from_location',
+            'returned_by', 'disposed_by'
+        ).order_by('-returned_at')
+        
+        return RMReturnSerializer(rm_returns, many=True).data
 
 
 class PurchaseOrderListSerializer(serializers.ModelSerializer):

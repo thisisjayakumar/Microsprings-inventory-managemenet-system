@@ -111,8 +111,15 @@ class HandoverIssueTypeChoices(models.TextChoices):
     WRONG_MATERIAL = 'wrong_material', _('Wrong Material')
 
 
+class RMReturnReasonChoices(models.TextChoices):
+    RECEIVED_WRONG_RM = 'received_wrong_rm', _('Received Wrong RM')
+    ENOUGH_QTY_REACHED = 'enough_qty_reached', _('Enough Qty Reached')
+    DEFECT_IN_QUALITY = 'defect_in_quality', _('Defect in Quality')
+
+
 class RMReturnDispositionChoices(models.TextChoices):
     PENDING = 'pending', _('Pending Action')
+    RETURN_TO_RM = 'return_to_rm', _('Return to RM')
     RETURN_TO_VENDOR = 'return_to_vendor', _('Return to Vendor')
     SCRAP = 'scrap', _('Scrap')
 

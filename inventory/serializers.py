@@ -702,6 +702,7 @@ class RMReturnSerializer(serializers.ModelSerializer):
     mo_id = serializers.CharField(source='manufacturing_order.mo_id', read_only=True)
     returned_from_location_display = serializers.CharField(source='returned_from_location.get_location_name_display', read_only=True)
     disposition_display = serializers.CharField(source='get_disposition_display', read_only=True)
+    return_reason_display = serializers.CharField(source='get_return_reason_display', read_only=True)
     returned_by_name = serializers.CharField(source='returned_by.get_full_name', read_only=True)
     disposed_by_name = serializers.CharField(source='disposed_by.get_full_name', read_only=True, allow_null=True)
     
@@ -710,15 +711,15 @@ class RMReturnSerializer(serializers.ModelSerializer):
         fields = [
             'id', 'return_id', 'raw_material', 'raw_material_details', 'heat_number', 'heat_number_display',
             'batch', 'batch_id', 'manufacturing_order', 'mo_id', 'returned_from_location', 
-            'returned_from_location_display', 'quantity_kg', 'return_reason', 'returned_by', 
-            'returned_by_name', 'returned_at', 'disposition', 'disposition_display', 
-            'disposition_notes', 'disposed_by', 'disposed_by_name', 'disposed_at', 
-            'return_transaction', 'created_at', 'updated_at'
+            'returned_from_location_display', 'quantity_kg', 'received_kg', 'return_reason', 
+            'return_reason_display', 'returned_by', 'returned_by_name', 'returned_at', 
+            'disposition', 'disposition_display', 'disposition_notes', 'disposed_by', 
+            'disposed_by_name', 'disposed_at', 'return_transaction', 'created_at', 'updated_at'
         ]
         read_only_fields = [
             'id', 'return_id', 'returned_at', 'created_at', 'updated_at',
             'raw_material_details', 'heat_number_display', 'batch_id', 'mo_id',
-            'returned_from_location_display', 'disposition_display', 
+            'returned_from_location_display', 'disposition_display', 'return_reason_display',
             'returned_by_name', 'disposed_by_name'
         ]
 
@@ -834,25 +835,111 @@ class RMReturnCreateSerializer(serializers.ModelSerializer):
 
 class RMReturnDispositionSerializer(serializers.Serializer):
     """Serializer for processing RM return disposition by RM Store"""
-    disposition = serializers.ChoiceField(choices=['return_to_vendor', 'scrap'])
+    disposition = serializers.ChoiceField(choices=['return_to_rm', 'return_to_vendor'])
+    received_kg = serializers.DecimalField(max_digits=10, decimal_places=3, required=True)
     disposition_notes = serializers.CharField(required=False, allow_blank=True)
+    
+    def validate_received_kg(self, value):
+        """Validate received quantity is positive"""
+        if value <= 0:
+            raise serializers.ValidationError("Received quantity must be greater than 0")
+        return value
     
     def validate(self, data):
         """Validate that disposition is not pending"""
-        if data['disposition'] == 'pending':
+        if data.get('disposition') == 'pending':
             raise serializers.ValidationError("Disposition cannot be set to pending")
         return data
     
     def update(self, instance, validated_data):
-        """Update RM return with disposition"""
-        instance.disposition = validated_data['disposition']
-        instance.disposition_notes = validated_data.get('disposition_notes', '')
-        instance.disposed_by = self.context['request'].user
-        instance.disposed_at = timezone.now()
-        instance.save()
+        """Update RM return with disposition and adjust stock accordingly"""
+        from decimal import Decimal
+        from django.db import transaction
         
-        # TODO: Create additional inventory transactions if needed
-        # For example, if disposition is 'scrap', we might want to move to scrap location
-        # If disposition is 'return_to_vendor', we might want to create a vendor return record
+        disposition = validated_data['disposition']
+        received_kg = validated_data['received_kg']
+        
+        with transaction.atomic():
+            # Update the RM return record
+            instance.disposition = disposition
+            instance.received_kg = received_kg
+            instance.disposition_notes = validated_data.get('disposition_notes', '')
+            instance.disposed_by = self.context['request'].user
+            instance.disposed_at = timezone.now()
+            instance.save()
+            
+            # Adjust RM stock based on disposition
+            if disposition == 'return_to_rm':
+                # Add back to RM stock
+                stock_balance, created = RMStockBalance.objects.get_or_create(
+                    raw_material=instance.raw_material,
+                    defaults={'available_quantity': Decimal('0')}
+                )
+                stock_balance.available_quantity += received_kg
+                stock_balance.save()
+                
+                # If heat number tracking is used, update heat stock balance
+                if instance.heat_number:
+                    try:
+                        heat_stock_balance, _ = RMStockBalanceHeat.objects.get_or_create(
+                            raw_material=instance.raw_material,
+                            defaults={
+                                'total_available_quantity_kg': Decimal('0'),
+                                'total_coils_available': 0,
+                                'total_sheets_available': 0,
+                                'active_heat_numbers_count': 0
+                            }
+                        )
+                        heat_stock_balance.total_available_quantity_kg += received_kg
+                        heat_stock_balance.save()
+                        
+                        # Update heat number consumed quantity (reverse it)
+                        heat = instance.heat_number
+                        heat.consumed_quantity_kg = max(Decimal('0'), heat.consumed_quantity_kg - received_kg)
+                        heat.save()
+                    except Exception as e:
+                        # Log but don't fail the transaction
+                        import logging
+                        logger = logging.getLogger(__name__)
+                        logger.warning(f"Failed to update heat stock balance: {e}")
+                
+            elif disposition == 'return_to_vendor':
+                # For defective material being returned to vendor
+                # Deduct from RM stock (material is unusable and will be replaced by vendor)
+                stock_balance, created = RMStockBalance.objects.get_or_create(
+                    raw_material=instance.raw_material,
+                    defaults={'available_quantity': Decimal('0')}
+                )
+                # Ensure we don't go negative
+                stock_balance.available_quantity = max(Decimal('0'), stock_balance.available_quantity - received_kg)
+                stock_balance.save()
+                
+                # If heat number tracking is used, update heat stock balance
+                if instance.heat_number:
+                    try:
+                        heat_stock_balance, _ = RMStockBalanceHeat.objects.get_or_create(
+                            raw_material=instance.raw_material,
+                            defaults={
+                                'total_available_quantity_kg': Decimal('0'),
+                                'total_coils_available': 0,
+                                'total_sheets_available': 0,
+                                'active_heat_numbers_count': 0
+                            }
+                        )
+                        heat_stock_balance.total_available_quantity_kg = max(
+                            Decimal('0'), 
+                            heat_stock_balance.total_available_quantity_kg - received_kg
+                        )
+                        heat_stock_balance.save()
+                        
+                        # Update heat number consumed quantity (increase it since material is defective)
+                        heat = instance.heat_number
+                        heat.consumed_quantity_kg += received_kg
+                        heat.save()
+                    except Exception as e:
+                        # Log but don't fail the transaction
+                        import logging
+                        logger = logging.getLogger(__name__)
+                        logger.warning(f"Failed to update heat stock balance for vendor return: {e}")
         
         return instance
