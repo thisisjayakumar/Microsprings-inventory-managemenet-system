@@ -140,9 +140,12 @@ DATABASES = {
             'init_command': config('DATABASE_OPTIONS_INIT_COMMAND', default="SET sql_mode='STRICT_TRANS_TABLES'"),
             'charset': config('DATABASE_OPTIONS_CHARSET', default='utf8mb4'),
         },
-        'CONN_MAX_AGE': config('DATABASE_CONN_MAX_AGE', default=600, cast=int),  # Connection pooling
+        'CONN_MAX_AGE': config('DATABASE_CONN_MAX_AGE', default=600, cast=int), 
+        'CONN_HEALTH_CHECKS': True,
     }
 }
+
+DATABASES['default']['CONN_HEALTH_CHECKS'] = True
 
 # Password validation
 # https://docs.djangoproject.com/en/5.2/ref/settings/#auth-password-validators
