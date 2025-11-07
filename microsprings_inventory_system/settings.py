@@ -80,12 +80,15 @@ INSTALLED_APPS = [
     
     # Phase 4: Analytics & Integration
     'reporting',           # Reports, analytics, business intelligence
+    
+    # Phase 5: Patrol Management
+    'patrol',              # Patrol duty and QC monitoring
 
 ]
 
 MIDDLEWARE = [
-    'django.middleware.security.SecurityMiddleware',
     'corsheaders.middleware.CorsMiddleware',
+    'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',

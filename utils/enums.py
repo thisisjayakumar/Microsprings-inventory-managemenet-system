@@ -31,6 +31,7 @@ class RoleHierarchyChoices(models.TextChoices):
     SUPERVISOR = 'supervisor', _('Supervisor')
     RM_STORE = 'rm_store', _('RM Store')
     FG_STORE = 'fg_store', _('FG Store')
+    PATROL = 'patrol', _('Patrol')
 
 
 # ============================================================================
@@ -360,6 +361,8 @@ class WorkflowNotificationTypeChoices(models.TextChoices):
     QUALITY_CHECK_REQUIRED = 'quality_check_required', _('Quality Check Required')
     FG_VERIFICATION_REQUIRED = 'fg_verification_required', _('FG Verification Required')
     READY_FOR_DISPATCH = 'ready_for_dispatch', _('Ready for Dispatch')
+    PATROL_DUTY_ASSIGNED = 'patrol_duty_assigned', _('Patrol Duty Assigned')
+    PATROL_DUTY_ENDING_SOON = 'patrol_duty_ending_soon', _('Patrol Duty Ending Soon')
 
 
 # ============================================================================
@@ -442,6 +445,23 @@ class MachineScheduleStatusChoices(models.TextChoices):
 class VendorTypeChoices(models.TextChoices):
     RM_VENDOR = 'rm_vendor', _('RM Vendor')
     OUTSOURCE_VENDOR = 'outsource_vendor', _('Outsource Vendor')
+
+
+# ============================================================================
+# PATROL MANAGEMENT CHOICES
+# ============================================================================
+
+class PatrolDutyStatusChoices(models.TextChoices):
+    ACTIVE = 'active', _('Active')
+    COMPLETED = 'completed', _('Completed')
+    CANCELLED = 'cancelled', _('Cancelled')
+
+
+class PatrolUploadStatusChoices(models.TextChoices):
+    PENDING = 'pending', _('Pending Upload')
+    SUBMITTED = 'submitted', _('Submitted')
+    MISSED = 'missed', _('Missed')
+    REUPLOADED = 'reuploaded', _('Reuploaded')
 
 
 class IndustryTypeChoices(models.TextChoices):
