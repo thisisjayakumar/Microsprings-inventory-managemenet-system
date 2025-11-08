@@ -25,11 +25,9 @@ redis==5.0.1
 
 # Security and monitoring
 django-ratelimit==4.1.0
-sentry-sdk[django]==1.38.0  # Error tracking (optional)
 
 # File handling and storage
-boto3==1.34.0  # AWS S3 support (optional)
-django-storages==1.14.2  # Cloud storage backends (optional)
+python-dotenv
 
 # Development and testing (keep for migrations)
 setuptools<81

@@ -14,6 +14,7 @@ from pathlib import Path
 from datetime import timedelta
 from decouple import Config, RepositoryEnv
 import os
+from dotenv import load_dotenv
 import warnings
 warnings.filterwarnings(
     "ignore",
@@ -27,6 +28,8 @@ pymysql.install_as_MySQLdb()
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
+
+load_dotenv()
 
 # Load environment variables from .env file in BASE_DIR
 DOTENV_FILE = BASE_DIR / '.env'
@@ -244,7 +247,9 @@ SIMPLE_JWT = {
 }
 
 # CORS Configuration
-CORS_ALLOWED_ORIGINS = os.getenv("CORS_ALLOWED_ORIGINS", "").split(",")
+CORS_ALLOWED_ORIGINS = [
+    origin for origin in os.getenv("CORS_ALLOWED_ORIGINS", "").split(",") if origin
+]
 
 CORS_ALLOW_CREDENTIALS = True
 
