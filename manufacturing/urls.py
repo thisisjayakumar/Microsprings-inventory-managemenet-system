@@ -13,6 +13,17 @@ from .views import (
 )
 from .views.batch_views import BatchProcessExecutionViewSet
 from .views.additional_rm_views import AdditionalRMRequestViewSet
+from .views.supervisor_views import (
+    ProcessStopViewSet,
+    ProcessDowntimeAnalyticsViewSet,
+    BatchProcessCompletionViewSet,
+    ReworkBatchViewSet,
+    BatchReceiptVerificationViewSet,
+    FinalInspectionReworkViewSet,
+    ProcessActivityLogViewSet,
+    BatchTraceabilityViewSet,
+    ReworkAnalyticsViewSet
+)
 
 # Create router and register viewsets
 router = DefaultRouter()
@@ -26,6 +37,17 @@ router.register(r'batch-process-executions', BatchProcessExecutionViewSet, basen
 router.register(r'outsourcing', OutsourcingRequestViewSet, basename='outsourcingrequest')
 router.register(r'rm-allocations', RawMaterialAllocationViewSet, basename='rmallocation')
 router.register(r'additional-rm-requests', AdditionalRMRequestViewSet, basename='additionalrmrequest')
+
+# Supervisor Process Management ViewSets
+router.register(r'process-stops', ProcessStopViewSet, basename='process-stop')
+router.register(r'downtime-analytics', ProcessDowntimeAnalyticsViewSet, basename='downtime-analytics')
+router.register(r'batch-completions', BatchProcessCompletionViewSet, basename='batch-completion')
+router.register(r'rework-batches', ReworkBatchViewSet, basename='rework-batch')
+router.register(r'batch-receipts', BatchReceiptVerificationViewSet, basename='batch-receipt')
+router.register(r'fi-reworks', FinalInspectionReworkViewSet, basename='fi-rework')
+router.register(r'activity-logs', ProcessActivityLogViewSet, basename='activity-log')
+router.register(r'batch-traceability', BatchTraceabilityViewSet, basename='batch-traceability')
+router.register(r'rework-analytics', ReworkAnalyticsViewSet, basename='rework-analytics')
 
 app_name = 'manufacturing'
 

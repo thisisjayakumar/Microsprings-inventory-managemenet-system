@@ -36,6 +36,23 @@ from .allocations import (
     RMAllocationHistory
 )
 from .additional_rm import AdditionalRMRequest
+from .process_stop import (
+    ProcessStop,
+    ProcessDowntimeSummary
+)
+from .rework import (
+    BatchProcessCompletion,
+    ReworkBatch,
+    FinalInspectionRework
+)
+from .batch_verification import (
+    BatchReceiptVerification,
+    BatchReceiptLog
+)
+from .activity_log import (
+    ProcessActivityLog,
+    BatchTraceabilityEvent
+)
 
 __all__ = [
     # Manufacturing Orders
@@ -73,5 +90,22 @@ __all__ = [
     
     # Additional RM
     'AdditionalRMRequest',
+    
+    # Process Stop & Downtime
+    'ProcessStop',
+    'ProcessDowntimeSummary',
+    
+    # Rework Management
+    'BatchProcessCompletion',
+    'ReworkBatch',
+    'FinalInspectionRework',
+    
+    # Batch Verification
+    'BatchReceiptVerification',
+    'BatchReceiptLog',
+    
+    # Activity Logging
+    'ProcessActivityLog',
+    'BatchTraceabilityEvent',
 ]
 
