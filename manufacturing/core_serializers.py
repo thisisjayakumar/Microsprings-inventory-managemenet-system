@@ -969,14 +969,10 @@ class PurchaseOrderDetailSerializer(serializers.ModelSerializer):
 # Utility serializers for dropdown/select options
 class ProductDropdownSerializer(serializers.ModelSerializer):
     """Serializer for product dropdown options"""
-    display_name = serializers.SerializerMethodField()
     
     class Meta:
         model = Product
-        fields = ['id', 'product_code', 'display_name']
-    
-    def get_display_name(self, obj):
-        return obj.product_code
+        fields = ['id', 'product_code']
 
 
 class RawMaterialDropdownSerializer(serializers.ModelSerializer):

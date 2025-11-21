@@ -6,7 +6,14 @@ from django.shortcuts import redirect
 from django.views.static import serve
 import os
 
+from django.http import JsonResponse
+
+def health_check(request):
+    """Root level health check endpoint for Docker/Kubernetes"""
+    return JsonResponse({'status': 'healthy', 'service': 'msp-erp-backend'})
+
 urlpatterns = [
+    path('health/', health_check, name='root_health_check'),
     path('', lambda request: redirect('admin/')),
     path('admin/', admin.site.urls),
     path('api/auth/', include('authentication.urls')),

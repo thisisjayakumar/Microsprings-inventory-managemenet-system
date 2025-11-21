@@ -33,7 +33,7 @@ load_dotenv()
 
 # Load environment variables from .env file in BASE_DIR
 DOTENV_FILE = BASE_DIR / '.env'
-config = Config(RepositoryEnv(DOTENV_FILE)) if DOTENV_FILE.exists() else Config()
+config = Config(RepositoryEnv(DOTENV_FILE)) if DOTENV_FILE.exists() else Config(repository=os.environ)
 
 
 # Quick-start development settings - unsuitable for production

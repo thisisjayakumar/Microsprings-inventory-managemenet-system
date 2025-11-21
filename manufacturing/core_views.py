@@ -404,16 +404,13 @@ class ManufacturingOrderViewSet(viewsets.ModelViewSet):
             # Get unique product codes from BOM
             bom_products = BOM.objects.filter(is_active=True).values('product_code').distinct().order_by('product_code')
             
-            # Create a list of product-like objects for the dropdown
+            # Create a list of simplified product dicts for the dropdown
             product_list = []
             for bom_product in bom_products:
+                product_code = bom_product['product_code']
                 product_list.append({
-                    'id': bom_product['product_code'],  # Use product_code as ID temporarily
-                    'product_code': bom_product['product_code'],
-                    'part_number': None,
-                    'part_name': None,
-                    'display_name': bom_product['product_code'],
-                    'is_active': True
+                    'id': product_code,  # Use product_code as ID temporarily
+                    'product_code': product_code,
                 })
             
             return Response(product_list)

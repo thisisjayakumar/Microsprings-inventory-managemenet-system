@@ -14,20 +14,11 @@ SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-docker-secret-key-cha
 # Allowed hosts
 ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',')
 
-# Database configuration
-if os.environ.get('DATABASE_URL'):
-    import dj_database_url
-    DATABASES = {
-        'default': dj_database_url.parse(os.environ.get('DATABASE_URL'))
-    }
-else:
-    # Fallback to SQLite for development
-    DATABASES = {
-        'default': {
-            'ENGINE': 'django.db.backends.sqlite3',
-            'NAME': BASE_DIR / 'db.sqlite3',
-        }
-    }
+# Database configuration (MySQL - Remote Server)
+# Database settings are loaded from environment variables via settings.py
+# Ensure these are set in .env.production:
+# DATABASE_ENGINE, DATABASE_NAME, DATABASE_USER, DATABASE_PASSWORD, DATABASE_HOST, DATABASE_PORT
+# The base settings.py will handle MySQL configuration automatically
 
 # CORS settings
 CORS_ALLOWED_ORIGINS = os.environ.get(

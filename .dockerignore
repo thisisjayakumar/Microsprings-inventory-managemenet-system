@@ -4,33 +4,23 @@ __pycache__/
 *$py.class
 *.so
 .Python
-build/
-develop-eggs/
-dist/
-downloads/
-eggs/
-.eggs/
-lib/
-lib64/
-parts/
-sdist/
-var/
-wheels/
 *.egg-info/
-.installed.cfg
+dist/
+build/
 *.egg
-
-# Virtual environments
 venv/
 env/
 ENV/
+.venv
 
 # Django
 *.log
 local_settings.py
 db.sqlite3
 db.sqlite3-journal
-media/
+/media
+/staticfiles
+/static
 
 # IDE
 .vscode/
@@ -38,38 +28,46 @@ media/
 *.swp
 *.swo
 *~
-
-# OS
 .DS_Store
-.DS_Store?
-._*
-.Spotlight-V100
-.Trashes
-ehthumbs.db
-Thumbs.db
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+.hypothesis/
+
+# Environment
+.env
+.env.local
+.env.*.local
+*.env
 
 # Git
-.git
+.git/
 .gitignore
-
-# Docker
-Dockerfile
-.dockerignore
+.gitattributes
 
 # Documentation
 *.md
-README*
+docs/
+README.md
+LICENSE
 
-# Test files
-tests/
-test_*.py
-*_test.py
+# Data files (if not needed in production)
+management_data/
+*.csv
 
-# Coverage
-.coverage
-htmlcov/
+# Logs
+logs/
+*.log
 
-# Environment files
-.env
-.env.local
-.env.production
+# Docker
+Dockerfile*
+docker-compose*.yml
+.dockerignore
+
+# Other
+*.bak
+*.tmp
+.cache/
