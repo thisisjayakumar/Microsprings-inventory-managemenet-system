@@ -77,7 +77,7 @@ class BatchProcessExecutionViewSet(viewsets.ViewSet):
         # Update batch status if needed and lock RM allocations
         if batch.status == 'created':
             # Lock RM allocations for this batch
-            from manufacturing.rm_allocation_service import RMAllocationService
+            from manufacturing.services.rm_allocation import RMAllocationService
             lock_result = RMAllocationService.lock_allocations_for_batch(
                 batch=batch,
                 locked_by_user=request.user

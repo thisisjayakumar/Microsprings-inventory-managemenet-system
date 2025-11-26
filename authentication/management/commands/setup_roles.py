@@ -99,6 +99,34 @@ class Command(BaseCommand):
                     'finished_goods': ['create', 'read', 'update']
                 },
                 'restricted_departments': ['fg_store']
+            },
+            {
+                'name': 'patrol',
+                'description': 'Patrol user with access to quality control monitoring, upload QC sheets, and view patrol duties',
+                'hierarchy_level': 6,
+                'permissions': {
+                    'patrol_duties': ['read'],
+                    'patrol_uploads': ['create', 'read', 'update'],
+                    'patrol_alerts': ['read', 'update'],
+                    'quality_control': ['create', 'read'],
+                    'qc_sheets': ['read']
+                },
+                'restricted_departments': []  # Patrol users can monitor all departments
+            },
+            {
+                'name': 'outsourcing_incharge',
+                'description': 'Outsourcing Incharge with access to send and receive batches for outsourcing processes, track quantities and manage vendor operations',
+                'hierarchy_level': 7,
+                'permissions': {
+                    'outsourcing_requests': ['create', 'read', 'update', 'delete'],
+                    'send_outsource': ['create', 'read', 'update'],
+                    'receive_outsource': ['create', 'read', 'update'],
+                    'manage_outsource_batches': ['create', 'read', 'update', 'delete'],
+                    'view_outsource_history': ['read'],
+                    'vendor_management': ['read'],
+                    'inventory_transactions': ['create', 'read']
+                },
+                'restricted_departments': []  # Outsourcing incharge can manage all departments
             }
         ]
         

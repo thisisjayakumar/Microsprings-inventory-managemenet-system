@@ -158,7 +158,7 @@ class ManufacturingOrderViewSet(viewsets.ModelViewSet):
                 mo.actual_start_date = timezone.now()
             # Ensure RM is reserved when status changes to in_progress (no locking)
             try:
-                from manufacturing.rm_allocation_service import RMAllocationService
+                from manufacturing.services.rm_allocation import RMAllocationService
                 from manufacturing.models import RawMaterialAllocation
                 from inventory.models import RMStockBalance
                 
@@ -860,7 +860,7 @@ class ManufacturingOrderViewSet(viewsets.ModelViewSet):
         # Ensure RM is reserved (allocate if not exists or if needed)
         reservation_result = None
         try:
-            from manufacturing.rm_allocation_service import RMAllocationService
+            from manufacturing.services.rm_allocation import RMAllocationService
             from inventory.models import RMStockBalance
             
             # Check if allocations exist
@@ -1019,7 +1019,7 @@ class ManufacturingOrderViewSet(viewsets.ModelViewSet):
         
         # Release any reserved RM allocations if they exist
         try:
-            from manufacturing.rm_allocation_service import RMAllocationService
+            from manufacturing.services.rm_allocation import RMAllocationService
             release_result = RMAllocationService.release_allocations_for_mo(mo, request.user)
             print(f"RM allocation release result for rejected MO {mo.mo_id}: {release_result}")
         except Exception as e:
@@ -1237,7 +1237,7 @@ class ManufacturingOrderViewSet(viewsets.ModelViewSet):
         
         # Ensure RM is reserved when supervisor starts production (no locking)
         try:
-            from manufacturing.rm_allocation_service import RMAllocationService
+            from manufacturing.services.rm_allocation import RMAllocationService
             from manufacturing.models import RawMaterialAllocation
             from inventory.models import RMStockBalance
             
@@ -2559,7 +2559,7 @@ class BatchViewSet(viewsets.ModelViewSet):
             )
         
         # Lock RM allocations for this batch
-        from manufacturing.rm_allocation_service import RMAllocationService
+        from manufacturing.services.rm_allocation import RMAllocationService
         lock_result = RMAllocationService.lock_allocations_for_batch(
             batch=batch,
             locked_by_user=request.user
@@ -3587,7 +3587,7 @@ class RawMaterialAllocationViewSet(viewsets.ReadOnlyModelViewSet):
             logger.info(f"[DEBUG]   - Allocation ID: {alloc.id}, Status: {alloc.status}, Qty: {alloc.allocated_quantity_kg}kg, Material: {alloc.raw_material.material_code}")
         
         # Get allocation summary
-        from manufacturing.rm_allocation_service import RMAllocationService
+        from manufacturing.services.rm_allocation import RMAllocationService
         summary = RMAllocationService.get_allocation_summary_for_mo(mo)
         
         # Calculate allocation status breakdown
@@ -3637,7 +3637,7 @@ class RawMaterialAllocationViewSet(viewsets.ReadOnlyModelViewSet):
         mo_id = serializer.validated_data['mo_id']
         mo = ManufacturingOrder.objects.get(id=mo_id)
         
-        from manufacturing.rm_allocation_service import RMAllocationService
+        from manufacturing.services.rm_allocation import RMAllocationService
         availability = RMAllocationService.check_rm_availability_for_mo(mo)
         
         return Response(availability)
@@ -3660,7 +3660,7 @@ class RawMaterialAllocationViewSet(viewsets.ReadOnlyModelViewSet):
                 status=status.HTTP_404_NOT_FOUND
             )
         
-        from manufacturing.rm_allocation_service import RMAllocationService
+        from manufacturing.services.rm_allocation import RMAllocationService
         swappable = RMAllocationService.find_swappable_allocations(target_mo)
         serializer = self.get_serializer(swappable, many=True)
         
@@ -3732,7 +3732,7 @@ class RawMaterialAllocationViewSet(viewsets.ReadOnlyModelViewSet):
                 status=status.HTTP_404_NOT_FOUND
             )
         
-        from manufacturing.rm_allocation_service import RMAllocationService
+        from manufacturing.services.rm_allocation import RMAllocationService
         result = RMAllocationService.auto_swap_allocations(target_mo, request.user)
         
         if result['success']:

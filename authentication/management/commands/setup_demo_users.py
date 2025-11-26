@@ -113,6 +113,25 @@ class Command(BaseCommand):
                     ('Steven', 'Lewis', 'steven.fgstore@microsprings.com', 'FGS002'),
                 ]
             },
+            # Patrol Users (Hierarchy Level 6) - Quality Control
+            {
+                'role': 'patrol',
+                'department': 'quality',
+                'users': [
+                    ('Alex', 'Patrol', 'alex.patrol@microsprings.com', 'PAT001'),
+                    ('Rachel', 'Green', 'rachel.patrol@microsprings.com', 'PAT002'),
+                    ('Kevin', 'White', 'kevin.patrol@microsprings.com', 'PAT003'),
+                ]
+            },
+            # Outsourcing Incharge (Hierarchy Level 7) - Outsourcing Management
+            {
+                'role': 'outsourcing_incharge',
+                'department': 'admin',
+                'users': [
+                    ('Daniel', 'Outsource', 'daniel.outsource@microsprings.com', 'OSI001'),
+                    ('Sophia', 'Lee', 'sophia.outsource@microsprings.com', 'OSI002'),
+                ]
+            },
         ]
         
         shifts = ['I', 'II', 'III']
@@ -122,7 +141,9 @@ class Command(BaseCommand):
             'production_head': 'Production Head',
             'supervisor': 'Process Supervisor',
             'rm_store': 'Raw Material Store Keeper',
-            'fg_store': 'Finished Goods Store Keeper / Operator'
+            'fg_store': 'Finished Goods Store Keeper / Operator',
+            'patrol': 'Quality Control Patrol',
+            'outsourcing_incharge': 'Outsourcing Incharge'
         }
         
         created_count = 0
