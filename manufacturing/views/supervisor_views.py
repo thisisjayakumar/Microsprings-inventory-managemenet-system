@@ -359,6 +359,20 @@ class BatchProcessCompletionViewSet(viewsets.ModelViewSet):
             
             # If rework quantity > 0, create rework batch
             if completion.rework_quantity_kg > 0:
+                # Get currently active supervisor for this process
+                from processes.models import DailySupervisorStatus
+                today = timezone.now().date()
+                current_shift = process_execution._get_current_shift()
+                
+                supervisor_status = DailySupervisorStatus.objects.filter(
+                    date=today,
+                    work_center=process_execution.process,
+                    shift=current_shift
+                ).first()
+                
+                # Use active supervisor from daily status, fallback to request.user
+                rework_supervisor = supervisor_status.active_supervisor if supervisor_status else request.user
+                
                 rework_batch = ReworkBatch.objects.create(
                     original_batch=batch,
                     process_execution=process_execution,
@@ -366,7 +380,7 @@ class BatchProcessCompletionViewSet(viewsets.ModelViewSet):
                     rework_quantity_kg=completion.rework_quantity_kg,
                     status='pending',
                     source='process_supervisor',
-                    assigned_supervisor=request.user,
+                    assigned_supervisor=rework_supervisor,
                     rework_cycle_number=completion.rework_cycle_number + 1,
                     defect_description=completion.defect_description
                 )
@@ -713,17 +727,31 @@ class FinalInspectionReworkViewSet(viewsets.ModelViewSet):
             batch = Batch.objects.get(id=validated_data['batch_id'])
             defective_process = Process.objects.get(id=validated_data['defective_process_id'])
             
-            # Find supervisor for defective process
-            from processes.models import DailySupervisorStatus
+            # Find supervisor for defective process - use current active supervisor
+            from processes.models import DailySupervisorStatus, WorkCenterSupervisorShift
             today = timezone.now().date()
+            current_time = timezone.now().time()
+            
+            # Determine current shift
+            shift_configs = WorkCenterSupervisorShift.objects.filter(
+                work_center=defective_process,
+                is_active=True
+            )
+            current_shift = 'shift_1'  # default
+            for config in shift_configs:
+                if config.shift_start_time <= current_time < config.shift_end_time:
+                    current_shift = config.shift
+                    break
+            
             supervisor_status = DailySupervisorStatus.objects.filter(
                 date=today,
-                work_center=defective_process
+                work_center=defective_process,
+                shift=current_shift
             ).select_related('active_supervisor').first()
             
             if not supervisor_status:
                 return Response(
-                    {'error': f'No active supervisor found for {defective_process.name}'},
+                    {'error': f'No active supervisor found for {defective_process.name} in {current_shift}'},
                     status=status.HTTP_400_BAD_REQUEST
                 )
             
